@@ -20,6 +20,8 @@ final class TranslationRepositoryTest extends TestCase {
 		parent::setUp();
 		Functions\when( 'wp_kses' )->alias( static fn( string $text ): string => strip_tags( $text, '<strong><em><b><i><br><span><a>' ) );
 		Functions\when( 'current_time' )->justReturn( '2026-10-21 12:00:00' );
+		Functions\when( 'wp_cache_incr' )->justReturn( 1 );
+		Functions\when( 'wp_cache_set' )->justReturn( true );
 	}
 
 	public function test_find_many_uses_one_join_query(): void {

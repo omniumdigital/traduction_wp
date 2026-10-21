@@ -17,6 +17,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class TranslationRepository implements TranslationRepositoryInterface {
 
+	public const CACHE_GROUP       = 'omtr';
+	public const CACHE_VERSION_KEY = 'translation_version';
+
 	/**
 	 * Constructor.
 	 *
@@ -66,6 +69,9 @@ final class TranslationRepository implements TranslationRepositoryInterface {
 	 * @param string             $model       Model id.
 	 */
 	public function save_auto( array $texts, string $target_lang, string $provider, string $model ): void {
+		if ( array() === $texts ) {
+			return;
+		}
 		$table = Tables::name( Tables::TRANSLATIONS );
 		$now   = current_time( 'mysql', true );
 		foreach ( $texts as $segment_id => $text ) {
@@ -100,6 +106,7 @@ final class TranslationRepository implements TranslationRepositoryInterface {
 			);
 			$this->wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
 		}
+		$this->invalidate_render_cache();
 	}
 
 	/**
@@ -125,6 +132,7 @@ final class TranslationRepository implements TranslationRepositoryInterface {
 			current_time( 'mysql', true )
 		);
 		$this->wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
+		$this->invalidate_render_cache();
 	}
 
 	/**
@@ -161,6 +169,17 @@ final class TranslationRepository implements TranslationRepositoryInterface {
 				self::STATUS_LOCKED
 			);
 			$this->wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
+		}
+		$this->invalidate_render_cache();
+	}
+
+	/**
+	 * Advance the object-cache generation after stored translations change.
+	 */
+	private function invalidate_render_cache(): void {
+		$version = wp_cache_incr( self::CACHE_VERSION_KEY, 1, self::CACHE_GROUP );
+		if ( false === $version ) {
+			wp_cache_set( self::CACHE_VERSION_KEY, 1, self::CACHE_GROUP );
 		}
 	}
 }

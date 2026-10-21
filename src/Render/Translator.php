@@ -11,6 +11,7 @@ use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\UrlTranslator;
 use Omnium\Translate\Security\Sanitizer;
 use Omnium\Translate\Store\SegmentKey;
+use Omnium\Translate\Store\TranslationRepository;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
 
 defined( 'ABSPATH' ) || exit;
@@ -49,11 +50,15 @@ final class Translator {
 
 		$source_lang = $this->current_language->source();
 		$segments    = $this->extractor->extract( $html, $source_lang );
-		$cache_key   = 'omtr_render_' . hash( 'sha256', $this->current_language->get() . "\n" . $html );
-		$stored      = get_transient( $cache_key );
+		$hashes      = array_keys( $segments );
+		sort( $hashes, SORT_STRING );
+		$version = wp_cache_get( TranslationRepository::CACHE_VERSION_KEY, TranslationRepository::CACHE_GROUP );
+		$version = is_int( $version ) ? $version : 0;
+		$cache_key = 'render:' . hash( 'sha256', $this->current_language->get() . "\n" . $version . "\n" . implode( "\n", $hashes ) );
+		$stored    = wp_cache_get( $cache_key, TranslationRepository::CACHE_GROUP );
 		if ( ! is_array( $stored ) ) {
-			$stored = $this->translations->find_many( array_keys( $segments ), $this->current_language->get() );
-			set_transient( $cache_key, $stored, 5 * MINUTE_IN_SECONDS );
+			$stored = $this->translations->find_many( $hashes, $this->current_language->get() );
+			wp_cache_set( $cache_key, $stored, TranslationRepository::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 		}
 
 		$document = $this->load_document( $html );
