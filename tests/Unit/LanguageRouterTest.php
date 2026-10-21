@@ -22,6 +22,8 @@ final class LanguageRouterTest extends TestCase {
 		Functions\when( 'is_admin' )->justReturn( false );
 		Functions\when( 'wp_doing_ajax' )->justReturn( false );
 		Functions\when( 'wp_doing_cron' )->justReturn( false );
+		Functions\when( 'home_url' )->justReturn( 'https://example.test/' );
+		Functions\when( 'wp_parse_url' )->alias( static fn( string $url ): array|false => parse_url( $url ) );
 	}
 
 	public function test_strips_supported_prefix_before_wordpress_parsing(): void {
@@ -53,5 +55,17 @@ final class LanguageRouterTest extends TestCase {
 		$router->strip_language_prefix( true );
 
 		$this->assertSame( '/caf%C3%A9/été/%2Fbrut?redirect=%2Fen%2Ffoo', $_SERVER['REQUEST_URI'] );
+	}
+
+	public function test_strips_prefix_after_home_path_on_subdirectory_install(): void {
+		Functions\when( 'home_url' )->justReturn( 'https://example.test/blog/' );
+		$_SERVER['REQUEST_URI'] = '/blog/en/bonjour/?a=1';
+		$current                = new CurrentLanguage( 'fr' );
+		$router                 = new LanguageRouter( $current, new Settings(), new RequestGuard() );
+
+		$router->strip_language_prefix( true );
+
+		$this->assertSame( 'en', $current->get() );
+		$this->assertSame( '/blog/bonjour/?a=1', $_SERVER['REQUEST_URI'] );
 	}
 }

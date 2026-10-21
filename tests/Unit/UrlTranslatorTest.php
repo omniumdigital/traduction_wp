@@ -40,4 +40,15 @@ final class UrlTranslatorTest extends TestCase {
 		$this->assertSame( 'https://other.test/page', $translator->translate( 'https://other.test/page', 'en' ) );
 		$this->assertSame( '/wp-admin/edit.php', $translator->translate( '/wp-admin/edit.php', 'en' ) );
 	}
+
+	public function test_places_language_prefix_after_home_path_on_subdirectory_install(): void {
+		Functions\when( 'home_url' )->justReturn( 'https://example.test/blog/' );
+		$translator = new UrlTranslator( new Settings() );
+
+		$this->assertSame( 'https://example.test/blog/en/page?a=1', $translator->translate( 'https://example.test/blog/page?a=1', 'en' ) );
+		$this->assertSame( '/blog/es/page', $translator->translate( '/blog/en/page', 'es' ) );
+		$this->assertSame( '/blog/page', $translator->translate( '/blog/en/page', 'fr' ) );
+		$this->assertSame( '/other/page', $translator->translate( '/other/page', 'en' ) );
+		$this->assertSame( '/blog/wp-admin/edit.php', $translator->translate( '/blog/wp-admin/edit.php', 'en' ) );
+	}
 }

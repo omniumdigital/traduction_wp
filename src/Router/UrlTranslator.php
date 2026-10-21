@@ -37,8 +37,16 @@ final class UrlTranslator {
 
 		$home        = wp_parse_url( home_url( '/' ) );
 		$is_relative = str_starts_with( $url, '/' ) && ! str_starts_with( $url, '//' );
-		$parts       = wp_parse_url( $is_relative ? home_url( $url ) : $url );
-		if ( false === $parts || false === $home || ! isset( $parts['host'], $home['host'] ) ) {
+		if ( false === $home || ! isset( $home['host'] ) ) {
+			return $url;
+		}
+
+		$home_authority = (string) ( $home['scheme'] ?? 'https' ) . '://' . (string) $home['host'];
+		if ( isset( $home['port'] ) ) {
+			$home_authority .= ':' . (int) $home['port'];
+		}
+		$parts = wp_parse_url( $is_relative ? $home_authority . $url : $url );
+		if ( false === $parts || ! isset( $parts['host'] ) ) {
 			return $url;
 		}
 		$scheme_matches = ( $parts['scheme'] ?? '' ) === ( $home['scheme'] ?? '' );
@@ -47,21 +55,29 @@ final class UrlTranslator {
 			return $url;
 		}
 
-		$path = isset( $parts['path'] ) ? (string) $parts['path'] : '/';
-		if ( str_starts_with( $path, '/wp-admin' ) || str_starts_with( $path, '/wp-json' ) ) {
+		$path      = isset( $parts['path'] ) ? (string) $parts['path'] : '/';
+		$home_path = isset( $home['path'] ) ? rtrim( (string) $home['path'], '/' ) : '';
+		if ( '' !== $home_path && $path !== $home_path && ! str_starts_with( $path, $home_path . '/' ) ) {
+			return $url;
+		}
+
+		$relative_path = substr( $path, strlen( $home_path ) );
+		$relative_path = '' === $relative_path ? '/' : $relative_path;
+		if ( str_starts_with( $relative_path, '/wp-admin' ) || str_starts_with( $relative_path, '/wp-json' ) ) {
 			return $url;
 		}
 		foreach ( $this->settings->target_langs() as $target ) {
 			$prefix = '/' . rawurlencode( $target );
-			if ( $path === $prefix || str_starts_with( $path, $prefix . '/' ) ) {
-				$path = substr( $path, strlen( $prefix ) );
-				$path = '' === $path ? '/' : $path;
+			if ( $relative_path === $prefix || str_starts_with( $relative_path, $prefix . '/' ) ) {
+				$relative_path = substr( $relative_path, strlen( $prefix ) );
+				$relative_path = '' === $relative_path ? '/' : $relative_path;
 				break;
 			}
 		}
 		if ( $lang !== $this->settings->source_lang() ) {
-			$path = '/' . rawurlencode( $lang ) . ( '/' === $path ? '/' : '/' . ltrim( $path, '/' ) );
+			$relative_path = '/' . rawurlencode( $lang ) . ( '/' === $relative_path ? '/' : '/' . ltrim( $relative_path, '/' ) );
 		}
+		$path = $home_path . $relative_path;
 
 		$query    = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
 		$fragment = isset( $parts['fragment'] ) ? '#' . $parts['fragment'] : '';
