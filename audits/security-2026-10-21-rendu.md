@@ -10,42 +10,42 @@ Verdict : ✅ VALIDÉ pour le périmètre rendu, routeur, stockage et filtre PII
 | `vendor/bin/phpstan analyse --level=6 --memory-limit=1G` | ✅ aucune erreur |
 | `vendor/bin/phpunit --group=security` | ✅ 15 tests, 39 assertions |
 | `composer audit --no-interaction` | ✅ aucun avis de sécurité |
-| `npm audit --audit-level=high` | ⚠️ 20 vulnérabilités hautes héritées de `@wordpress/scripts`, uniquement dans les outils de développement ; correction disponible seulement par mise à niveau majeure forcée, explicitement laissée hors périmètre par le coordinateur |
-| `npm audit --omit=dev --audit-level=high` | ✅ 0 vulnérabilité dans les dépendances livrées |
-| `gitleaks detect --no-banner` | ✅ 3 commits, environ 1,04 Mo analysé, aucune fuite |
+| `npm audit --audit-level=high` | ✅ 0 vulnérabilité |
+| `gitleaks detect --no-banner` (image officielle, worktree complet monté) | ✅ 16 commits, environ 1,30 Mo analysé, aucune fuite |
 
-Les suppressions PHPCS dans `SegmentRepository` et `TranslationRepository` sont limitées aux listes `IN` dont seul le nombre de placeholders `%s` est généré dynamiquement. Les noms de tables passent par `%i` et toutes les valeurs passent effectivement à `$wpdb->prepare()` ; chaque autre suppression sur requête marque une variable produite immédiatement par `prepare()`. Les suppressions sur les propriétés DOM couvrent uniquement les noms publics natifs camelCase de PHP (`nodeType`, `nodeValue`, `childNodes`, etc.).
+Les suppressions PHPCS SQL restent limitées aux listes `IN` dont seul le nombre de placeholders est généré ; les identifiants de tables utilisent `%i` et toutes les valeurs passent à `$wpdb->prepare()`. La suppression PHPCS de `LanguageRouter.php:42` est intentionnelle : l'URI serveur brute n'est ni exécutée ni affichée, seulement découpée sur un préfixe connu afin de préserver exactement ses octets encodés.
 
 ## Findings
 
 | Sévérité | Fichier:ligne | Problème | Correctif proposé |
 | --- | --- | --- | --- |
-| Information | `package-lock.json` | Vulnérabilités héritées dans les outils npm de développement, absentes du zip et des dépendances de production | Traiter la montée majeure de `@wordpress/scripts` dans un chantier dépendances séparé |
+| Information | `src/Render/HtmlSegmentExtractor.php:65-81` | PHP 8.1–8.3 utilise le parseur HTML4 `DOMDocument`, susceptible de normaliser certaines constructions HTML5 complexes sur une page traduite | Limite documentée ; PHP 8.4+ utilise `Dom\HTMLDocument`. La langue source ne passe jamais dans le parseur |
 
-Aucun finding Critique ou Haute dans le périmètre audité.
+Aucun finding Critique, Haute, Moyenne ou Basse dans le périmètre audité.
 
 ## Recherche de motifs dangereux
 
 - Aucune fonction interdite (`eval`, `assert`, `unserialize`, exécution de processus) dans `src/`.
-- Aucun accès réseau ajouté ; aucune redirection ajoutée.
-- Les accès `$_GET` et `$_SERVER` du routeur sont en lecture seule et passent par `wp_unslash()` puis `sanitize_text_field()` ou `sanitize_url()` (`src/Router/RequestGuard.php:35-36`, `src/Router/LanguageRouter.php:38-42`).
-- Toutes les requêtes ajoutées utilisent `$wpdb->prepare()` ; les identifiants de tables utilisent `%i`.
-- Tous les nouveaux fichiers PHP contiennent la garde `defined( 'ABSPATH' ) || exit;`.
+- Aucun nouvel appel réseau ni aucune redirection.
+- Les paramètres d'éditeur et Woo AJAX passent par `wp_unslash()` puis `sanitize_text_field()`/`sanitize_key()` (`src/Router/RequestGuard.php:28-35`, `src/Router/RequestGuard.php:64-69`). Le chemin REST de classification passe par `wp_unslash()` et `sanitize_url()` (`src/Router/RequestGuard.php:75-82`).
+- Toutes les requêtes ajoutées utilisent `$wpdb->prepare()` ; `hashes_by_ids()` effectue une requête unique et omet les identifiants inconnus (`src/Store/SegmentRepository.php:103-123`).
+- Tous les fichiers PHP de `src/` contiennent la garde `defined( 'ABSPATH' ) || exit;`.
 
 ## Checklist manuelle
 
 ### 3.1 Réponses de l'IA = entrées non fiables
 
-- OK — réinsertion via import de nœuds DOM, pas par concaténation dans le document (`src/Render/Translator.php:147-174`).
-- OK — double passage par `Sanitizer::inline_html()` avant stockage et avant sortie (`src/Store/TranslationRepository.php:72`, `src/Render/Translator.php:137-143`) ; whitelist `wp_kses` (`src/Security/Sanitizer.php:23-41`).
-- OK — attributs et métadonnées passent par texte brut puis `esc_attr()` (`src/Render/Translator.php:99-110`, `src/Render/Translator.php:177-184`).
-- N/A — validation JSON fournisseur et construction du prompt appartiennent au lot Providers/ réservé à l'autre agent et ne sont pas modifiées ici.
-- OK — test de sortie avec `<script>`, `<img onerror>`, URL `javascript:` et instruction hostile traitée comme simple donnée (`tests/Unit/TranslatorSecurityTest.php:43-63`).
+- OK — réinsertion par import de nœuds DOM, jamais par affectation d'HTML au document (`src/Render/Translator.php:137-170`).
+- OK — traduction filtrée par `Sanitizer::inline_html()` au stockage, à la lecture et avant création du fragment (`src/Store/TranslationRepository.php:58`, `src/Store/TranslationRepository.php:78`, `src/Render/Translator.php:127-149`).
+- OK — attributs traduits passent par texte brut puis `esc_attr()` (`src/Render/Translator.php:173-180`).
+- N/A — validation JSON fournisseur et prompt sont hors de ce lot.
+- OK — test de sortie avec `<script>`, `<img onerror>`, `javascript:` et instruction hostile (`tests/Unit/TranslatorSecurityTest.php`).
+- OK — test HTML5 réaliste couvrant SVG, template, noscript, JSON-LD et contenu de script piégeux (`tests/Unit/Html5RenderingTest.php:64-82`).
 
 ### 3.2 Contrôle d'accès
 
 - N/A — aucune route REST ni action d'administration ajoutée.
-- OK — `save_edit()` applique lui-même `Sanitizer::inline_html()`, indépendamment du rôle appelant (`src/Store/TranslationRepository.php:112-127`).
+- OK — `save_edit()` applique directement `Sanitizer::inline_html()` quel que soit l'appelant (`src/Store/TranslationRepository.php:119-135`).
 - OK — aucun `wp_ajax_nopriv_*` ajouté.
 
 ### 3.3 Clés API
@@ -54,12 +54,13 @@ Aucun finding Critique ou Haute dans le périmètre audité.
 
 ### 3.4 Abus et coûts
 
-- OK — le rendu effectue exclusivement extraction, cache et lecture groupée ; aucun fournisseur ni service de file n'est injecté (`src/Render/Translator.php:45-67`).
-- N/A — quotas, verrou et traduction à la volée appartiennent au lot Queue/ réservé à l'autre agent.
+- OK — le rendu ne possède aucune dépendance fournisseur ou file et ne fait que lire les traductions stockées (`src/Render/Translator.php:46-74`).
+- OK — l'éligibilité future au crawl/IA exclut session connectée, aperçu, page protégée, panier, commande, compte et `order-received` (`src/Router/RequestGuard.php:47-58`).
+- N/A — quotas et verrou de traduction appartiennent au lot Queue.
 
 ### 3.5 Réseau et redirections
 
-- OK — aucun appel réseau ni redirection. `UrlTranslator` refuse les autres origines et les chemins admin/REST (`src/Router/UrlTranslator.php:32-51`).
+- OK — aucun appel réseau ajouté. `UrlTranslator` refuse les autres origines et les chemins admin/REST.
 
 ### 3.6 Fichiers et imports
 
@@ -67,5 +68,6 @@ Aucun finding Critique ou Haute dans le périmètre audité.
 
 ### 3.7 Base de données et désinstallation
 
-- OK — noms de tables fixes issus de `Tables`, passés par `%i`, valeurs préparées (`src/Store/TranslationRepository.php:38-55`, `src/Store/SegmentRepository.php:35-90`).
+- OK — noms de tables fixes via `Tables`, passés par `%i`, valeurs préparées (`src/Store/TranslationRepository.php:36-60`, `src/Store/SegmentRepository.php:103-123`).
+- OK — le cache visiteur utilise uniquement `wp_cache_*`, groupe `omtr`, sans transient ni écriture `wp_options` (`src/Render/Translator.php:59-68`).
 - N/A — aucun changement de schéma ni de désinstallation.
