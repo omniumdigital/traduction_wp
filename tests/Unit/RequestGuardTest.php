@@ -24,6 +24,7 @@ final class RequestGuardTest extends TestCase {
 		Functions\when( 'wp_unslash' )->returnArg();
 		Functions\when( 'sanitize_text_field' )->returnArg();
 		Functions\when( 'sanitize_key' )->returnArg();
+		Functions\when( 'sanitize_url' )->returnArg();
 		Functions\when( 'wp_parse_url' )->alias( static fn( string $url, int $component ): string|null => parse_url( $url, $component ) );
 		Functions\when( 'rest_get_url_prefix' )->justReturn( 'wp-json' );
 	}
