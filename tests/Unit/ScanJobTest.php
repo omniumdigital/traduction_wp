@@ -55,6 +55,13 @@ final class ScanJobTest extends TestCase {
 	 */
 	private ?array $captured_fetch = null;
 
+	/**
+	 * Filters temporarily registered by the crawler.
+	 *
+	 * @var array<string, callable>
+	 */
+	private array $added_filters = array();
+
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -73,6 +80,7 @@ final class ScanJobTest extends TestCase {
 		$this->translations->id_hash = array();
 		$this->lock          = new RunLock();
 		$this->word_cap      = new WordCap( new Settings() );
+		$test                = $this;
 
 		Functions\when( '__' )->returnArg();
 		Functions\when( 'home_url' )->justReturn( 'https://example.test' );
@@ -87,8 +95,14 @@ final class ScanJobTest extends TestCase {
 		Functions\when( 'wp_remote_retrieve_body' )->alias(
 			static fn( $response ) => is_array( $response ) && isset( $response['body'] ) ? (string) $response['body'] : ''
 		);
+		Functions\when( 'add_filter' )->alias(
+			function ( string $hook, callable $callback ) use ( $test ): bool {
+				$test->added_filters[ $hook ] = $callback;
+				return true;
+			}
+		);
+		Functions\when( 'remove_filter' )->justReturn( true );
 
-		$test     = $this;
 		$registry = new ProviderRegistry();
 		$registry->add( new FakeProvider() );
 
@@ -247,6 +261,20 @@ final class ScanJobTest extends TestCase {
 		$this->assertSame( 'https://example.test/page/', $this->captured_fetch['url'] );
 		$this->assertTrue( $this->captured_fetch['args']['sslverify'] );
 		$this->assertSame( array(), $this->captured_fetch['args']['cookies'] );
+		$this->assertSame( 0, $this->captured_fetch['args']['redirection'] );
+	}
+
+	public function test_scan_temporarily_allows_only_the_exact_home_endpoint(): void {
+		Functions\when( 'home_url' )->justReturn( 'http://example.test:8881' );
+		$this->hold_lock();
+
+		$this->job->handle( 'http://example.test:8881/page/', 7, 'run-uuid' );
+
+		$host_filter = $this->added_filters['http_request_host_is_external'];
+		$port_filter = $this->added_filters['http_allowed_safe_ports'];
+		$this->assertTrue( $host_filter( false, 'example.test' ) );
+		$this->assertFalse( $host_filter( false, 'evil.test' ) );
+		$this->assertSame( array( 80, 443, 8881 ), $port_filter( array( 80, 443 ) ) );
 	}
 
 	public function test_scan_uses_extractor_with_source_language(): void {

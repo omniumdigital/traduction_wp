@@ -146,18 +146,52 @@ final class ScanJob {
 	 * @return string|null HTML body, null on failure.
 	 */
 	private function fetch( string $url ): ?string {
+		$home   = wp_parse_url( (string) home_url() );
+		$target = wp_parse_url( $url );
+		if ( ! is_array( $home ) || ! is_array( $target ) || ! isset( $home['scheme'], $home['host'], $target['scheme'], $target['host'] ) ) {
+			return null;
+		}
+
+		$home_scheme = strtolower( (string) $home['scheme'] );
+		$home_host   = strtolower( (string) $home['host'] );
+		$target_port = isset( $target['port'] ) ? (int) $target['port'] : ( 'https' === strtolower( (string) $target['scheme'] ) ? 443 : 80 );
+		$home_port   = isset( $home['port'] ) ? (int) $home['port'] : ( 'https' === $home_scheme ? 443 : 80 );
+		if ( strtolower( (string) $target['scheme'] ) !== $home_scheme || strtolower( (string) $target['host'] ) !== $home_host || $target_port !== $home_port ) {
+			return null;
+		}
+
+		// wp_safe_remote_get() rejects loopback/private home hosts and custom
+		// ports by default. Allow only this installation's exact home endpoint
+		// while the anonymous request runs (not arbitrary redirect targets).
+		$allow_home_host = static function ( bool $is_external, string $host ) use ( $home_host ): bool {
+			return strtolower( $host ) === $home_host ? true : $is_external;
+		};
+		$allow_home_port = static function ( array $ports ) use ( $home_port ): array {
+			if ( ! in_array( $home_port, $ports, true ) ) {
+				$ports[] = $home_port;
+			}
+			return $ports;
+		};
+		add_filter( 'http_request_host_is_external', $allow_home_host, 10, 2 );
+		add_filter( 'http_allowed_safe_ports', $allow_home_port );
+
 		// Anonymous crawl: the WP HTTP API sends no cookie by default, and
-		// wp_safe_remote_get() blocks redirects to foreign hosts (SSRF guard).
-		$response = wp_safe_remote_get(
-			$url,
-			array(
-				'timeout'     => 30,
-				'redirection' => 3,
-				'sslverify'   => true,
-				'cookies'     => array(),
-				'user-agent'  => 'Omnium-Translate/' . OMTR_VERSION . ' (internal crawler)',
-			)
-		);
+		// redirects are refused so content can never be fetched from another host.
+		try {
+			$response = wp_safe_remote_get(
+				$url,
+				array(
+					'timeout'     => 30,
+					'redirection' => 0,
+					'sslverify'   => true,
+					'cookies'     => array(),
+					'user-agent'  => 'Omnium-Translate/' . OMTR_VERSION . ' (internal crawler)',
+				)
+			);
+		} finally {
+			remove_filter( 'http_allowed_safe_ports', $allow_home_port );
+			remove_filter( 'http_request_host_is_external', $allow_home_host, 10 );
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return null;
