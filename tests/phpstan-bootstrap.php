@@ -16,7 +16,7 @@ define( 'OMTR_MIN_PHP', '8.1' );
  * Minimal WP-CLI stub for static analysis (the real class only exists when
  * the WP-CLI context loads it; there is no composer stub package available).
  *
- * @phpstan-type CliCommand callable|class-string|string
+ * @phpstan-type CliCommand callable|class-string|object|string
  */
 final class WP_CLI {
 
@@ -24,7 +24,7 @@ final class WP_CLI {
 	 * Register a command.
 	 *
 	 * @param string              $name    Command name.
-	 * @param callable|string     $command Command implementation.
+	 * @param callable|object|string $command Command implementation.
 	 * @param array<string,mixed> $args    Command args.
 	 * @return bool
 	 */

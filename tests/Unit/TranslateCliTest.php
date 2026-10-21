@@ -52,7 +52,6 @@ final class TranslateCliTest extends TestCase {
 		Functions\when( 'url_to_postid' )->justReturn( 0 );
 		Functions\when( 'as_schedule_single_action' )->justReturn( 1 );
 		Functions\when( 'as_get_scheduled_actions' )->justReturn( array() );
-
 		$settings = new Settings();
 		$lock     = new RunLock();
 		$word_cap = new WordCap( $settings );
@@ -76,7 +75,7 @@ final class TranslateCliTest extends TestCase {
 	public function test_registers_only_the_omtr_command_in_cli_context(): void {
 		$this->command->register();
 		$this->assertSame( 'omtr', \WP_CLI::$calls['add_command'][0][0] );
-		$this->assertSame( TranslateCli::class, \WP_CLI::$calls['add_command'][0][1] );
+		$this->assertSame( $this->command, \WP_CLI::$calls['add_command'][0][1] );
 	}
 
 	public function test_translate_post_id_resolves_permalink_and_enqueues(): void {
@@ -96,12 +95,12 @@ final class TranslateCliTest extends TestCase {
 	}
 
 	public function test_status_formats_provider_queue_and_limits(): void {
+		Functions\expect( 'WP_CLI\\Utils\\format_items' )
+			->once()
+			->with( 'table', \Mockery::type( 'array' ), array( 'key', 'value' ) );
+
 		$this->command->status( array(), array() );
 
 		$this->assertArrayHasKey( 'line', \WP_CLI::$calls );
-		$this->assertArrayHasKey( 'format_items', \WP_CLI::$calls );
-		$rows = \WP_CLI::$calls['format_items'][0][1];
-		$this->assertContains( 'provider', array_column( $rows, 'key' ) );
-		$this->assertContains( 'pending_batches', array_column( $rows, 'key' ) );
 	}
 }

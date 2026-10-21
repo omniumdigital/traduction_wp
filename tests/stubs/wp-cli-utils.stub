@@ -1,0 +1,12 @@
+<?php
+
+namespace WP_CLI\Utils;
+
+/**
+ * Render structured WP-CLI output.
+ *
+ * @param string                    $format Output format.
+ * @param list<array<string,mixed>> $items  Rows.
+ * @param list<string>              $fields Fields.
+ */
+function format_items( string $format, array $items, array $fields ): void {}

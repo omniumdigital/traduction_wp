@@ -7,6 +7,7 @@ parameters:
     scanFiles:
         - vendor/woocommerce/action-scheduler/functions.php
         - tests/stubs/dom-html84.stub
+        - tests/stubs/wp-cli-utils.stub
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
     dynamicConstantNames:

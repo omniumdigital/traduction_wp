@@ -44,7 +44,7 @@ final class TranslateCli {
 		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 			return;
 		}
-		\WP_CLI::add_command( 'omtr', self::class );
+		\WP_CLI::add_command( 'omtr', $this );
 	}
 
 	/**
@@ -173,7 +173,7 @@ final class TranslateCli {
 		}
 
 		\WP_CLI::line( sprintf( '# %s', __( 'Omnium Translate status', 'omnium-translate' ) ) );
-		\WP_CLI::format_items( 'table', $rows, array( 'key', 'value' ) );
+		\WP_CLI\Utils\format_items( 'table', $rows, array( 'key', 'value' ) );
 	}
 
 	/**
