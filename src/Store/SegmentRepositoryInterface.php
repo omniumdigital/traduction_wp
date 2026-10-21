@@ -30,4 +30,12 @@ interface SegmentRepositoryInterface {
 	 * @return array<string, string> Hash => source text.
 	 */
 	public function texts_by_hash( array $hashes ): array;
+
+	/**
+	 * Hashes of segments by id, in ONE query. Unknown ids are omitted.
+	 *
+	 * @param list<int> $ids Segment ids.
+	 * @return array<int, string> Segment id => hash.
+	 */
+	public function hashes_by_ids( array $ids ): array;
 }
