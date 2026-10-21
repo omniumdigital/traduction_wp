@@ -9,12 +9,15 @@ namespace Omnium\Translate\Providers;
 
 use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
+use Omnium\Translate\Core\Settings;
+use Omnium\Translate\Providers\Claude\ClaudeProvider;
+use Omnium\Translate\Security\ApiKeyStore;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Registers providers in the ProviderRegistry (CLAUDE.md section 5).
- * TODO(jalon 2): Claude provider. TODO(jalon 3): OpenAI, Mistral, Gemini, DeepSeek.
+ * Milestone 2: Claude. TODO(jalon 3): OpenAI, Mistral, Gemini, DeepSeek.
  */
 final class ProvidersModule implements ModuleInterface {
 
@@ -24,7 +27,27 @@ final class ProvidersModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
-		$container->set( ProviderRegistry::class, static fn() => new ProviderRegistry() );
+		$container->set( PromptBuilder::class, static fn() => new PromptBuilder() );
+		$container->set( ResponseValidator::class, static fn() => new ResponseValidator() );
+
+		$container->set(
+			ClaudeProvider::class,
+			static fn( Container $c ): ClaudeProvider => new ClaudeProvider(
+				$c->get( ApiKeyStore::class ),
+				$c->get( Settings::class ),
+				$c->get( PromptBuilder::class ),
+				$c->get( ResponseValidator::class )
+			)
+		);
+
+		$container->set(
+			ProviderRegistry::class,
+			static function ( Container $c ): ProviderRegistry {
+				$registry = new ProviderRegistry();
+				$registry->add( $c->get( ClaudeProvider::class ) );
+				return $registry;
+			}
+		);
 	}
 
 	/**
@@ -33,5 +56,6 @@ final class ProvidersModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function boot( Container $container ): void {
+		unset( $container );
 	}
 }

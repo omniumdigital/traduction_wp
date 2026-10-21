@@ -27,7 +27,7 @@ final class Sanitizer {
 			'b'      => array(),
 			'i'      => array(),
 			'br'     => array(),
-			'span'   => array( 'class' => true ),
+			'span'   => array(),
 			'a'      => array( 'href' => true ),
 		);
 	}

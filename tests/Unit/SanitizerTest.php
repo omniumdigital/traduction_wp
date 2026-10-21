@@ -7,6 +7,7 @@
 
 namespace Omnium\Translate\Tests\Unit;
 
+use Brain\Monkey\Functions;
 use Omnium\Translate\Security\Sanitizer;
 use Omnium\Translate\Tests\TestCase;
 
@@ -23,5 +24,16 @@ final class SanitizerTest extends TestCase {
 				$this->assertNotContains( $attribute, array( 'style', 'src', 'srcset' ) );
 			}
 		}
+	}
+
+	public function test_ai_xss_payload_is_always_passed_to_strict_wp_kses(): void {
+		$payload = '<script>alert(1)</script><img src=x onerror=alert(1)><a href="javascript:alert(1)">click</a>';
+
+		Functions\expect( 'wp_kses' )
+			->once()
+			->with( $payload, Sanitizer::allowed_inline_tags(), array( 'http', 'https', 'mailto', 'tel' ) )
+			->andReturn( 'alert(1)<a>click</a>' );
+
+		$this->assertSame( 'alert(1)<a>click</a>', Sanitizer::inline_html( $payload ) );
 	}
 }
