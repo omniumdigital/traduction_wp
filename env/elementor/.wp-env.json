@@ -8,9 +8,11 @@
     "https://downloads.wordpress.org/plugin/wordpress-seo.latest-stable.zip"
   ],
   "port": 8882,
-  "testsPort": 8892,
   "config": {
     "WP_DEBUG": true,
-    "WP_DEBUG_LOG": true
-  }
+    "WP_DEBUG_LOG": true,
+    "WP_MEMORY_LIMIT": "512M",
+    "WP_MAX_MEMORY_LIMIT": "512M"
+  },
+  "testsEnvironment": false
 }
