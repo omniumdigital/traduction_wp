@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version header matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          HEADER=$(grep -E '^\s*\*\s*Version:' omnium-translate.php | awk '{print $NF}')
+          CONST=$(grep -E "define\( 'OMTR_VERSION'" omnium-translate.php | sed -E "s/.*'([0-9.]+)'.*/\1/")
+          test "$TAG" = "$HEADER" && test "$TAG" = "$CONST" || { echo "Tag $TAG != header $HEADER / const $CONST"; exit 1; }
+      - name: Check audits of the day
+        run: |
+          for f in security privacy; do
+            ls audits/$f-*.md >/dev/null 2>&1 || { echo "Missing audits/$f-*.md"; exit 1; }
+            LATEST=$(ls audits/$f-*.md | sort | tail -1)
+            grep -q "VALIDÉ" "$LATEST" || { echo "$LATEST is not VALIDÉ"; exit 1; }
+          done
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: sodium
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: composer install --no-dev --no-interaction --optimize-autoloader
+      - run: npm ci --ignore-scripts && if [ -d assets/src ]; then npm run build; fi
+      - name: Build zip
+        run: |
+          mkdir -p dist/omnium-translate
+          rsync -a --exclude-from=.distignore ./ dist/omnium-translate/
+          cd dist && zip -qr omnium-translate.zip omnium-translate
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/omnium-translate.zip --title "$GITHUB_REF_NAME" --notes-file CHANGELOG.md
