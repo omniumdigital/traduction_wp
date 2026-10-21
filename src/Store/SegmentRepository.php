@@ -94,4 +94,32 @@ final class SegmentRepository implements SegmentRepositoryInterface {
 		}
 		return $result;
 	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param list<int> $ids Segment ids.
+	 */
+	public function hashes_by_ids( array $ids ): array {
+		if ( array() === $ids ) {
+			return array();
+		}
+
+		$table        = Tables::name( Tables::SEGMENTS );
+		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+		// The variable contains only a count-derived list of %d placeholders; every value is still passed to prepare().
+		// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQL.NotPrepared
+		$sql = $this->wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholder list is generated only from array length.
+			'SELECT id, hash FROM %i WHERE id IN (' . $placeholders . ')',
+			$table,
+			...$ids
+		);
+		// phpcs:enable WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQL.NotPrepared
+		$rows   = $this->wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
+		$result = array();
+		foreach ( $rows as $row ) {
+			$result[ (int) $row['id'] ] = (string) $row['hash'];
+		}
+		return $result;
+	}
 }
