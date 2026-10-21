@@ -39,25 +39,22 @@ final class LanguageRouter {
 			return $do_parse;
 		}
 
-		$request_uri = sanitize_url( wp_unslash( (string) $_SERVER['REQUEST_URI'] ) );
-		$parts       = wp_parse_url( $request_uri );
-		$path        = isset( $parts['path'] ) ? (string) $parts['path'] : '/';
+		$request_uri = (string) $_SERVER['REQUEST_URI'];
+		$query_start = strpos( $request_uri, '?' );
+		$path        = false === $query_start ? $request_uri : substr( $request_uri, 0, $query_start );
 		$targets     = array_values( array_unique( $this->settings->target_langs() ) );
-		$language    = $this->current_language->source();
 
 		foreach ( $targets as $target ) {
 			$prefix = '/' . rawurlencode( $target );
 			if ( $path === $prefix || str_starts_with( $path, $prefix . '/' ) ) {
-				$language = $target;
-				$path     = substr( $path, strlen( $prefix ) );
-				$path     = '' === $path ? '/' : $path;
+				$this->current_language->set( $target );
+				$path = substr( $path, strlen( $prefix ) );
+				$path = '' === $path ? '/' : $path;
+				$_SERVER['REQUEST_URI'] = $path . ( false === $query_start ? '' : substr( $request_uri, $query_start ) );
 				break;
 			}
 		}
 
-		$this->current_language->set( $language );
-		$query                  = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
-		$_SERVER['REQUEST_URI'] = $path . $query;
 		return $do_parse;
 	}
 }
