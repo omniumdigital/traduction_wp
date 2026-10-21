@@ -39,7 +39,7 @@ final class LanguageRouter {
 			return $do_parse;
 		}
 
-		$request_uri = (string) $_SERVER['REQUEST_URI'];
+		$request_uri = (string) $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- The raw URI is only sliced so its original bytes remain untouched.
 		$query_start = strpos( $request_uri, '?' );
 		$path        = false === $query_start ? $request_uri : substr( $request_uri, 0, $query_start );
 		$targets     = array_values( array_unique( $this->settings->target_langs() ) );
@@ -48,8 +48,8 @@ final class LanguageRouter {
 			$prefix = '/' . rawurlencode( $target );
 			if ( $path === $prefix || str_starts_with( $path, $prefix . '/' ) ) {
 				$this->current_language->set( $target );
-				$path = substr( $path, strlen( $prefix ) );
-				$path = '' === $path ? '/' : $path;
+				$path                   = substr( $path, strlen( $prefix ) );
+				$path                   = '' === $path ? '/' : $path;
 				$_SERVER['REQUEST_URI'] = $path . ( false === $query_start ? '' : substr( $request_uri, $query_start ) );
 				break;
 			}

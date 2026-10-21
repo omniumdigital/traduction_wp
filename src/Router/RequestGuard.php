@@ -76,7 +76,7 @@ final class RequestGuard {
 		if ( ! isset( $_SERVER['REQUEST_URI'] ) || ! function_exists( 'rest_get_url_prefix' ) ) {
 			return false;
 		}
-		$request_uri = wp_unslash( (string) $_SERVER['REQUEST_URI'] );
+		$request_uri = sanitize_url( wp_unslash( (string) $_SERVER['REQUEST_URI'] ) );
 		$path        = (string) wp_parse_url( $request_uri, PHP_URL_PATH );
 		$prefix      = trim( rest_get_url_prefix(), '/' );
 		return '' !== $prefix && 1 === preg_match( '#(?:^|/)' . preg_quote( $prefix, '#' ) . '(?:/|$)#', $path );
