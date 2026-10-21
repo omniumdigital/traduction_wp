@@ -4,7 +4,7 @@
  * Plugin URI:        https://github.com/omniumdigital/traduction_wp
  * Description:       Traduction automatique par IA, sans abonnement : tout tourne sur votre site, avec votre propre clé API.
  * Version:           0.1.0
- * Requires at least: 6.4
+ * Requires at least: 6.9
  * Requires PHP:      8.1
  * Author:            Omnium Digital
  * Author URI:        https://omnium-digital.fr

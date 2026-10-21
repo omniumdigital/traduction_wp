@@ -41,7 +41,7 @@ Quand ce fichier `CLAUDE.md` est mis à jour, refais cette vérification : les a
 | Préfixes | `OMTR_` (constantes), `omtr_` (fonctions, options, hooks, tables) |
 | Namespace | `Omnium\Translate` |
 | Licence | GPL-2.0-or-later |
-| WordPress min. | 6.4 |
+| WordPress min. | 6.9 (testé jusqu’à 7.1) |
 | PHP min. | 8.1 |
 | WooCommerce | 8.x (optionnel) |
 

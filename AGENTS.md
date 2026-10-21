@@ -30,6 +30,10 @@ docker run --rm -v "$PWD":/app -w /app composer:2 sh -c 'composer install -q && 
 Les trois doivent passer. Toute fonctionnalité est livrée avec ses tests ; les tests de sécurité portent `@group security`.
 Après modification de `src/`, appliquer la checklist `.claude/skills/security-audit/SKILL.md` aux fichiers modifiés ; si tu touches au crawler, prompts, logs, exports, cookies ou front, appliquer aussi `.claude/skills/privacy-audit/SKILL.md`. Écrire le rapport dans `audits/`.
 
+## JavaScript
+
+Pas de `@wordpress/scripts` (dépendances vulnérables sans correctif). Build : `npm run build` (esbuild, `scripts/build.mjs`) : chaque `assets/src/<entrée>/index.jsx` produit `assets/build/<entrée>.js` + `.asset.php` ; les imports `@wordpress/*` et `react` sont mappés sur les globals WordPress. Lint : `npm run lint` (Biome). `npm audit --audit-level=high` doit rester à 0.
+
 ## Git
 
 Commits en français, Conventional Commits. Ne jamais commiter de clé API, de `.env`, ni de données client. Ne pas pousser, ne pas merger : le coordinateur s'en charge.

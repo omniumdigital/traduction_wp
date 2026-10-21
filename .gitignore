@@ -4,6 +4,7 @@
 /assets/build/
 /dist/
 /env/oxygen/oxygen/
+/env/oxygen/*.zip
 .env
 .env.*
 *.log

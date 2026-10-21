@@ -41,15 +41,12 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Lint JS
-        run: |
-          if [ -d assets/src ]; then npm run lint:js; fi
-      - name: Lint CSS
-        run: |
-          if [ -d assets/src ]; then npm run lint:css; fi
-      # Shipped code only: dev tooling (@wordpress/scripts) is never included in the plugin zip.
+      - name: Lint JS/CSS (Biome)
+        run: npm run lint
+      - name: Build
+        run: npm run build
       - name: npm audit
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --audit-level=high
 
   secrets:
     runs-on: ubuntu-latest

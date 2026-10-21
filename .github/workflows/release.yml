@@ -35,7 +35,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: composer install --no-dev --no-interaction --optimize-autoloader
-      - run: npm ci --ignore-scripts && if [ -d assets/src ]; then npm run build; fi
+      - run: npm ci --ignore-scripts && npm run build
       - name: Build zip
         run: |
           mkdir -p dist/omnium-translate

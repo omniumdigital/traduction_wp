@@ -3,17 +3,21 @@
   "private": true,
   "license": "GPL-2.0-or-later",
   "scripts": {
-    "build": "wp-scripts build --source-path=assets/src --output-path=assets/build",
-    "start": "wp-scripts start --source-path=assets/src --output-path=assets/build",
-    "lint:js": "wp-scripts lint-js assets/src",
-    "lint:css": "wp-scripts lint-style \"assets/src/**/*.css\"",
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/build.mjs --watch",
     "env:gutenberg": "wp-env start",
     "env:elementor": "cd env/elementor && wp-env start",
     "env:oxygen": "cd env/oxygen && wp-env start",
-    "env:stop": "wp-env stop && (cd env/elementor && wp-env stop) && (cd env/oxygen && wp-env stop)"
+    "env:stop": "wp-env stop && (cd env/elementor && wp-env stop) && (cd env/oxygen && wp-env stop)",
+    "lint": "biome lint"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
     "@wordpress/env": "^12.0.0",
-    "@wordpress/scripts": "^37.0.0"
+    "esbuild": "^0.28.2"
+  },
+  "overrides": {
+    "qs": "^6.16.1",
+    "argparse": "^2.0.1"
   }
 }
