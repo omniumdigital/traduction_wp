@@ -6,6 +6,7 @@ parameters:
         - src
     scanFiles:
         - vendor/woocommerce/action-scheduler/functions.php
+        - tests/stubs/dom-html84.stub
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
     dynamicConstantNames:
