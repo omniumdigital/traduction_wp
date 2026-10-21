@@ -17,7 +17,7 @@ class Element extends Node {
 	public string $tagName;
 
 	public function hasAttribute( string $qualified_name ): bool {}
-	public function getAttribute( string $qualified_name ): string {}
+	public function getAttribute( string $qualified_name ): ?string {}
 	public function setAttribute( string $qualified_name, string $value ): void {}
 }
 

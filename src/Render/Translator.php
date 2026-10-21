@@ -189,7 +189,7 @@ final class Translator {
 		if ( in_array( strtolower( $element->tagName ), array( 'script', 'style', 'code', 'pre', 'textarea' ), true ) || $element->hasAttribute( 'data-omtr-skip' ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			return true;
 		}
-		$classes = preg_split( '/\s+/', $element->getAttribute( 'class' ) );
+		$classes = preg_split( '/\s+/', (string) $element->getAttribute( 'class' ) );
 		$classes = false === $classes ? array() : $classes;
 		return in_array( 'notranslate', $classes, true );
 	}
@@ -200,8 +200,8 @@ final class Translator {
 	 * @param \DOMElement|\Dom\Element $element Meta element.
 	 */
 	private function is_translatable_meta( \DOMElement|\Dom\Element $element ): bool {
-		$name = $element->getAttribute( 'name' );
-		$key  = strtolower( '' !== $name ? $name : $element->getAttribute( 'property' ) );
+		$name = (string) $element->getAttribute( 'name' );
+		$key  = strtolower( '' !== $name ? $name : (string) $element->getAttribute( 'property' ) );
 		return 'description' === $key || str_starts_with( $key, 'og:' ) || str_starts_with( $key, 'twitter:' );
 	}
 
