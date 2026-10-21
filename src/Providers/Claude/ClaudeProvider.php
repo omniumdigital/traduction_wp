@@ -33,10 +33,12 @@ final class ClaudeProvider implements ProviderInterface {
 	private const API_VERSION = '2023-06-01';
 
 	/**
-	 * Default model: the fastest and cheapest of the current lineup
-	 * (Claude Haiku 5.5, from $0.10/$0.50 per million tokens).
+	 * Default model: the fastest and least expensive active Claude model.
+	 *
+	 * Verified in Anthropic's official model overview and deprecation table on
+	 * 2026-10-21. Use the dated API id so behavior cannot change behind an alias.
 	 */
-	private const DEFAULT_MODEL = 'claude-haiku-5-5';
+	private const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 
 	/**
 	 * Constructor.
@@ -74,9 +76,9 @@ final class ClaudeProvider implements ProviderInterface {
 	 */
 	public function models(): array {
 		return array(
-			self::DEFAULT_MODEL => 'Claude Haiku 5.5 — fast and cost-effective (recommended)',
-			'claude-sonnet-5-5' => 'Claude Sonnet 5.5 — best speed/quality balance',
-			'claude-opus-5-5'   => 'Claude Opus 5.5 — highest quality',
+			self::DEFAULT_MODEL => 'Claude Haiku 4.5 — fast and cost-effective (recommended)',
+			'claude-sonnet-5'   => 'Claude Sonnet 5 — best speed/quality balance',
+			'claude-opus-5'     => 'Claude Opus 5 — highest quality',
 		);
 	}
 
@@ -212,22 +214,15 @@ final class ClaudeProvider implements ProviderInterface {
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 429 === $code || $code >= 500 ) {
-			throw new ProviderException( $this->http_error_message( $code ), (int) $code, true );
+			$exception = new ProviderException( 'The provider returned a retryable HTTP error.', $code, true );
+			throw $exception;
 		}
 		if ( 200 !== $code ) {
-			throw new ProviderException( $this->http_error_message( $code ), (int) $code, false );
+			$exception = new ProviderException( 'The provider returned an HTTP error.', $code, false );
+			throw $exception;
 		}
 
 		return (string) wp_remote_retrieve_body( $response );
-	}
-
-	/**
-	 * Generic HTTP error message: the raw provider response is never included.
-	 *
-	 * @param int $code HTTP status code.
-	 */
-	private function http_error_message( int $code ): string {
-		return sprintf( 'The provider returned an error (HTTP %d).', $code );
 	}
 
 	/**

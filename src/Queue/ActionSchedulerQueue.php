@@ -69,6 +69,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @param Settings                            $settings     Plugin settings.
 	 * @param RunLock                             $lock         Translation run lock.
 	 * @param WordCap                             $word_cap     Monthly word cap.
+	 * @param HourlyQuota                         $hourly_quota Hourly on-the-fly quota.
 	 * @param ProviderRegistry                    $providers    Provider registry.
 	 * @param LoggerInterface                     $logger       Logger.
 	 * @param SegmentRepositoryInterface|null     $segments     Segments repository (only enqueue_segments needs it).
@@ -78,6 +79,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		private Settings $settings,
 		private RunLock $lock,
 		private WordCap $word_cap,
+		private HourlyQuota $hourly_quota,
 		private ProviderRegistry $providers,
 		private LoggerInterface $logger,
 		private ?SegmentRepositoryInterface $segments = null,
@@ -95,6 +97,12 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		$normalized = $this->normalize_url( $url );
 		if ( null === $normalized ) {
 			$this->reason = __( 'The URL is not part of this site or uses a non-public path.', 'omnium-translate' );
+			return false;
+		}
+		$resolved_post_id = $post_id > 0 ? $post_id : (int) url_to_postid( $normalized );
+		if ( $resolved_post_id > 0 && ( ! $this->is_public_post( $resolved_post_id ) || $this->is_sensitive_post( $resolved_post_id ) ) ) {
+			$this->reason = __( 'Only published, non-protected content can be translated.', 'omnium-translate' );
+			$this->logger->log( 'warning', 'queue', sprintf( 'Enqueue refused: post is not public (post_id=%d).', $resolved_post_id ) );
 			return false;
 		}
 
@@ -117,7 +125,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		}
 
 		$this->schedule_scan( $normalized, $post_id, $run_id );
-		$this->logger->log( 'info', 'queue', sprintf( 'Scan scheduled (post_id=%d, url=%s).', $post_id, $normalized ) );
+		$this->logger->log( 'info', 'queue', sprintf( 'Scan scheduled (post_id=%d).', $post_id ) );
 
 		return true;
 	}
@@ -160,12 +168,15 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 
 		$scheduled = 0;
 		foreach ( BatchSizer::chunk( $missing, $limits ) as $batch ) {
+			if ( ! $this->hourly_quota->reserve( count( $batch ) ) ) {
+				$this->logger->log( 'warning', 'queue', 'Segment batch dropped: hourly quota reached.' );
+				break;
+			}
 			$words = $this->word_cap->count_words( $batch );
-			if ( ! $this->word_cap->allows( $words ) ) {
+			if ( ! $this->word_cap->reserve( $words ) ) {
 				$this->logger->log( 'warning', 'queue', 'Segment batch dropped: monthly word cap reached.' );
 				break;
 			}
-			$this->word_cap->charge( $words );
 
 			$payload = array();
 			foreach ( $batch as $hash => $text ) {
@@ -207,20 +218,31 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		}
 
 		$home = wp_parse_url( (string) home_url() );
-		if ( ! is_array( $home ) || ! isset( $home['host'] ) ) {
-			return null;
-		}
-		if ( strtolower( (string) $parts['host'] ) !== strtolower( (string) $home['host'] ) ) {
+		if ( ! is_array( $home ) || ! isset( $home['scheme'], $home['host'] ) ) {
 			return null;
 		}
 
-		$path = isset( $parts['path'] ) ? $parts['path'] : '/';
-		if ( ! $this->is_translatable_path( $path ) ) {
+		$home_scheme = strtolower( (string) $home['scheme'] );
+		$home_host   = strtolower( (string) $home['host'] );
+		$home_port   = isset( $home['port'] ) ? (int) $home['port'] : $this->default_port( $home_scheme );
+		$url_port    = isset( $parts['port'] ) ? (int) $parts['port'] : $this->default_port( $scheme );
+		if ( $scheme !== $home_scheme || strtolower( (string) $parts['host'] ) !== $home_host || $url_port !== $home_port ) {
 			return null;
 		}
 
-		$port = isset( $parts['port'] ) ? ':' . (int) $parts['port'] : '';
-		return $scheme . '://' . strtolower( (string) $parts['host'] ) . $port . $path;
+		$path      = isset( $parts['path'] ) ? (string) $parts['path'] : '/';
+		$home_path = isset( $home['path'] ) ? '/' . trim( (string) $home['path'], '/' ) : '';
+		if ( '' !== $home_path && $path !== $home_path && 0 !== strpos( $path, $home_path . '/' ) ) {
+			return null;
+		}
+
+		$relative_path = '' !== $home_path ? (string) substr( $path, strlen( $home_path ) ) : $path;
+		if ( ! $this->is_translatable_path( $relative_path ) ) {
+			return null;
+		}
+
+		$port = isset( $home['port'] ) ? ':' . (int) $home['port'] : '';
+		return $home_scheme . '://' . $home_host . $port . $path;
 	}
 
 	/**
@@ -286,7 +308,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 					'hook'     => self::ACTION_BATCH,
 					'group'    => self::GROUP,
 					'status'   => array( 'pending', 'in-progress' ),
-					'per_page' => 0,
+					'per_page' => -1,
 				),
 				'ids'
 			)
@@ -296,13 +318,15 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	/**
 	 * Settle a run: release the lock once no batch of the group is outstanding.
 	 *
-	 * @param string $run_id Run id.
+	 * @param string $run_id        Run id.
+	 * @param bool   $current_batch Whether the outstanding count includes this running batch.
 	 */
-	public function settle_run( string $run_id ): void {
+	public function settle_run( string $run_id, bool $current_batch = false ): void {
 		if ( '' === $run_id ) {
 			return;
 		}
-		if ( $this->pending_batch_count() > 0 ) {
+		$remaining = $this->pending_batch_count();
+		if ( $remaining > ( $current_batch ? 1 : 0 ) ) {
 			return;
 		}
 		$this->lock->release( $run_id );
@@ -333,5 +357,40 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Default TCP port for a supported URL scheme.
+	 *
+	 * @param string $scheme URL scheme.
+	 */
+	private function default_port( string $scheme ): int {
+		return 'https' === $scheme ? 443 : 80;
+	}
+
+	/**
+	 * Whether a known post is public and not password protected.
+	 *
+	 * @param int $post_id Post id.
+	 */
+	private function is_public_post( int $post_id ): bool {
+		return 'publish' === get_post_status( $post_id ) && ! post_password_required( $post_id );
+	}
+
+	/**
+	 * Whether a post is a WooCommerce account, cart or checkout page.
+	 *
+	 * The ids come from WooCommerce's own options, so customized slugs remain
+	 * protected in addition to the conservative path deny-list.
+	 *
+	 * @param int $post_id Post id.
+	 */
+	private function is_sensitive_post( int $post_id ): bool {
+		foreach ( array( 'woocommerce_cart_page_id', 'woocommerce_checkout_page_id', 'woocommerce_myaccount_page_id' ) as $option ) {
+			if ( (int) get_option( $option, 0 ) === $post_id ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

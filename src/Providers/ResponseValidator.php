@@ -23,6 +23,9 @@ final class ResponseValidator {
 	 * @return array<int, string>|null Number => translation, or null when the response is invalid.
 	 */
 	public function validate( string $raw, array $expected ): ?array {
+		if ( str_contains( $raw, "\0" ) ) {
+			return null;
+		}
 		$raw = trim( $raw );
 
 		// Strict JSON only: reject code fences, prefixed prose, BOM, anything but an object.
@@ -31,12 +34,13 @@ final class ResponseValidator {
 		}
 
 		try {
-			$decoded = json_decode( $raw, true, 64, JSON_THROW_ON_ERROR );
+			$decoded = json_decode( $raw, false, 64, JSON_THROW_ON_ERROR );
 		} catch ( \JsonException $e ) {
 			return null;
 		}
 
-		if ( ! is_array( $decoded ) ) {
+		// Decode to an object so a JSON array cannot masquerade as an object.
+		if ( ! $decoded instanceof \stdClass ) {
 			return null;
 		}
 
@@ -46,9 +50,10 @@ final class ResponseValidator {
 		}
 
 		$valid = array();
-		foreach ( $decoded as $key => $value ) {
+		foreach ( get_object_vars( $decoded ) as $key => $value ) {
 			// Keep only ids that were sent; reject everything else.
-			if ( ! is_string( $key ) || ! ctype_digit( $key ) || ! isset( $allowed[ $key ] ) ) {
+			$key = (string) $key;
+			if ( ! ctype_digit( $key ) || ! isset( $allowed[ $key ] ) ) {
 				continue;
 			}
 			if ( ! is_string( $value ) || '' === trim( $value ) ) {

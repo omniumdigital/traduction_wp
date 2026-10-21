@@ -27,12 +27,14 @@ final class TranslateCli {
 	 * @param Settings             $settings Plugin settings.
 	 * @param RunLock              $lock     Translation run lock.
 	 * @param WordCap              $word_cap Monthly word cap.
+	 * @param HourlyQuota          $hourly_quota Hourly on-the-fly quota.
 	 */
 	public function __construct(
 		private ActionSchedulerQueue $queue,
 		private Settings $settings,
 		private RunLock $lock,
-		private WordCap $word_cap
+		private WordCap $word_cap,
+		private HourlyQuota $hourly_quota
 	) {}
 
 	/**
@@ -149,6 +151,14 @@ final class TranslateCli {
 				'value' => __( 'unlimited', 'omnium-translate' ),
 			);
 		}
+
+		$hourly_limit = $this->hourly_quota->limit();
+		$rows[]       = array(
+			'key'   => 'hourly_segment_quota',
+			'value' => $hourly_limit > 0
+				? sprintf( '%d / %d', $this->hourly_quota->used(), $hourly_limit )
+				: __( 'unlimited', 'omnium-translate' ),
+		);
 
 		if ( null !== $provider ) {
 			$chosen = (string) $this->settings->get( 'model' );

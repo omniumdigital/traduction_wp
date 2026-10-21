@@ -36,7 +36,7 @@ final class BatchSizer {
 	 */
 	public static function chunk( array $texts, RateLimits $limits ): array {
 		$max_size  = max( self::MIN_BATCH, min( self::MAX_BATCH, max( 1, $limits->max_batch_size ) ) );
-		$max_chars = max( 1000, $limits->max_batch_chars );
+		$max_chars = max( 1, $limits->max_batch_chars );
 
 		$batches = array();
 		$current = array();

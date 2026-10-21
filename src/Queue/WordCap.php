@@ -22,6 +22,7 @@ defined( 'ABSPATH' ) || exit;
  * action rescheduled, not a new enqueuing.
  */
 final class WordCap {
+	private const LOCK_STALE_AFTER = 30;
 
 	/**
 	 * Constructor.
@@ -77,6 +78,33 @@ final class WordCap {
 	}
 
 	/**
+	 * Atomically reserve words before scheduling paid work.
+	 *
+	 * Concurrent requests that cannot take the short-lived counter lock are
+	 * refused instead of risking a cap overrun.
+	 *
+	 * @param int $words Word count.
+	 */
+	public function reserve( int $words ): bool {
+		if ( $words <= 0 || 0 === $this->limit() ) {
+			return true;
+		}
+		if ( ! $this->acquire_counter_lock() ) {
+			return false;
+		}
+
+		try {
+			if ( ! $this->allows( $words ) ) {
+				return false;
+			}
+			$this->charge( $words );
+			return true;
+		} finally {
+			delete_option( Options::MONTH_WORDS_LOCK );
+		}
+	}
+
+	/**
 	 * Charge words against the current month.
 	 *
 	 * @param int $words Word count, ignored when negative or zero.
@@ -106,6 +134,8 @@ final class WordCap {
 	public function count_words( array $texts ): int {
 		$total = 0;
 		foreach ( $texts as $text ) {
+			// Placeholders are not natural-language words and must remain unchanged.
+			$text    = (string) preg_replace( '/%(?:\d+\$)?[a-zA-Z]|\{[^{}]+\}/u', ' ', $text );
 			$matches = preg_match_all( '/[\p{L}\p{N}]+/u', $text );
 			$total  += is_int( $matches ) ? $matches : 0;
 		}
@@ -129,5 +159,20 @@ final class WordCap {
 			'month' => $payload['month'],
 			'words' => (int) $payload['words'],
 		);
+	}
+
+	/**
+	 * Acquire the atomic option lock, recovering a crashed writer after 30 s.
+	 */
+	private function acquire_counter_lock(): bool {
+		if ( add_option( Options::MONTH_WORDS_LOCK, time(), '', false ) ) {
+			return true;
+		}
+		$created_at = get_option( Options::MONTH_WORDS_LOCK );
+		if ( ! is_numeric( $created_at ) || ( time() - (int) $created_at ) > self::LOCK_STALE_AFTER ) {
+			delete_option( Options::MONTH_WORDS_LOCK );
+			return add_option( Options::MONTH_WORDS_LOCK, time(), '', false );
+		}
+		return false;
 	}
 }

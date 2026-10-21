@@ -119,11 +119,10 @@ final class ScanJob {
 		$scheduled = 0;
 		foreach ( BatchSizer::chunk( $missing, $limits ) as $batch ) {
 			$words = $this->word_cap->count_words( $batch );
-			if ( ! $this->word_cap->allows( $words ) ) {
+			if ( ! $this->word_cap->reserve( $words ) ) {
 				$this->logger->log( 'warning', 'queue:scan', sprintf( 'Scan stopped early: monthly word cap reached (lang=%s).', $lang ) );
 				return $scheduled;
 			}
-			$this->word_cap->charge( $words );
 
 			$payload = array();
 			foreach ( array_keys( $batch ) as $hash ) {
@@ -155,6 +154,7 @@ final class ScanJob {
 				'timeout'     => 30,
 				'redirection' => 3,
 				'sslverify'   => true,
+				'cookies'     => array(),
 				'user-agent'  => 'Omnium-Translate/' . OMTR_VERSION . ' (internal crawler)',
 			)
 		);

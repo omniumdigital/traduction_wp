@@ -67,7 +67,7 @@ final class BatchJob {
 		$hashes = array_values( $segments );
 		$texts  = $this->segments->texts_by_hash( $hashes );
 		if ( array() === $texts ) {
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 
@@ -77,7 +77,7 @@ final class BatchJob {
 		$pending  = array_diff_key( $texts, $existing );
 		if ( array() === $pending ) {
 			$this->logger->log( 'info', 'queue:batch', 'Batch skipped: every segment is already translated.' );
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 
@@ -85,7 +85,7 @@ final class BatchJob {
 		if ( null === $provider ) {
 			$this->logger->log( 'error', 'queue:batch', 'Batch failed: no provider is configured.' );
 			$this->mark_failed( $pending, $segments, $lang );
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 
@@ -123,7 +123,7 @@ final class BatchJob {
 		}
 
 		$this->logger->log( 'info', 'queue:batch', sprintf( 'Batch done: %d segment(s) saved (lang=%s, attempt=%d).', count( $saved ), $lang, $attempt ) );
-		$this->queue->settle_run( $run_id );
+		$this->queue->settle_run( $run_id, true );
 	}
 
 	/**
@@ -154,7 +154,7 @@ final class BatchJob {
 			sprintf( 'Batch failed after %d attempt(s) (http=%d).', $attempt, $e->http_code )
 		);
 		$this->mark_failed( $pending, $segments, $lang );
-		$this->queue->settle_run( $run_id );
+		$this->queue->settle_run( $run_id, true );
 	}
 
 	/**

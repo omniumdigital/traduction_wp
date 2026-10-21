@@ -33,6 +33,7 @@ final class QueueModule implements ModuleInterface {
 	public function register( Container $container ): void {
 		$container->set( RunLock::class, static fn() => new RunLock() );
 		$container->set( WordCap::class, static fn( Container $c ) => new WordCap( $c->get( Settings::class ) ) );
+		$container->set( HourlyQuota::class, static fn( Container $c ) => new HourlyQuota( $c->get( Settings::class ) ) );
 
 		$container->set(
 			ActionSchedulerQueue::class,
@@ -40,6 +41,7 @@ final class QueueModule implements ModuleInterface {
 				$c->get( Settings::class ),
 				$c->get( RunLock::class ),
 				$c->get( WordCap::class ),
+				$c->get( HourlyQuota::class ),
 				$c->get( ProviderRegistry::class ),
 				$c->get( LoggerInterface::class ),
 				$c->get( SegmentRepositoryInterface::class ),
@@ -79,7 +81,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( ActionSchedulerQueue::class ),
 				$c->get( Settings::class ),
 				$c->get( RunLock::class ),
-				$c->get( WordCap::class )
+				$c->get( WordCap::class ),
+				$c->get( HourlyQuota::class )
 			)
 		);
 	}
