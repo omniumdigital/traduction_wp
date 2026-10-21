@@ -49,11 +49,17 @@ final class Translator {
 		}
 
 		$source_lang = $this->current_language->source();
-		$segments    = $this->extractor->extract( $html, $source_lang );
-		$hashes      = array_keys( $segments );
+		$document    = HtmlSegmentExtractor::load_document( $html );
+		if ( null === $document ) {
+			return $html;
+		}
+		$segments = $this->extractor instanceof HtmlSegmentExtractor
+			? $this->extractor->extract_from_document( $document, $source_lang )
+			: $this->extractor->extract( $html, $source_lang );
+		$hashes   = array_keys( $segments );
 		sort( $hashes, SORT_STRING );
-		$version = wp_cache_get( TranslationRepository::CACHE_VERSION_KEY, TranslationRepository::CACHE_GROUP );
-		$version = is_int( $version ) ? $version : 0;
+		$version   = wp_cache_get( TranslationRepository::CACHE_VERSION_KEY, TranslationRepository::CACHE_GROUP );
+		$version   = is_int( $version ) ? $version : 0;
 		$cache_key = 'render:' . hash( 'sha256', $this->current_language->get() . "\n" . $version . "\n" . implode( "\n", $hashes ) );
 		$stored    = wp_cache_get( $cache_key, TranslationRepository::CACHE_GROUP );
 		if ( ! is_array( $stored ) ) {
@@ -61,44 +67,23 @@ final class Translator {
 			wp_cache_set( $cache_key, $stored, TranslationRepository::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 		}
 
-		$document = $this->load_document( $html );
-		if ( null === $document ) {
-			return $html;
-		}
 		$this->walk( $document, $source_lang, $stored, false );
 		$this->set_document_language( $document );
 		$this->rewrite_links( $document );
-		$output = $document->saveHTML();
+		$output = HtmlSegmentExtractor::save_document( $document );
 		return false === $output ? $html : preg_replace( '/^<\?xml encoding="UTF-8"\?>\s*/', '', $output ) ?? $html;
-	}
-
-	/**
-	 * Load HTML safely.
-	 *
-	 * @param string $html HTML document.
-	 */
-	private function load_document( string $html ): ?\DOMDocument {
-		if ( ! class_exists( \DOMDocument::class ) ) {
-			return null;
-		}
-		$document = new \DOMDocument( '1.0', 'UTF-8' );
-		$previous = libxml_use_internal_errors( true );
-		$loaded   = $document->loadHTML( '<?xml encoding="UTF-8">' . $html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
-		libxml_clear_errors();
-		libxml_use_internal_errors( $previous );
-		return $loaded ? $document : null;
 	}
 
 	/**
 	 * Translate nodes recursively.
 	 *
-	 * @param \DOMNode              $node        Current node.
+	 * @param \DOMNode|\Dom\Node    $node        Current node.
 	 * @param string                $source_lang Source language.
 	 * @param array<string, string> $stored      Stored translations.
 	 * @param bool                  $excluded    Ancestor exclusion state.
 	 */
-	private function walk( \DOMNode $node, string $source_lang, array $stored, bool $excluded ): void {
-		if ( $node instanceof \DOMElement ) {
+	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array $stored, bool $excluded ): void {
+		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
 			$excluded = $excluded || $this->is_excluded_element( $node );
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
@@ -151,21 +136,27 @@ final class Translator {
 	/**
 	 * Insert sanitized inline markup as DOM nodes.
 	 *
-	 * @param \DOMNode $text_node   Text node to replace.
-	 * @param string   $translation Sanitized translation.
+	 * @param \DOMNode|\Dom\Node $text_node   Text node to replace.
+	 * @param string             $translation Sanitized translation.
 	 */
-	private function replace_text_node( \DOMNode $text_node, string $translation ): void {
+	private function replace_text_node( \DOMNode|\Dom\Node $text_node, string $translation ): void {
 		$parent = $text_node->parentNode; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 		$owner  = $text_node->ownerDocument; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 		if ( null === $parent || null === $owner ) {
 			return;
 		}
 
-		$fragment = new \DOMDocument( '1.0', 'UTF-8' );
-		$previous = libxml_use_internal_errors( true );
-		$loaded   = $fragment->loadHTML( '<?xml encoding="UTF-8"><div id="omtr-fragment">' . Sanitizer::inline_html( $translation ) . '</div>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
-		libxml_clear_errors();
-		libxml_use_internal_errors( $previous );
+		$fragment_html = '<div id="omtr-fragment">' . Sanitizer::inline_html( $translation ) . '</div>';
+		if ( $owner instanceof \DOMDocument ) {
+			$fragment = new \DOMDocument( '1.0', 'UTF-8' );
+			$previous = libxml_use_internal_errors( true );
+			$loaded   = $fragment->loadHTML( '<?xml encoding="UTF-8">' . $fragment_html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
+			libxml_clear_errors();
+			libxml_use_internal_errors( $previous );
+		} else {
+			$fragment = HtmlSegmentExtractor::load_document( $fragment_html );
+			$loaded   = null !== $fragment;
+		}
 		if ( ! $loaded ) {
 			return;
 		}
@@ -192,9 +183,9 @@ final class Translator {
 	/**
 	 * Exclusion rules shared with extraction.
 	 *
-	 * @param \DOMElement $element Element.
+	 * @param \DOMElement|\Dom\Element $element Element.
 	 */
-	private function is_excluded_element( \DOMElement $element ): bool {
+	private function is_excluded_element( \DOMElement|\Dom\Element $element ): bool {
 		if ( in_array( strtolower( $element->tagName ), array( 'script', 'style', 'code', 'pre', 'textarea' ), true ) || $element->hasAttribute( 'data-omtr-skip' ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			return true;
 		}
@@ -206,9 +197,9 @@ final class Translator {
 	/**
 	 * Meta translation allowlist.
 	 *
-	 * @param \DOMElement $element Meta element.
+	 * @param \DOMElement|\Dom\Element $element Meta element.
 	 */
-	private function is_translatable_meta( \DOMElement $element ): bool {
+	private function is_translatable_meta( \DOMElement|\Dom\Element $element ): bool {
 		$name = $element->getAttribute( 'name' );
 		$key  = strtolower( '' !== $name ? $name : $element->getAttribute( 'property' ) );
 		return 'description' === $key || str_starts_with( $key, 'og:' ) || str_starts_with( $key, 'twitter:' );
@@ -217,13 +208,13 @@ final class Translator {
 	/**
 	 * Set the root HTML language.
 	 *
-	 * @param \DOMDocument $document Document.
+	 * @param \DOMDocument|\Dom\HTMLDocument $document Document.
 	 */
-	private function set_document_language( \DOMDocument $document ): void {
+	private function set_document_language( \DOMDocument|\Dom\HTMLDocument $document ): void {
 		$elements = $document->getElementsByTagName( 'html' );
 		if ( $elements->length > 0 ) {
 			$root = $elements->item( 0 );
-			if ( $root instanceof \DOMElement ) {
+			if ( $root instanceof \DOMElement || $root instanceof \Dom\Element ) {
 				$root->setAttribute( 'lang', esc_attr( $this->current_language->get() ) );
 			}
 		}
@@ -232,9 +223,9 @@ final class Translator {
 	/**
 	 * Rewrite same-site links for the active language.
 	 *
-	 * @param \DOMDocument $document Document.
+	 * @param \DOMDocument|\Dom\HTMLDocument $document Document.
 	 */
-	private function rewrite_links( \DOMDocument $document ): void {
+	private function rewrite_links( \DOMDocument|\Dom\HTMLDocument $document ): void {
 		foreach ( $document->getElementsByTagName( 'a' ) as $anchor ) {
 			if ( $anchor->hasAttribute( 'href' ) ) {
 				$href = $anchor->getAttribute( 'href' );

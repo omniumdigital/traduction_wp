@@ -33,11 +33,21 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	 * @param string $source_lang Source language.
 	 */
 	public function extract( string $html, string $source_lang ): array {
-		$document = $this->load_document( $html );
+		$document = self::load_document( $html );
 		if ( null === $document ) {
 			return array();
 		}
+		return $this->extract_from_document( $document, $source_lang );
+	}
 
+	/**
+	 * Extract segments from an already parsed document.
+	 *
+	 * @param \DOMDocument|\Dom\HTMLDocument $document   Parsed HTML document.
+	 * @param string                         $source_lang Source language.
+	 * @return array<string, string> SegmentKey hash => normalized source text.
+	 */
+	public function extract_from_document( \DOMDocument|\Dom\HTMLDocument $document, string $source_lang ): array {
 		$segments = array();
 		$this->walk( $document, $source_lang, $segments, false );
 		return $segments;
@@ -48,8 +58,19 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	 *
 	 * @param string $html HTML document.
 	 */
-	private function load_document( string $html ): ?\DOMDocument {
-		if ( '' === trim( $html ) || ! class_exists( \DOMDocument::class ) ) {
+	public static function load_document( string $html ): \DOMDocument|\Dom\HTMLDocument|null {
+		if ( '' === trim( $html ) ) {
+			return null;
+		}
+		if ( class_exists( 'Dom\\HTMLDocument' ) ) {
+			$document_class = 'Dom\\HTMLDocument';
+			try {
+				return $document_class::createFromString( $html, LIBXML_NOERROR );
+			} catch ( \ValueError ) {
+				return null;
+			}
+		}
+		if ( ! class_exists( \DOMDocument::class ) ) {
 			return null;
 		}
 		$document = new \DOMDocument( '1.0', 'UTF-8' );
@@ -61,15 +82,27 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	}
 
 	/**
+	 * Serialize a parsed document with its matching HTML parser.
+	 *
+	 * @param \DOMDocument|\Dom\HTMLDocument $document Parsed HTML document.
+	 */
+	public static function save_document( \DOMDocument|\Dom\HTMLDocument $document ): string|false {
+		if ( $document instanceof \DOMDocument ) {
+			return $document->saveHTML();
+		}
+		return $document->saveHtml();
+	}
+
+	/**
 	 * Walk DOM nodes and collect eligible strings.
 	 *
-	 * @param \DOMNode              $node        Current node.
+	 * @param \DOMNode|\Dom\Node    $node        Current node.
 	 * @param string                $source_lang Source language.
 	 * @param array<string, string> $segments    Accumulator.
 	 * @param bool                  $excluded    Whether an ancestor is excluded.
 	 */
-	private function walk( \DOMNode $node, string $source_lang, array &$segments, bool $excluded ): void {
-		if ( $node instanceof \DOMElement ) {
+	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array &$segments, bool $excluded ): void {
+		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
 			$excluded = $excluded || $this->is_excluded_element( $node );
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
@@ -94,9 +127,9 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	/**
 	 * Whether an element and its descendants must be ignored.
 	 *
-	 * @param \DOMElement $element Element.
+	 * @param \DOMElement|\Dom\Element $element Element.
 	 */
-	private function is_excluded_element( \DOMElement $element ): bool {
+	private function is_excluded_element( \DOMElement|\Dom\Element $element ): bool {
 		$tag = strtolower( $element->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 		if ( in_array( $tag, array( 'script', 'style', 'code', 'pre', 'textarea' ), true ) ) {
 			return true;
@@ -112,9 +145,9 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	/**
 	 * Whether a meta content attribute is translatable.
 	 *
-	 * @param \DOMElement $element Meta element.
+	 * @param \DOMElement|\Dom\Element $element Meta element.
 	 */
-	private function is_translatable_meta( \DOMElement $element ): bool {
+	private function is_translatable_meta( \DOMElement|\Dom\Element $element ): bool {
 		$name = $element->getAttribute( 'name' );
 		$key  = strtolower( '' !== $name ? $name : $element->getAttribute( 'property' ) );
 		return 'description' === $key || str_starts_with( $key, 'og:' ) || str_starts_with( $key, 'twitter:' );
