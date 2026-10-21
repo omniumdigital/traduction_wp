@@ -11,6 +11,7 @@ La charte du projet est [`CLAUDE.md`](CLAUDE.md) : lis-la entièrement avant tou
   - `Store\SegmentRepositoryInterface`, `Store\TranslationRepositoryInterface`
   - `Store\SegmentKey` : identité unique d'un segment, utilisée par Render, Queue et Store
   - `Router\CurrentLanguage` : langue de la requête
+  - `Render\SegmentExtractorInterface`, `Queue\TranslationQueueInterface`, `Core\LoggerInterface`
   - `Glossary\Glossary`
   - `Security\Sanitizer` : passage obligatoire de toute traduction (IA ou manuelle)
   - `Security\ApiKeyStore` : seule porte d'accès à la clé API déchiffrée
