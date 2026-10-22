@@ -26,10 +26,12 @@ final class Html5RenderingTest extends TestCase {
 	private const HTML5 = <<<'HTML'
 <!doctype html>
 <html lang="fr"><head>
+<style>.sample::after { content: "</div>"; }</style>
 <script type="application/ld+json">{"name":"Produit","offers":{"price":"19.90"}}</script>
 <script>window.sample = "</div>";</script>
 </head><body data-config='{"currency":"EUR","enabled":true}'>
 <svg id="logo" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0h10v10z"></path></svg>
+<math><mi>x</mi></math>
 <template id="card-template"><article data-kind="card"><strong>Modèle intact</strong></article></template>
 <noscript><p>Activez JavaScript</p></noscript>
 <main><p>Bonjour HTML5</p></main>
@@ -70,16 +72,15 @@ HTML;
 
 		$output   = $this->translator( $current, $repository )->translate( self::HTML5 );
 		$document = HtmlSegmentExtractor::load_document( $output );
+		$body     = null === $document ? null : $document->getElementsByTagName( 'body' )->item( 0 );
 
 		$this->assertNotNull( $document );
 		$this->assertSame( 'en', $document->documentElement?->getAttribute( 'lang' ) );
-		$this->assertSame( '{"currency":"EUR","enabled":true}', $document->body?->getAttribute( 'data-config' ) );
-		$this->assertSame( 'M0 0h10v10z', $document->getElementsByTagName( 'path' )->item( 0 )?->getAttribute( 'd' ) );
-		$this->assertStringContainsString( '<template id="card-template"><article data-kind="card"><strong>Modèle intact</strong></article></template>', $output );
+		$this->assertSame( '{"currency":"EUR","enabled":true}', $body?->getAttribute( 'data-config' ) );
+		$this->assertSame( $this->sensitive_blocks( self::HTML5 ), $this->sensitive_blocks( $output ), 'Sensitive blocks must be restored byte for byte.' );
 		$this->assertStringContainsString( '<noscript><p>Activez JavaScript</p></noscript>', $output );
-		$this->assertStringContainsString( '<script type="application/ld+json">{"name":"Produit","offers":{"price":"19.90"}}</script>', $output );
-		$this->assertStringContainsString( '<script>window.sample = "</div>";</script>', $output );
 		$this->assertStringContainsString( '<p>Hello HTML5</p>', $output );
+		$this->assertStringNotContainsString( '<?xml', $output );
 	}
 
 	public function test_dynamic_html_with_same_segments_reuses_stable_cache_key(): void {
@@ -107,6 +108,25 @@ HTML;
 		$this->assertSame( $cache_keys[0], $cache_keys[1] );
 	}
 
+	public function test_fallback_detects_case_insensitive_sensitive_closing_tags(): void {
+		if ( class_exists( 'Dom\\HTMLDocument' ) ) {
+			$this->markTestSkipped( 'DOMDocument fallback only.' );
+		}
+
+		$html       = '<!doctype html><html lang="fr"><head><script>window.sample = "</div>";</ScRiPt></head><body><p>Bonjour HTML5</p></body></html>';
+		$hash       = SegmentKey::hash( 'fr', 'Bonjour HTML5' );
+		$current    = new CurrentLanguage( 'fr' );
+		$repository = $this->createMock( TranslationRepositoryInterface::class );
+		$repository->expects( $this->once() )->method( 'find_many' )->willReturn( array( $hash => 'Hello HTML5' ) );
+		$current->set( 'en' );
+
+		$output = $this->translator( $current, $repository )->translate( $html );
+
+		$this->assertStringContainsString( '<script>window.sample = "</div>";</ScRiPt>', $output );
+		$this->assertStringContainsString( '<p>Hello HTML5</p>', $output );
+		$this->assertStringNotContainsString( '<?xml', $output );
+	}
+
 	private function translator( CurrentLanguage $current, TranslationRepositoryInterface $repository ): Translator {
 		return new Translator(
 			$current,
@@ -114,5 +134,15 @@ HTML;
 			$repository,
 			new UrlTranslator( new Settings() )
 		);
+	}
+
+	/**
+	 * Return raw-text and foreign-content blocks in document order.
+	 *
+	 * @return list<string>
+	 */
+	private function sensitive_blocks( string $html ): array {
+		preg_match_all( '~<(script|style|svg|math|template)\b(?:"[^"]*"|\'[^\']*\'|[^\'">])*?>.*?</\1\s*>~is', $html, $matches );
+		return $matches[0];
 	}
 }

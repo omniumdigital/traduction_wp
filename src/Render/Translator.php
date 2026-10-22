@@ -71,7 +71,7 @@ final class Translator {
 		$this->set_document_language( $document );
 		$this->rewrite_links( $document );
 		$output = HtmlSegmentExtractor::save_document( $document );
-		return false === $output ? $html : preg_replace( '/^<\?xml encoding="UTF-8"\?>\s*/', '', $output ) ?? $html;
+		return false === $output ? $html : $output;
 	}
 
 	/**
@@ -150,7 +150,7 @@ final class Translator {
 		if ( $owner instanceof \DOMDocument ) {
 			$fragment = new \DOMDocument( '1.0', 'UTF-8' );
 			$previous = libxml_use_internal_errors( true );
-			$loaded   = $fragment->loadHTML( '<?xml encoding="UTF-8">' . $fragment_html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
+			$loaded   = $fragment->loadHTML( '<meta charset="UTF-8">' . $fragment_html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
 			libxml_clear_errors();
 			libxml_use_internal_errors( $previous );
 		} else {

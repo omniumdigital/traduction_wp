@@ -17,7 +17,21 @@ defined( 'ABSPATH' ) || exit;
  */
 final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 
-	private const ATTRIBUTES = array( 'alt', 'title', 'placeholder', 'aria-label' );
+	private const ATTRIBUTES                 = array( 'alt', 'title', 'placeholder', 'aria-label' );
+	private const SENSITIVE_ELEMENTS_PATTERN = '~<(script|style|svg|math|template)\b(?:"[^"]*"|\'[^\']*\'|[^\'">])*?>.*?</\1\s*>~is';
+
+	/**
+	 * Original sensitive blocks and the temporary charset marker, keyed by fallback document.
+	 *
+	 * On PHP below 8.4, DOMDocument uses an HTML4 parser which mutates raw-text
+	 * content and case-sensitive foreign markup. Those blocks are therefore kept
+	 * out of the parser and restored byte for byte when the document is saved.
+	 * Consequently, template contents and SVG titles are not extracted on this
+	 * fallback path.
+	 *
+	 * @var \WeakMap<\DOMDocument, array{blocks: array<int, string>, token: string}>|null
+	 */
+	private static ?\WeakMap $fallback_state = null;
 
 	/**
 	 * Constructor.
@@ -73,11 +87,19 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 		if ( ! class_exists( \DOMDocument::class ) ) {
 			return null;
 		}
-		$document = new \DOMDocument( '1.0', 'UTF-8' );
-		$previous = libxml_use_internal_errors( true );
-		$loaded   = $document->loadHTML( '<?xml encoding="UTF-8">' . $html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
+		list( $protected_html, $blocks, $token ) = self::protect_fallback_html( $html );
+		$document                                = new \DOMDocument( '1.0', 'UTF-8' );
+		$previous                                = libxml_use_internal_errors( true );
+		$loaded                                  = $document->loadHTML( $protected_html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
 		libxml_clear_errors();
 		libxml_use_internal_errors( $previous );
+		if ( $loaded ) {
+			self::$fallback_state            ??= new \WeakMap();
+			self::$fallback_state[ $document ] = array(
+				'blocks' => $blocks,
+				'token'  => $token,
+			);
+		}
 		return $loaded ? $document : null;
 	}
 
@@ -88,9 +110,75 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	 */
 	public static function save_document( \DOMDocument|\Dom\HTMLDocument $document ): string|false {
 		if ( $document instanceof \DOMDocument ) {
-			return $document->saveHTML();
+			$output = $document->saveHTML();
+			if ( false === $output || null === self::$fallback_state || ! isset( self::$fallback_state[ $document ] ) ) {
+				return $output;
+			}
+			$state = self::$fallback_state[ $document ];
+			unset( self::$fallback_state[ $document ] );
+			return self::restore_fallback_html( $output, $state['blocks'], $state['token'] );
 		}
 		return $document->saveHtml();
+	}
+
+	/**
+	 * Replace raw-text and foreign-content elements before the HTML4 fallback parses them.
+	 *
+	 * @param string $html Original HTML.
+	 * @return array{string, array<int, string>, string} Protected HTML, blocks and marker token.
+	 */
+	private static function protect_fallback_html( string $html ): array {
+		$blocks = array();
+		$token  = substr( hash( 'sha256', $html ), 0, 20 );
+		while ( str_contains( $html, $token ) ) {
+			$token .= 'x';
+		}
+
+		$protected = preg_replace_callback(
+			self::SENSITIVE_ELEMENTS_PATTERN,
+			static function ( array $matches ) use ( &$blocks, $token ): string {
+				$index            = count( $blocks );
+				$blocks[ $index ] = $matches[0];
+				return '<omtr-ph data-omtr-placeholder="' . $token . '-' . $index . '"></omtr-ph>';
+			},
+			$html
+		);
+		$protected = null === $protected ? $html : $protected;
+		$meta      = '<meta charset="UTF-8" data-omtr-charset="' . $token . '">';
+		$with_meta = preg_replace_callback(
+			'~<head\b(?:"[^"]*"|\'[^\']*\'|[^\'">])*?>~i',
+			static fn( array $matches ): string => $matches[0] . $meta,
+			$protected,
+			1,
+			$count
+		);
+
+		return array( 0 === $count || null === $with_meta ? $meta . $protected : $with_meta, $blocks, $token );
+	}
+
+	/**
+	 * Remove the charset marker and restore protected blocks byte for byte.
+	 *
+	 * @param string             $html   Serialized fallback document.
+	 * @param array<int, string> $blocks Original sensitive blocks.
+	 * @param string             $token  Unique marker token.
+	 */
+	private static function restore_fallback_html( string $html, array $blocks, string $token ): string {
+		$quoted_token = preg_quote( $token, '~' );
+		$restored     = preg_replace(
+			'~<meta\b(?=[^>]*\bdata-omtr-charset=["\']' . $quoted_token . '["\'])[^>]*>~i',
+			'',
+			$html
+		);
+		$restored     = null === $restored ? $html : $restored;
+
+		foreach ( $blocks as $index => $block ) {
+			$pattern  = '~<omtr-ph\b(?=[^>]*\bdata-omtr-placeholder=["\']' . $quoted_token . '-' . $index . '["\'])[^>]*>\s*</omtr-ph>~i';
+			$replaced = preg_replace_callback( $pattern, static fn(): string => $block, $restored, 1 );
+			$restored = null === $replaced ? $restored : $replaced;
+		}
+
+		return $restored;
 	}
 
 	/**
