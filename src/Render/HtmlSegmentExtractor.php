@@ -34,6 +34,13 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	private static ?\WeakMap $fallback_state = null;
 
 	/**
+	 * Meta name/property keys whose content is human text. Other SEO metas
+	 * (og:locale, og:type, og:url, og:image, twitter:card…) hold constants
+	 * or URLs that must never be sent to translation.
+	 */
+	private const TRANSLATABLE_META = array( 'description', 'og:title', 'og:description', 'og:site_name', 'twitter:title', 'twitter:description' );
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PiiFilter $pii_filter Personal-data filter.
@@ -192,13 +199,17 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array &$segments, bool $excluded ): void {
 		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
 			$excluded = $excluded || $this->is_excluded_element( $node );
+			$tag      = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
+					if ( 'link' === $tag && 'title' === $attribute ) {
+						continue; // Link titles (feeds, oEmbed) are never visible page text.
+					}
 					if ( $node->hasAttribute( $attribute ) ) {
 						$this->add( $node->getAttribute( $attribute ), $source_lang, $segments );
 					}
 				}
-				if ( 'meta' === strtolower( $node->tagName ) && $this->is_translatable_meta( $node ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+				if ( 'meta' === $tag && $this->is_translatable_meta( $node ) ) {
 					$this->add( $node->getAttribute( 'content' ), $source_lang, $segments );
 				}
 				// A textarea placeholder is public interface text, but its child
@@ -234,14 +245,14 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	}
 
 	/**
-	 * Whether a meta content attribute is translatable.
+	 * Whether a meta content attribute is translatable human text.
 	 *
 	 * @param \DOMElement|\Dom\Element $element Meta element.
 	 */
 	private function is_translatable_meta( \DOMElement|\Dom\Element $element ): bool {
 		$name = (string) $element->getAttribute( 'name' );
 		$key  = strtolower( '' !== $name ? $name : (string) $element->getAttribute( 'property' ) );
-		return 'description' === $key || str_starts_with( $key, 'og:' ) || str_starts_with( $key, 'twitter:' );
+		return in_array( $key, self::TRANSLATABLE_META, true );
 	}
 
 	/**

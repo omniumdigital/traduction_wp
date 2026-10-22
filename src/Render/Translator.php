@@ -24,6 +24,13 @@ final class Translator {
 	private const ATTRIBUTES = array( 'alt', 'title', 'placeholder', 'aria-label' );
 
 	/**
+	 * Meta name/property keys whose content is human text. Must stay in sync
+	 * with HtmlSegmentExtractor::TRANSLATABLE_META: non-textual SEO metas
+	 * (locale, type, URL, card…) must never be rewritten with a translation.
+	 */
+	private const TRANSLATABLE_META = array( 'description', 'og:title', 'og:description', 'og:site_name', 'twitter:title', 'twitter:description' );
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CurrentLanguage                $current_language Current request language.
@@ -85,8 +92,12 @@ final class Translator {
 	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array $stored, bool $excluded ): void {
 		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
 			$excluded = $excluded || $this->is_excluded_element( $node );
+			$tag      = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
+					if ( 'link' === $tag && 'title' === $attribute ) {
+						continue; // Link titles (feeds, oEmbed) are never visible page text.
+					}
 					if ( $node->hasAttribute( $attribute ) ) {
 						$translation = $this->lookup( $node->getAttribute( $attribute ), $source_lang, $stored );
 						if ( null !== $translation ) {
@@ -94,7 +105,7 @@ final class Translator {
 						}
 					}
 				}
-				if ( 'meta' === strtolower( $node->tagName ) && $this->is_translatable_meta( $node ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+				if ( 'meta' === $tag && $this->is_translatable_meta( $node ) ) {
 					$translation = $this->lookup( $node->getAttribute( 'content' ), $source_lang, $stored );
 					if ( null !== $translation ) {
 						$node->setAttribute( 'content', $this->safe_attribute( $translation ) );
@@ -195,14 +206,14 @@ final class Translator {
 	}
 
 	/**
-	 * Meta translation allowlist.
+	 * Meta translation allowlist, in sync with the extractor.
 	 *
 	 * @param \DOMElement|\Dom\Element $element Meta element.
 	 */
 	private function is_translatable_meta( \DOMElement|\Dom\Element $element ): bool {
 		$name = (string) $element->getAttribute( 'name' );
 		$key  = strtolower( '' !== $name ? $name : (string) $element->getAttribute( 'property' ) );
-		return 'description' === $key || str_starts_with( $key, 'og:' ) || str_starts_with( $key, 'twitter:' );
+		return in_array( $key, self::TRANSLATABLE_META, true );
 	}
 
 	/**
