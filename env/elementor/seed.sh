@@ -19,11 +19,11 @@ cd "$(dirname "$0")"
 
 CLI='npx wp-env run cli'
 
-# Les dossiers de plugins dans le conteneur portent des noms imposés par
-# wp-env (worktree courant, *.latest-stable) : résoudre chaque slug depuis
-# les entêtes de plugin plutôt que de les coder en dur. Le nom du plugin est
-# incorporé au code PHP (base64) car un argument contenant une espace ne
-# survit pas au passage docker/compose de wp-env.
+# Le plugin local est monté sous le slug stable omnium-translate ; les plugins
+# téléchargés peuvent toutefois porter un suffixe wp-env (*.latest-stable).
+# Résoudre chaque slug depuis les entêtes évite toute dépendance au dossier de
+# travail. Le nom du plugin est incorporé au code PHP (base64) car un argument
+# contenant une espace ne survit pas au passage docker/compose de wp-env.
 find_plugin() {
 	NAME_B64=$(printf '%s' "$1" | base64 | tr -d '\n')
 	$CLI wp eval "\$needle = base64_decode( '$NAME_B64' ); foreach ( get_plugins() as \$file => \$data ) { if ( 0 === strpos( (string) ( \$data[\"Name\"] ?? \"\" ), \$needle ) ) { echo dirname( \$file ); break; } }" 2>/dev/null | tr -d '\r'
