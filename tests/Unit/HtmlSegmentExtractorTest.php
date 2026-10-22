@@ -18,7 +18,7 @@ final class HtmlSegmentExtractorTest extends TestCase {
 		$extractor = new HtmlSegmentExtractor( new PiiFilter() );
 		$html      = '<html><head><title>Accueil</title><meta name="description" content="Bienvenue ici"></head><body>'
 			. '<p>Bonjour monde</p><img alt="Belle image"><input value="Secret" placeholder="Votre nom">'
-			. '<textarea>Valeur privée</textarea><pre>Code privé</pre><div class="notranslate">Ignorer</div>'
+			. '<textarea placeholder="Votre message">Valeur privée</textarea><pre>Code privé</pre><div class="notranslate">Ignorer</div>'
 			. '<span data-omtr-skip>Masqué</span><p>hello@example.com</p></body></html>';
 
 		$segments = $extractor->extract( $html, 'fr' );
@@ -28,6 +28,7 @@ final class HtmlSegmentExtractorTest extends TestCase {
 		$this->assertContains( 'Bienvenue ici', $segments );
 		$this->assertContains( 'Belle image', $segments );
 		$this->assertContains( 'Votre nom', $segments );
+		$this->assertContains( 'Votre message', $segments );
 		$this->assertNotContains( 'Secret', $segments );
 		$this->assertNotContains( 'Valeur privée', $segments );
 		$this->assertNotContains( 'Code privé', $segments );

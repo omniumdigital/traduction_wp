@@ -38,8 +38,7 @@ if ( version_compare( PHP_VERSION, OMTR_MIN_PHP, '<' ) || ! extension_loaded( 's
 
 require_once OMTR_DIR . 'vendor/autoload.php';
 
-// Action Scheduler must be loaded before plugins_loaded; it defers to a newer copy (e.g. WooCommerce's) if present.
-require_once OMTR_DIR . 'vendor/woocommerce/action-scheduler/action-scheduler.php';
+\Omnium\Translate\Core\ActionSchedulerLoader::register();
 
 register_activation_hook( __FILE__, array( \Omnium\Translate\Core\Activator::class, 'activate' ) );
 register_deactivation_hook( __FILE__, array( \Omnium\Translate\Core\Deactivator::class, 'deactivate' ) );

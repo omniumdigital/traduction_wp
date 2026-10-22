@@ -240,7 +240,7 @@ $contact = omtr_oxygen_node(
 	array(
 		omtr_oxygen_text( 91, 'Parlons de votre projet', 'h2', 90, 'font-size:38px' ),
 		omtr_oxygen_text( 92, 'Quelques lignes suffisent pour commencer la conversation.', 'p', 90 ),
-		omtr_oxygen_node( 93, 'OxygenElements\\HTMLCode', array( 'content' => array( 'content' => array( 'html_code' => $form_html ) ) ), array(), 90 ),
+		omtr_oxygen_node( 93, 'OxygenElements\\HtmlCode', array( 'content' => array( 'content' => array( 'html_code' => $form_html ) ) ), array(), 90 ),
 	),
 	30
 );
@@ -261,10 +261,11 @@ $footer = omtr_oxygen_node(
 $page_tree = array(
 	'root'        => array(
 		'id'       => 1,
-		'data'     => array( 'type' => 'root', 'properties' => array() ),
+		'data'     => array( 'type' => 'root', 'properties' => (object) array() ),
 		'children' => array( $header, $main, $footer ),
 	),
 	'_nextNodeId' => 104,
+	'status'      => 'exported',
 );
 
 $oxygen_meta_prefix = \Breakdance\BreakdanceOxygen\Strings\__bdox( '_meta_prefix' );
@@ -282,16 +283,21 @@ update_post_meta( $page_id, 'rank_math_title', 'Atelier Horizon | Stratégie et 
 update_post_meta( $page_id, 'rank_math_description', 'Atelier Horizon accompagne les entreprises de la stratégie au lancement avec une méthode claire et créative.' );
 update_post_meta( $page_id, 'rank_math_facebook_title', 'Atelier Horizon — Donnez de l’élan à vos idées' );
 update_post_meta( $page_id, 'rank_math_facebook_description', 'Découvrez notre approche en stratégie, design et croissance durable.' );
+update_option( 'rank_math_is_configured', true );
+update_option( 'rank_math_registration_skip', true );
+update_option( 'woocommerce_coming_soon', 'no' );
+update_option( 'woocommerce_store_pages_only', 'no' );
 
 $template_tree = array(
 	'root'        => array(
 		'id'       => 1,
-		'data'     => array( 'type' => 'root', 'properties' => array() ),
+		'data'     => array( 'type' => 'root', 'properties' => (object) array() ),
 		'children' => array(
 			omtr_oxygen_node( 2, 'OxygenElements\\TemplateContentArea', omtr_oxygen_settings( 'div' ), array(), 1 ),
 		),
 	),
 	'_nextNodeId' => 3,
+	'status'      => 'exported',
 );
 $template_id = wp_insert_post(
 	array(

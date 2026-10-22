@@ -201,6 +201,9 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 				if ( 'meta' === strtolower( $node->tagName ) && $this->is_translatable_meta( $node ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 					$this->add( $node->getAttribute( 'content' ), $source_lang, $segments );
 				}
+				// A textarea placeholder is public interface text, but its child
+				// text is a visitor-provided form value and must stay excluded.
+				$excluded = 'textarea' === strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			}
 		}
 
@@ -219,7 +222,7 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	 */
 	private function is_excluded_element( \DOMElement|\Dom\Element $element ): bool {
 		$tag = strtolower( $element->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
-		if ( in_array( $tag, array( 'script', 'style', 'code', 'pre', 'textarea' ), true ) ) {
+		if ( in_array( $tag, array( 'script', 'style', 'code', 'pre' ), true ) ) {
 			return true;
 		}
 		if ( $element->hasAttribute( 'data-omtr-skip' ) ) {
