@@ -49,6 +49,14 @@ $CLI wp plugin activate "$ELEMENTOR_SLUG" "$WOO_SLUG" "$OMTR_SLUG"
 if [ "${SEO:-yoast}" = "rankmath" ]; then
 	$CLI wp plugin deactivate "$YOAST_SLUG"
 	$CLI wp plugin activate "$RANKMATH_SLUG"
+	# Rank Math ne sort aucune meta tant que son assistant n'est pas finalisé :
+	# appliquer la configuration minimale qu'un admin obtiendrait en le terminant
+	# (inscription ignorée, drapeau is_configured, module OpenGraph actif,
+	# réglages de titres).
+	$CLI wp option update rank_math_registration_skip 1
+	$CLI wp option update rank_math_is_configured 1
+	$CLI wp eval 'update_option( "rank_math_modules", array_values( array_unique( array_merge( (array) get_option( "rank_math_modules", array() ), array( "opengraph" ) ) ) ) );'
+	$CLI wp option update rank_math_titles '{"title_separator":"|","pt_page_title":"%title% %sep% %sitename%","pt_page_description":"","homepage_title":"%sitename%","noindex_empty_taxonomies":"on"}' --format=json
 else
 	$CLI wp plugin deactivate "$RANKMATH_SLUG"
 	$CLI wp plugin activate "$YOAST_SLUG"
@@ -65,7 +73,7 @@ PAGE_SLUG='atelier-ceramique'
 
 # Métadonnées SEO du plugin actif (title + description distincts par plugin).
 YOAST_META='{"_yoast_wpseo_title":"Atelier de céramique artisanale à Lyon | pièces uniques","_yoast_wpseo_metadesc":"Bols, vases et assiettes en grès façonnés à la main dans notre atelier lyonnais depuis 1998."}'
-RANKMATH_META='{"rank_math_title":"Atelier de céramique artisanale à Lyon | pièces uniques","rank_math_description":"Bols, vases et assiettes en grès façonnés à la main dans notre atelier lyonnais depuis 1998."}'
+RANKMATH_META='{"rank_math_title":"Céramiques artisanales de Lyon | atelier de grès","rank_math_description":"Découvrez nos collections de grès façonnées main, cuites au bois dans un atelier familial lyonnais."}'
 
 # Structure Elementor 4.x : sections / colonnes / widgets. Les contenus
 # embarquent les cas de recette : texte public, alt d'images, lien interne
