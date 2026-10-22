@@ -6,12 +6,12 @@ Verdict : ✅ VALIDÉ pour le périmètre rendu, routeur, stockage et filtre PII
 
 | Outil | Résultat |
 | --- | --- |
-| `vendor/bin/phpcs --standard=phpcs.xml.dist src/ omnium-translate.php uninstall.php` | ✅ 53 fichiers, aucune erreur ni avertissement |
+| `vendor/bin/phpcs --standard=phpcs.xml.dist src/ omnium-translate.php uninstall.php` | ✅ 65 fichiers, aucune erreur ni avertissement |
 | `vendor/bin/phpstan analyse --level=6 --memory-limit=1G` | ✅ aucune erreur |
-| `vendor/bin/phpunit --group=security` | ✅ 15 tests, 39 assertions |
+| `vendor/bin/phpunit --group=security` | ✅ 61 tests, 147 assertions |
 | `composer audit --no-interaction` | ✅ aucun avis de sécurité |
 | `npm audit --audit-level=high` | ✅ 0 vulnérabilité |
-| `gitleaks detect --no-banner` (image officielle, worktree complet monté) | ✅ 16 commits, environ 1,30 Mo analysé, aucune fuite |
+| `gitleaks detect --no-banner` (image officielle, worktree complet monté) | ✅ 27 commits, environ 1,50 Mo analysé, aucune fuite |
 
 Les suppressions PHPCS SQL restent limitées aux listes `IN` dont seul le nombre de placeholders est généré ; les identifiants de tables utilisent `%i` et toutes les valeurs passent à `$wpdb->prepare()`. La suppression PHPCS de `LanguageRouter.php:42` est intentionnelle : l'URI serveur brute n'est ni exécutée ni affichée, seulement découpée sur un préfixe connu afin de préserver exactement ses octets encodés.
 
@@ -19,7 +19,7 @@ Les suppressions PHPCS SQL restent limitées aux listes `IN` dont seul le nombre
 
 | Sévérité | Fichier:ligne | Problème | Correctif proposé |
 | --- | --- | --- | --- |
-| Information | `src/Render/HtmlSegmentExtractor.php:65-81` | PHP 8.1–8.3 utilise le parseur HTML4 `DOMDocument`, susceptible de normaliser certaines constructions HTML5 complexes sur une page traduite | Limite documentée ; PHP 8.4+ utilise `Dom\HTMLDocument`. La langue source ne passe jamais dans le parseur |
+| Information | `src/Render/HtmlSegmentExtractor.php:90-181` | PHP 8.1–8.3 utilise le parseur HTML4 `DOMDocument` | Les blocs `script`, `style`, `svg`, `math` et `template` sont remplacés avant parsing puis restaurés octet pour octet. En contrepartie, les segments situés dans un `template` ou un `title` de SVG ne sont pas traduits sur ce fallback. PHP 8.4+ conserve le chemin `Dom\HTMLDocument` inchangé. |
 
 Aucun finding Critique, Haute, Moyenne ou Basse dans le périmètre audité.
 
@@ -35,12 +35,12 @@ Aucun finding Critique, Haute, Moyenne ou Basse dans le périmètre audité.
 
 ### 3.1 Réponses de l'IA = entrées non fiables
 
-- OK — réinsertion par import de nœuds DOM, jamais par affectation d'HTML au document (`src/Render/Translator.php:137-170`).
+- OK — réinsertion par import de nœuds DOM, jamais par affectation d'HTML au document (`src/Render/Translator.php:142-170`).
 - OK — traduction filtrée par `Sanitizer::inline_html()` au stockage, à la lecture et avant création du fragment (`src/Store/TranslationRepository.php:58`, `src/Store/TranslationRepository.php:78`, `src/Render/Translator.php:127-149`).
-- OK — attributs traduits passent par texte brut puis `esc_attr()` (`src/Render/Translator.php:173-180`).
+- OK — attributs traduits passent par texte brut puis `esc_attr()` (`src/Render/Translator.php:176-183`).
 - N/A — validation JSON fournisseur et prompt sont hors de ce lot.
 - OK — test de sortie avec `<script>`, `<img onerror>`, `javascript:` et instruction hostile (`tests/Unit/TranslatorSecurityTest.php`).
-- OK — test HTML5 réaliste couvrant SVG, template, noscript, JSON-LD et contenu de script piégeux (`tests/Unit/Html5RenderingTest.php:64-82`).
+- OK — tests HTML5 couvrant la restauration octet pour octet de SVG, MathML, template, styles, JSON-LD et scripts, ainsi que les balises fermantes insensibles à la casse sur le fallback (`tests/Unit/Html5RenderingTest.php:66-128`).
 
 ### 3.2 Contrôle d'accès
 

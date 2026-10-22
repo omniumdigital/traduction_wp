@@ -15,7 +15,7 @@ Les recherches prescrites sur `wp_remote_*`, `wp_safe_remote_*`, `curl_*`, `fsoc
 
 | Sévérité | Fichier:ligne | Problème | Correctif proposé |
 | --- | --- | --- | --- |
-| Information | `src/Render/HtmlSegmentExtractor.php:65-81` | Le fallback PHP 8.1–8.3 repose sur le parseur HTML4 `DOMDocument` et peut normaliser du balisage HTML5 pendant un rendu traduit | PHP 8.4+ utilise `Dom\HTMLDocument`; conserver les tests HTML5 et élargir les fixtures lors de l'ajout de composants web |
+| Information | `src/Render/HtmlSegmentExtractor.php:90-181` | Le fallback PHP 8.1–8.3 repose sur le parseur HTML4 `DOMDocument` | Les blocs sensibles sont isolés du parseur puis restaurés octet pour octet ; les contenus de `template` et les titres de SVG ne sont donc pas traduits sur ce fallback. PHP 8.4+ conserve le chemin `Dom\HTMLDocument` inchangé. |
 
 Aucun finding Critique, Haute, Moyenne ou Basse dans le périmètre audité.
 
@@ -27,7 +27,7 @@ Aucun finding Critique, Haute, Moyenne ou Basse dans le périmètre audité.
 - OK — `is_public_front_request()` autorise l'affichage de traductions déjà stockées sur panier/commande/compte, tout en excluant admin, cron, REST précoce, éditeurs et AJAX hors fragments Woo (`src/Router/RequestGuard.php:20-38`, `src/Router/RequestGuard.php:64-82`).
 - OK — la méthode distincte `is_crawlable_or_ai_eligible()` exclut panier, commande, compte, `order-received`, utilisateurs connectés, aperçus et pages protégées (`src/Router/RequestGuard.php:47-58`). Elle est destinée au futur crawler/file à la volée ; aucun envoi IA n'existe encore dans ce lot.
 - OK — emails, téléphones FR/internationaux, IBAN modulo 97 et cartes Luhn sont filtrés par `PiiFilter` et couverts par tests de sécurité.
-- OK — `input[value]` n'est jamais extrait et `textarea` est exclu ; seuls `placeholder`, `alt`, `title` et `aria-label` sont lus (`src/Render/HtmlSegmentExtractor.php:104-142`).
+- OK — `input[value]` n'est jamais extrait et `textarea` est exclu ; seuls `placeholder`, `alt`, `title` et `aria-label` sont lus (`src/Render/HtmlSegmentExtractor.php:192-245`).
 - N/A — emails Woo et prompts appartiennent à d'autres lots.
 
 ### Stockage et journaux
@@ -48,8 +48,9 @@ Aucun finding Critique, Haute, Moyenne ou Basse dans le périmètre audité.
 
 ### Limites HTML restantes
 
-- Sous PHP 8.4+, le parseur HTML5 natif conserve sémantiquement les SVG, templates, noscript, attributs JSON et scripts testés. La sérialisation d'une page traduite peut néanmoins normaliser la casse du doctype, les espaces et les guillemets d'attributs ; seule la langue source est garantie octet pour octet.
-- Sous PHP 8.1–8.3, `DOMDocument::loadHTML()` reste un parseur HTML4 : du HTML5 très mal formé, les namespaces SVG/MathML ou des composants web complexes peuvent être normalisés. Les scripts, styles, templates et valeurs de formulaires restent exclus de l'extraction, mais une recette navigateur sur les trois sites de test demeure nécessaire avant livraison.
+- Sous PHP 8.4+, le chemin HTML5 natif reste inchangé. La sérialisation d'une page traduite peut normaliser la casse du doctype, les espaces et les guillemets d'attributs ; seule la langue source est garantie octet pour octet.
+- Sous PHP 8.1–8.3, les éléments complets `script`, `style`, `svg`, `math` et `template` sont remplacés avant `DOMDocument::loadHTML()`, puis restaurés octet pour octet après sérialisation. Cela préserve notamment le contenu de scripts/JSON-LD, la casse `viewBox` et les gabarits, mais signifie que les segments à l'intérieur d'un `template` et les titres de SVG ne sont pas traduits sur ce fallback.
+- Le parseur HTML4 peut encore normaliser du HTML5 mal formé ou des composants web hors de cette liste. Une recette navigateur sur les trois sites de test demeure nécessaire avant livraison.
 
 ### Transparence et désinstallation
 
