@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Output buffering of the final HTML, segment extraction, translation injection
- * as text nodes, internal link rewriting (CLAUDE.md section 4). TODO(jalon 2).
+ * as text nodes, internal link rewriting (CLAUDE.md section 4).
  */
 final class RenderModule implements ModuleInterface {
 

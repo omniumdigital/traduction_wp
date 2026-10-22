@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Registers providers in the ProviderRegistry (CLAUDE.md section 5).
- * Milestone 2: Claude. TODO(jalon 3): OpenAI, Mistral, Gemini, DeepSeek.
+ * Milestone 2: Claude. TODO(jalon 3): OpenAI, Mistral, Gemini (DeepSeek out of scope).
  */
 final class ProvidersModule implements ModuleInterface {
 
@@ -29,6 +29,7 @@ final class ProvidersModule implements ModuleInterface {
 	public function register( Container $container ): void {
 		$container->set( PromptBuilder::class, static fn() => new PromptBuilder() );
 		$container->set( ResponseValidator::class, static fn() => new ResponseValidator() );
+		$container->set( Pricing::class, static fn() => new Pricing() );
 
 		$container->set(
 			ClaudeProvider::class,

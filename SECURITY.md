@@ -2,7 +2,7 @@
 
 ## Signaler une vulnérabilité
 
-Ne publiez pas de ticket public. Écrivez à **securite@omnium-digital.fr** avec :
+Ne publiez pas de ticket public. Écrivez à **hello@omnium-digital.fr** avec :
 
 - la version concernée d'Omnium Translate ;
 - la description et les étapes de reproduction ;

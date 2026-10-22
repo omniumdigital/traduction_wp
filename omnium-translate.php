@@ -12,6 +12,8 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       omnium-translate
  * Domain Path:       /languages
+ * WC requires at least: 9.0
+ * WC tested up to:     11.2
  *
  * @package Omnium\Translate
  */

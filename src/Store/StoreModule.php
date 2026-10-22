@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Repositories for segments, translations, pages, slugs and log (CLAUDE.md section 4).
- * TODO(jalon 2): bind SegmentRepositoryInterface and TranslationRepositoryInterface implementations.
+ * TODO(jalon 4): slugs repository.
  */
 final class StoreModule implements ModuleInterface {
 

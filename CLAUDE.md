@@ -43,7 +43,7 @@ Quand ce fichier `CLAUDE.md` est mis à jour, refais cette vérification : les a
 | Licence | GPL-2.0-or-later |
 | WordPress min. | 6.9 (testé jusqu’à 7.1) |
 | PHP min. | 8.1 |
-| WooCommerce | 8.x (optionnel) |
+| WooCommerce | 9.0 à la dernière version (testé jusqu’à 11.2), optionnel |
 
 Hors périmètre v1 : traduction des médias, multisite, gestion de licences, sous-domaines par langue.
 
@@ -78,7 +78,7 @@ Plugins SEO de test : Yoast SEO et Rank Math.
 1. Requête `/en/ma-page/` → le routeur retire le préfixe, mémorise la langue, WordPress résout `/ma-page/`.
 2. Rendu normal (Elementor, Oxygen, Woo…) capturé par output buffering.
 3. Parseur (`WP_HTML_Tag_Processor` / DOMDocument) : nœuds texte + attributs `alt`, `title`, `placeholder`, `aria-label` + balises meta.
-4. Normalisation puis hash SHA-256 (texte source + langue cible).
+4. Normalisation puis hash SHA-256 (langue source + texte normalisé, voir `Store\SegmentKey`) ; une traduction unique par (segment, langue cible).
 5. Lecture des traductions existantes en **une seule requête**. Segments manquants → mis en file ; le texte source s'affiche en attendant.
 6. Réécriture des liens internes vers la langue courante, envoi de la page.
 
@@ -94,7 +94,7 @@ omnium-translate/
 │   ├── Router/      # préfixes d'URL, détection langue
 │   ├── Render/      # output buffer, parseur, réécriture liens
 │   ├── Store/       # repositories segments / traductions
-│   ├── Providers/   # ProviderInterface + Claude, OpenAI, Mistral, Gemini, DeepSeek
+│   ├── Providers/   # ProviderInterface + Claude, OpenAI, Mistral, Gemini, Pricing
 │   ├── Queue/       # jobs Action Scheduler, retry, rate limit
 │   ├── Glossary/
 │   ├── Seo/         # hreflang, sitemaps, Yoast / Rank Math
@@ -131,9 +131,8 @@ Migrations versionnées via l'option `omtr_db_version`. Toute requête via `$wpd
 | OpenAI | https://platform.openai.com/api-keys | Non |
 | Mistral | https://console.mistral.ai/api-keys | Oui, débit limité |
 | Google Gemini | https://aistudio.google.com/apikey | Oui, débit limité |
-| DeepSeek | https://platform.deepseek.com/api_keys | Non |
 
-Liens et conditions à revérifier avant chaque release. Avertissement affiché pour les paliers gratuits (réutilisation possible des données par le fournisseur).
+DeepSeek est hors périmètre. Liens et conditions à revérifier avant chaque release. Avertissement affiché pour les paliers gratuits (réutilisation possible des données par le fournisseur).
 
 **`ProviderInterface`**
 - `translate_batch(array $segments, string $source, string $target, Glossary $g): array`
@@ -153,7 +152,7 @@ Appels via `wp_remote_post()`, timeout 60 s, SSL vérifié, **endpoints codés e
 - Lots de 20 à 50 segments.
 - Erreur 429/5xx : backoff 30 s, 2 min, 10 min, 1 h ; 5 essais max.
 - Reprise après coupure, pause/reprise manuelles.
-- Estimation avant lancement (segments, mots, coût indicatif).
+- Estimation avant lancement (segments, mots, coût indicatif) à partir de la table de prix `Providers\Pricing` : prix par million de tokens en entrée et en sortie pour chaque modèle, avec source officielle et date de vérification, revérifiés avant chaque release.
 - Plafond mensuel optionnel en mots.
 - Verrou : une seule traduction complète à la fois.
 - **Jamais d'appel IA pendant la requête d'un visiteur.**
@@ -200,7 +199,7 @@ Style moderne et minimaliste inspiré de shadcn/ui.
 | Taille drapeau | `--omtr-flag-size` | `18px` |
 
 - Aperçu en direct dans les réglages, alerte si contraste < 4,5:1, mode sombre auto optionnel (`prefers-color-scheme`).
-- **Drapeaux** : SVG flag-icons (MIT) **embarqués**, jamais de CDN. Drapeau choisissable par langue.
+- **Drapeaux** : SVG flag-icons (MIT) **embarqués**, jamais de CDN. Drapeau choisissable par langue ; par défaut `en` = Royaume-Uni (`gb`).
 - **Intégrations** : shortcode `[omtr_switcher variant="dropdown" display="flag-name"]`, bloc Gutenberg, widget Elementor, élément Oxygen, élément de menu, fonction `omtr_switcher()`.
 - JS vanilla ≤ 3 Ko, CSS ≤ 4 Ko, chargés seulement si le sélecteur est présent. Vrais `<a href>` (fonctionne sans JS). `aria-expanded`, `aria-haspopup`, navigation clavier, focus visible.
 
@@ -267,7 +266,7 @@ Les skills ne remplacent pas un regard extérieur : avant la première mise en p
 
 1. **Socle** : repo, CI, wp-env, bootstrap, migrations, crypto, capability, skills installés.
 2. **Moteur** : routeur, output buffering, parseur, tables, fournisseur Claude, file, traduction d'une page.
-3. **Multi-IA et contrôle** : 4 autres fournisseurs, test de clé, estimation, plafonds, déclencheurs, glossaire, éditeur.
+3. **Multi-IA et contrôle** : 3 autres fournisseurs (OpenAI, Mistral, Gemini), test de clé, estimation, plafonds, déclencheurs, glossaire, éditeur.
 4. **SEO et WooCommerce** : slugs, hreflang, canonical, sitemaps, JSON-LD, fragments, emails.
 5. **Interface et livraison** : sélecteur, assistant, tableau de bord, export, audits validés, v1.0.0.
 

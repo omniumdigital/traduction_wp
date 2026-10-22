@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Language URL prefixes (/en/...), language detection, internal link targets
- * (CLAUDE.md sections 4 and 7). TODO(jalon 2).
+ * (CLAUDE.md sections 4 and 7).
  */
 final class RouterModule implements ModuleInterface {
 
