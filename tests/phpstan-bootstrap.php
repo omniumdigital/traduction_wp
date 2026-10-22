@@ -74,6 +74,18 @@ final class WP_CLI {
 	}
 
 	/**
+	 * Prompt for a value.
+	 *
+	 * @param string              $question Question.
+	 * @param array<string,mixed> $args     Prompt arguments.
+	 * @return string
+	 */
+	public static function prompt( $question, $args = array() ) {
+		unset( $question, $args );
+		return '';
+	}
+
+	/**
 	 * Render items in a table or list.
 	 *
 	 * @param string              $format Format.

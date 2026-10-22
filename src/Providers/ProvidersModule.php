@@ -49,6 +49,14 @@ final class ProvidersModule implements ModuleInterface {
 				return $registry;
 			}
 		);
+
+		$container->set(
+			ApiKeyCli::class,
+			static fn( Container $c ): ApiKeyCli => new ApiKeyCli(
+				$c->get( ApiKeyStore::class ),
+				$c->get( ProviderRegistry::class )
+			)
+		);
 	}
 
 	/**
@@ -57,6 +65,8 @@ final class ProvidersModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function boot( Container $container ): void {
-		unset( $container );
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$container->get( ApiKeyCli::class )->register();
+		}
 	}
 }
