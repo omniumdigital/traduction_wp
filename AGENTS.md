@@ -17,6 +17,7 @@ La charte du projet est [`CLAUDE.md`](CLAUDE.md) : lis-la entièrement avant tou
   - `Security\ApiKeyStore` : seule porte d'accès à la clé API déchiffrée
 - Schéma de base : `Core\Migrations` (incrémenter `DB_VERSION` pour toute modification). Noms de tables : `Core\Tables`. Options : `Core\Options`.
 - Toute nouvelle option ou transient commence par `omtr_` ; toute méta par `_omtr_`.
+- Chaînes d'interface : source en anglais dans `__()` / `esc_html__()` (text domain `omnium-translate`), traduction française livrée dans `languages/omnium-translate-fr_FR.po`. Jamais de chaîne source en français.
 - Style : WordPress Coding Standards (méthodes et variables en snake_case), une classe par fichier PSR-4, `defined( 'ABSPATH' ) || exit;` en tête.
 
 ## Vérifications avant de terminer

@@ -289,7 +289,7 @@ Chaque jalon est testé sur les trois sites de test avant de passer au suivant.
 
 - Code et commentaires techniques en anglais ; interface, docs et commits en français.
 - PSR-4 sous `src/`, une classe par fichier, injection de dépendances via le container.
-- Toute chaîne d'interface traduisible (`__()`, text domain `omnium-translate`).
+- Toute chaîne d'interface traduisible (`__()`, text domain `omnium-translate`) : chaînes source en anglais, traduction française dans `languages/`.
 - Pas de nouvelle dépendance Composer ou npm sans justification dans la PR.
 - Toute fonctionnalité livrée avec ses tests.
 

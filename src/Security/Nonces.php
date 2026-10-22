@@ -40,7 +40,7 @@ final class Nonces {
 	 */
 	public static function check_admin( string $action ): void {
 		if ( ! Capabilities::current_user_can_manage() ) {
-			wp_die( esc_html__( 'Action non autorisée.', 'omnium-translate' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You are not allowed to perform this action.', 'omnium-translate' ), '', array( 'response' => 403 ) );
 		}
 		check_admin_referer( self::action( $action ), '_omtr_nonce' );
 	}

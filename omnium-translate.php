@@ -30,7 +30,7 @@ if ( version_compare( PHP_VERSION, OMTR_MIN_PHP, '<' ) || ! extension_loaded( 's
 	add_action(
 		'admin_notices',
 		static function (): void {
-			echo '<div class="notice notice-error"><p>' . esc_html__( 'Omnium Translate requiert PHP 8.1+, l\'extension sodium et une installation complète (dossier vendor).', 'omnium-translate' ) . '</p></div>';
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'Omnium Translate requires PHP 8.1+, the sodium extension and a complete installation (vendor folder).', 'omnium-translate' ) . '</p></div>';
 		}
 	);
 	return;
