@@ -11,13 +11,14 @@ use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Providers\Claude\ClaudeProvider;
+use Omnium\Translate\Providers\OpenAI\OpenAIProvider;
 use Omnium\Translate\Security\ApiKeyStore;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Registers providers in the ProviderRegistry (CLAUDE.md section 5).
- * Milestone 2: Claude. TODO(jalon 3): OpenAI, Mistral, Gemini (DeepSeek out of scope).
+ * Milestone 2: Claude. TODO(jalon 3): Mistral, Gemini (DeepSeek out of scope).
  */
 final class ProvidersModule implements ModuleInterface {
 
@@ -42,10 +43,21 @@ final class ProvidersModule implements ModuleInterface {
 		);
 
 		$container->set(
+			OpenAIProvider::class,
+			static fn( Container $c ): OpenAIProvider => new OpenAIProvider(
+				$c->get( ApiKeyStore::class ),
+				$c->get( Settings::class ),
+				$c->get( PromptBuilder::class ),
+				$c->get( ResponseValidator::class )
+			)
+		);
+
+		$container->set(
 			ProviderRegistry::class,
 			static function ( Container $c ): ProviderRegistry {
 				$registry = new ProviderRegistry();
 				$registry->add( $c->get( ClaudeProvider::class ) );
+				$registry->add( $c->get( OpenAIProvider::class ) );
 				return $registry;
 			}
 		);
