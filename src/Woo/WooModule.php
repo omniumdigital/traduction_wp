@@ -34,6 +34,15 @@ final class WooModule implements ModuleInterface {
 		}
 		$container->set( OrderLanguage::class, static fn( Container $c ) => new OrderLanguage( $c->get( CurrentLanguage::class ) ) );
 		$container->set(
+			FragmentTranslator::class,
+			static fn( Container $c ) => new FragmentTranslator(
+				$c->get( CurrentLanguage::class ),
+				$c->get( \Omnium\Translate\Core\Settings::class ),
+				$c->get( Translator::class )
+			)
+		);
+		$container->set( CatalogTranslator::class, static fn( Container $c ) => new CatalogTranslator( $c->get( Translator::class ) ) );
+		$container->set(
 			EmailTemplateTranslator::class,
 			static fn( Container $c ) => new EmailTemplateTranslator(
 				$c->get( CurrentLanguage::class ),
@@ -56,6 +65,8 @@ final class WooModule implements ModuleInterface {
 			return;
 		}
 		$container->get( OrderLanguage::class )->register_hooks();
+		$container->get( FragmentTranslator::class )->register_hooks();
+		$container->get( CatalogTranslator::class )->register_hooks();
 		$container->get( EmailTemplateTranslator::class )->register_hooks();
 	}
 }
