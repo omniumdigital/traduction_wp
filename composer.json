@@ -1,0 +1,44 @@
+{
+    "name": "omniumdigital/omnium-translate",
+    "description": "Traduction automatique par IA pour WordPress, sans abonnement, avec la clé API du client.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "Omnium\\Translate\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Omnium\\Translate\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.1.0"
+        },
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.1",
+        "ext-sodium": "*",
+        "woocommerce/action-scheduler": "^4.2",
+        "yahnis-elsts/plugin-update-checker": "^5.7"
+    },
+    "require-dev": {
+        "brain/monkey": "^2.7",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.3",
+        "phpunit/phpunit": "^10.5",
+        "szepeviktor/phpstan-wordpress": "^2.0",
+        "wp-coding-standards/wpcs": "^3.4"
+    }
+}

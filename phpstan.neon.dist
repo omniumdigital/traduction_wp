@@ -1,0 +1,15 @@
+parameters:
+    level: 6
+    paths:
+        - omnium-translate.php
+        - uninstall.php
+        - src
+    scanFiles:
+        - vendor/woocommerce/action-scheduler/functions.php
+        - tests/stubs/dom-html84.stub
+        - tests/stubs/wp-cli-utils.stub
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+    dynamicConstantNames:
+        - OMTR_ENCRYPTION_KEY
+        - OMTR_MIN_PHP

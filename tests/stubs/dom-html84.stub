@@ -1,0 +1,48 @@
+<?php
+
+namespace Dom;
+
+class Node {
+	public int $nodeType;
+	public ?string $nodeValue;
+	public NodeList $childNodes;
+	public ?Node $parentNode;
+	public ?Document $ownerDocument;
+
+	public function insertBefore( Node $node, ?Node $child = null ): Node {}
+	public function removeChild( Node $child ): Node {}
+}
+
+class Element extends Node {
+	public string $tagName;
+
+	public function hasAttribute( string $qualified_name ): bool {}
+	public function getAttribute( string $qualified_name ): ?string {}
+	public function setAttribute( string $qualified_name, string $value ): void {}
+}
+
+class HTMLElement extends Element {}
+
+class Document extends Node {
+	public ?HTMLElement $documentElement;
+	public ?HTMLElement $body;
+
+	public function getElementsByTagName( string $qualified_name ): NodeList {}
+	public function getElementById( string $element_id ): ?Element {}
+	public function importNode( Node $node, bool $deep = false ): Node {}
+}
+
+final class HTMLDocument extends Document {
+	public static function createFromString( string $html, int $options = 0, ?string $override_encoding = null ): HTMLDocument {}
+	public function saveHtml( ?Node $node = null ): string {}
+}
+
+/** @implements \IteratorAggregate<int, Node> */
+class NodeList implements \IteratorAggregate {
+	public int $length;
+
+	public function item( int $index ): ?Node {}
+
+	/** @return \Traversable<int, Node> */
+	public function getIterator(): \Traversable {}
+}
