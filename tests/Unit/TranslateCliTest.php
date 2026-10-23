@@ -89,7 +89,7 @@ final class TranslateCliTest extends TestCase {
 		$content         = new PublicContent();
 		$translations    = new FakeTranslationRepository();
 		$estimator       = new Estimator( $settings, $content, new FakeSegmentExtractor(), $translations, $word_cap, $registry, new Pricing() );
-		$crawler         = new Crawler( $content, new PageRepository( new \wpdb() ), $queue, new SpyLogger() );
+		$crawler         = new Crawler( $content, new PageRepository( new \wpdb() ), $queue, new FakeSegmentExtractor(), $settings, new SpyLogger() );
 		$this->command   = new TranslateCli( $queue, $settings, $lock, $word_cap, $hourly, $estimator, $content, new QueueState(), $crawler );
 	}
 
