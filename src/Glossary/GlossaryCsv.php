@@ -27,11 +27,12 @@ final class GlossaryCsv {
 	/**
 	 * Import a local CSV file without copying it to persistent storage.
 	 *
-	 * @param string $path Local CSV path.
+	 * @param string $path        Local CSV path.
+	 * @param string $client_name Original upload name, when available.
 	 * @return int Number of imported rules.
 	 * @throws \InvalidArgumentException For an unsafe or malformed file.
 	 */
-	public function import( string $path ): int {
+	public function import( string $path, string $client_name = '' ): int {
 		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
 			throw new \InvalidArgumentException( 'CSV file is not readable.' );
 		}
@@ -39,7 +40,8 @@ final class GlossaryCsv {
 		if ( false === $size || $size > self::MAX_BYTES ) {
 			throw new \InvalidArgumentException( 'CSV file exceeds 1 MB.' );
 		}
-		if ( 'csv' !== strtolower( (string) pathinfo( $path, PATHINFO_EXTENSION ) ) ) {
+		$extension_path = '' !== $client_name ? $client_name : $path;
+		if ( 'csv' !== strtolower( (string) pathinfo( $extension_path, PATHINFO_EXTENSION ) ) ) {
 			throw new \InvalidArgumentException( 'File must use the CSV extension.' );
 		}
 
