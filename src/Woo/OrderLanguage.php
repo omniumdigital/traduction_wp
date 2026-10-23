@@ -19,6 +19,11 @@ final class OrderLanguage {
 	/** Order meta key. */
 	public const META_KEY = '_omtr_order_language';
 
+	/**
+	 * Constructor.
+	 *
+	 * @param CurrentLanguage $current_language Current request language.
+	 */
 	public function __construct( private CurrentLanguage $current_language ) {}
 
 	/** Register both classic checkout and Store API checkout hooks. */

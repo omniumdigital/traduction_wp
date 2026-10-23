@@ -16,6 +16,11 @@ defined( 'ABSPATH' ) || exit;
  */
 final class CatalogTranslator {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param Translator $translator Stored-translation renderer.
+	 */
 	public function __construct( private Translator $translator ) {}
 
 	/** Register WooCommerce variation rendering filters. */
@@ -29,11 +34,11 @@ final class CatalogTranslator {
 	 *
 	 * @param mixed $variation Variation data array.
 	 * @param mixed $product   Variable product (unused).
-	 * @param mixed $object    Variation product (unused).
+	 * @param mixed $variation_product Variation product (unused).
 	 * @return mixed
 	 */
-	public function translate_variation( mixed $variation, mixed $product = null, mixed $object = null ): mixed {
-		unset( $product, $object );
+	public function translate_variation( mixed $variation, mixed $product = null, mixed $variation_product = null ): mixed {
+		unset( $product, $variation_product );
 		if ( ! is_array( $variation ) ) {
 			return $variation;
 		}
@@ -45,7 +50,12 @@ final class CatalogTranslator {
 		return $variation;
 	}
 
-	/** Translate visible selector labels while preserving option values/slugs. */
+	/**
+	 * Translate visible selector labels while preserving option values/slugs.
+	 *
+	 * @param mixed $args Variation selector arguments.
+	 * @return mixed
+	 */
 	public function translate_selector_args( mixed $args ): mixed {
 		if ( ! is_array( $args ) ) {
 			return $args;
@@ -53,7 +63,7 @@ final class CatalogTranslator {
 		foreach ( array( 'show_option_none', 'aria-label' ) as $key ) {
 			if ( isset( $args[ $key ] ) && is_string( $args[ $key ] ) ) {
 				$args[ $key ] = $this->translator->translate( '<span>' . $args[ $key ] . '</span>' );
-				$args[ $key ] = trim( strip_tags( $args[ $key ] ) );
+				$args[ $key ] = trim( wp_strip_all_tags( $args[ $key ] ) );
 			}
 		}
 		return $args;

@@ -46,5 +46,6 @@ final class WooOrderLanguageTest extends TestCase {
 		Actions\expectAdded( 'woocommerce_store_api_checkout_order_processed' )->once();
 
 		$order_language->register_hooks();
+		$this->addToAssertionCount( 1 );
 	}
 }

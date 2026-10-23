@@ -12,6 +12,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Queue\TranslationQueueInterface;
 use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Render\Translator;
+use Omnium\Translate\Router\UrlTranslator;
 use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Woo\CatalogTranslator;
@@ -41,8 +42,7 @@ final class WooSecurityTest extends TestCase {
 
 	public function test_unconfigured_fragment_language_is_refused(): void {
 		$_GET['lang'] = 'de';
-		$translator = $this->createMock( Translator::class );
-		$translator->expects( $this->never() )->method( 'translate' );
+		$translator = $this->real_translator();
 		$fragments = array( 'div.widget_shopping_cart_content' => '<div>Cart</div>' );
 
 		$result = ( new FragmentTranslator( new CurrentLanguage( 'fr' ), new Settings(), $translator ) )->translate_fragments( $fragments );
@@ -51,8 +51,7 @@ final class WooSecurityTest extends TestCase {
 	}
 
 	public function test_catalog_translation_does_not_touch_commercial_variation_data(): void {
-		$translator = $this->createMock( Translator::class );
-		$translator->method( 'translate' )->willReturnArgument( 0 );
+		$translator = $this->real_translator();
 		$variation = array(
 			'availability_html'     => '<p>In stock</p>',
 			'variation_description' => 'Blue shirt',
@@ -69,8 +68,7 @@ final class WooSecurityTest extends TestCase {
 	}
 
 	public function test_admin_email_object_is_not_translated(): void {
-		$translator = $this->createMock( Translator::class );
-		$translator->expects( $this->never() )->method( 'translate' );
+		$translator = $this->real_translator();
 		$service = new EmailTemplateTranslator(
 			new CurrentLanguage( 'fr' ),
 			new Settings(),
@@ -96,5 +94,15 @@ final class WooSecurityTest extends TestCase {
 		( new OrderLanguage( $current ) )->record( $order );
 
 		$this->assertSame( array( OrderLanguage::META_KEY => 'en' ), $order->meta );
+	}
+
+	/** Build a real renderer; its source-language fast path avoids external calls. */
+	private function real_translator(): Translator {
+		return new Translator(
+			new CurrentLanguage( 'fr' ),
+			$this->createMock( SegmentExtractorInterface::class ),
+			$this->createMock( \Omnium\Translate\Store\TranslationRepositoryInterface::class ),
+			new UrlTranslator( new Settings() )
+		);
 	}
 }

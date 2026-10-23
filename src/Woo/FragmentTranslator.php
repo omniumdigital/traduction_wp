@@ -18,6 +18,13 @@ defined( 'ABSPATH' ) || exit;
  */
 final class FragmentTranslator {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param CurrentLanguage $current_language Current request language.
+	 * @param Settings        $settings         Plugin settings.
+	 * @param Translator      $translator       Stored-translation renderer.
+	 */
 	public function __construct(
 		private CurrentLanguage $current_language,
 		private Settings $settings,
