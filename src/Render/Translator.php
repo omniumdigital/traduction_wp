@@ -261,4 +261,25 @@ final class Translator {
 			}
 		}
 	}
+
+	/**
+	 * Translate HTML without returning the parser's document shell.
+	 *
+	 * @param string $html HTML fragment or plain text.
+	 */
+	public function translate_fragment( string $html ): string {
+		if ( ! $this->current_language->is_translated() || '' === trim( $html ) ) {
+			return $html;
+		}
+		$token      = bin2hex( random_bytes( 12 ) );
+		$start      = '<!--omtr-start-' . $token . '-->';
+		$end        = '<!--omtr-end-' . $token . '-->';
+		$translated = $this->translate( '<div data-omtr-fragment="1">' . $start . $html . $end . '</div>' );
+		$from       = strpos( $translated, $start );
+		$to         = strpos( $translated, $end );
+		if ( false === $from || false === $to || $to < $from ) {
+			return $html;
+		}
+		return substr( $translated, $from + strlen( $start ), $to - $from - strlen( $start ) );
+	}
 }

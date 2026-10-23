@@ -54,7 +54,7 @@ final class FragmentTranslator {
 		$this->current_language->set( $lang );
 		foreach ( $fragments as $selector => $html ) {
 			if ( is_string( $selector ) && is_string( $html ) ) {
-				$fragments[ $selector ] = $this->translator->translate( $html );
+				$fragments[ $selector ] = $this->translator->translate_fragment( $html );
 			}
 		}
 		$this->current_language->set( $previous );

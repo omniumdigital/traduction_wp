@@ -44,7 +44,7 @@ final class CatalogTranslator {
 		}
 		foreach ( array( 'availability_html', 'variation_description' ) as $key ) {
 			if ( isset( $variation[ $key ] ) && is_string( $variation[ $key ] ) ) {
-				$variation[ $key ] = $this->translator->translate( $variation[ $key ] );
+				$variation[ $key ] = $this->translator->translate_fragment( $variation[ $key ] );
 			}
 		}
 		return $variation;
@@ -62,7 +62,7 @@ final class CatalogTranslator {
 		}
 		foreach ( array( 'show_option_none', 'aria-label' ) as $key ) {
 			if ( isset( $args[ $key ] ) && is_string( $args[ $key ] ) ) {
-				$args[ $key ] = $this->translator->translate( '<span>' . $args[ $key ] . '</span>' );
+				$args[ $key ] = $this->translator->translate_fragment( $args[ $key ] );
 				$args[ $key ] = trim( wp_strip_all_tags( $args[ $key ] ) );
 			}
 		}

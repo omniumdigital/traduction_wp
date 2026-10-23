@@ -139,20 +139,24 @@ final class EmailTemplateTranslator {
 		}
 		$template = $this->template( $email, $setting, $fallback_getter );
 		if ( '' === $template ) {
-			return '';
+			return $formatted;
 		}
 		$segments = $this->extractor->extract( '<div>' . $template . '</div>', $this->current_language->source() );
 		if ( array() === $segments ) {
-			return $template;
+			return $formatted;
 		}
-		$ids = $this->segments->upsert_many( $segments, $this->current_language->source() );
-		$this->queue->enqueue_segments( array_values( $ids ), $order_lang );
 		$previous = $this->current_language->get();
 		$this->current_language->set( $order_lang );
-		$translated = $this->translator->translate( '<div>' . $template . '</div>' );
+		$translated = $this->translator->translate_fragment( $template );
 		$this->current_language->set( $previous );
-		$document = str_replace( array( '<div>', '</div>' ), '', $translated );
-		return $document;
+		if ( $this->translator->missing_count() > 0 ) {
+			$ids = $this->segments->upsert_many( $segments, $this->current_language->source() );
+			$this->queue->enqueue_segments( array_values( $ids ), $order_lang );
+		}
+		if ( 'subject' === $setting || 'heading' === $setting ) {
+			$translated = trim( wp_strip_all_tags( $translated ) );
+		}
+		return method_exists( $email, 'format_string' ) ? $email->format_string( $translated ) : $formatted;
 	}
 
 	/**
@@ -163,7 +167,10 @@ final class EmailTemplateTranslator {
 	 * @param string|null $fallback_getter Default getter.
 	 */
 	private function template( object $email, string $setting, ?string $fallback_getter ): string {
-		if ( null !== $fallback_getter && method_exists( $email, $fallback_getter ) ) {
+		if ( method_exists( $email, 'get_option' ) ) {
+			$fallback = null !== $fallback_getter && method_exists( $email, $fallback_getter ) ? $email->{$fallback_getter}() : '';
+			$value    = $email->get_option( $setting, $fallback );
+		} elseif ( null !== $fallback_getter && method_exists( $email, $fallback_getter ) ) {
 			$value = $email->{$fallback_getter}();
 		} else {
 			$id      = isset( $email->id ) ? sanitize_key( (string) $email->id ) : '';
