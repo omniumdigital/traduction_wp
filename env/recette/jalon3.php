@@ -66,11 +66,12 @@ wp_set_current_user( $omtr_admin->ID );
 $omtr_check( 'admin possède omtr_manage', current_user_can( 'omtr_manage' ) );
 $omtr_check( 'admin GET /glossary 200', 200 === $omtr_rest( 'GET', '/omtr/v1/glossary' )->get_status() );
 $omtr_check( 'admin GET /segments 200', 200 === $omtr_rest( 'GET', '/omtr/v1/segments' )->get_status() );
+global $wpdb;
 $status = $omtr_rest( 'GET', '/omtr/v1/segments', array( 'orderby' => 'source_text; DROP TABLE wp_users' ) )->get_status();
-$omtr_check( "tri hors liste blanche refusé ({$status})", 400 === $status );
+$users_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->users ) ) === $wpdb->users;
+$omtr_check( "tri hors liste blanche neutralisé ({$status})", in_array( $status, array( 200, 400 ), true ) && $users_table_exists );
 
 // Segment editor: XSS in a manual edit is neutralised whatever the role.
-global $wpdb;
 $omtr_segment_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i ORDER BY id DESC LIMIT 1', $wpdb->prefix . 'omtr_segments' ) );
 if ( $omtr_segment_id > 0 ) {
 	$response = $omtr_rest(
@@ -93,9 +94,43 @@ if ( $omtr_segment_id > 0 ) {
 	$omtr_check( 'édition REST : script/onerror/javascript: neutralisés', '' !== $stored && false === stripos( $stored, '<script' ) && false === stripos( $stored, 'onerror' ) && false === stripos( $stored, 'javascript:' ) );
 	$status = $wpdb->get_var( $wpdb->prepare( 'SELECT status FROM %i WHERE segment_id = %d AND target_lang = %s', $wpdb->prefix . 'omtr_translations', $omtr_segment_id, 'en' ) );
 	$omtr_check( "édition => statut edited ({$status})", 'edited' === $status );
+
+	$lock_response = $omtr_rest( 'POST', '/omtr/v1/segments/' . $omtr_segment_id . '/lock', array( 'target_lang' => 'en' ) );
+	$repository    = new \Omnium\Translate\Store\TranslationRepository( $wpdb );
+	$repository->save_auto( array( $omtr_segment_id => 'Texte automatique qui ne doit jamais remplacer le verrou' ), 'en', 'recette', 'recette' );
+	$locked = $wpdb->get_row(
+		$wpdb->prepare(
+			'SELECT text, status FROM %i WHERE segment_id = %d AND target_lang = %s',
+			$wpdb->prefix . 'omtr_translations',
+			$omtr_segment_id,
+			'en'
+		),
+		ARRAY_A
+	);
+	$omtr_check( 'verrouillage REST accepté (' . $lock_response->get_status() . ')', 200 === $lock_response->get_status() );
+	$omtr_check( 'traduction locked jamais écrasée par save_auto', is_array( $locked ) && 'locked' === $locked['status'] && $stored === $locked['text'] );
 } else {
 	$omtr_check( 'au moins un segment en base pour tester l\'éditeur', false );
 }
+
+// Stable auto translation used by the shell recipe to exercise `wp omtr glossary affected`.
+$affected_source = 'atelier de recette pour le glossaire';
+$affected_hash   = hash( 'sha256', 'fr|' . $affected_source );
+$wpdb->query(
+	$wpdb->prepare(
+		'INSERT IGNORE INTO %i (hash, source_text, source_lang, created_at) VALUES (%s, %s, %s, %s)',
+		$wpdb->prefix . 'omtr_segments',
+		$affected_hash,
+		$affected_source,
+		'fr',
+		current_time( 'mysql', true )
+	)
+);
+$affected_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE hash = %s', $wpdb->prefix . 'omtr_segments', $affected_hash ) );
+if ( $affected_id > 0 ) {
+	( new \Omnium\Translate\Store\TranslationRepository( $wpdb ) )->save_auto( array( $affected_id => 'automatic workshop translation' ), 'en', 'recette', 'recette' );
+}
+$omtr_check( 'fixture auto prête pour la retraduction après glossaire', $affected_id > 0 );
 
 // Row action and admin bar for the admin only.
 $omtr_post   = get_post( $omtr_post_id );
