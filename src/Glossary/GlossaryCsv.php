@@ -34,27 +34,27 @@ final class GlossaryCsv {
 	 */
 	public function import( string $path, string $client_name = '' ): int {
 		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
-			throw new \InvalidArgumentException( 'CSV file is not readable.' );
+			throw new \InvalidArgumentException( esc_html__( 'CSV file is not readable.', 'omnium-translate' ) );
 		}
 		$size = filesize( $path );
 		if ( false === $size || $size > self::MAX_BYTES ) {
-			throw new \InvalidArgumentException( 'CSV file exceeds 1 MB.' );
+			throw new \InvalidArgumentException( esc_html__( 'CSV file exceeds 1 MB.', 'omnium-translate' ) );
 		}
 		$extension_path = '' !== $client_name ? $client_name : $path;
 		if ( 'csv' !== strtolower( (string) pathinfo( $extension_path, PATHINFO_EXTENSION ) ) ) {
-			throw new \InvalidArgumentException( 'File must use the CSV extension.' );
+			throw new \InvalidArgumentException( esc_html__( 'File must use the CSV extension.', 'omnium-translate' ) );
 		}
 
 		$finfo = new \finfo( FILEINFO_MIME_TYPE );
 		$mime  = $finfo->file( $path );
 		if ( ! is_string( $mime ) || ! in_array( $mime, self::MIMES, true ) ) {
-			throw new \InvalidArgumentException( 'Invalid CSV MIME type.' );
+			throw new \InvalidArgumentException( esc_html__( 'Invalid CSV MIME type.', 'omnium-translate' ) );
 		}
 
 		// Local path validated above; remote retrieval is deliberately forbidden.
 		$content = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Safe local CSV read only.
 		if ( false === $content ) {
-			throw new \InvalidArgumentException( 'CSV file could not be read.' );
+			throw new \InvalidArgumentException( esc_html__( 'CSV file could not be read.', 'omnium-translate' ) );
 		}
 		return $this->import_string( $content );
 	}
@@ -69,31 +69,32 @@ final class GlossaryCsv {
 	 */
 	public function import_string( string $content ): int {
 		if ( strlen( $content ) > self::MAX_BYTES ) {
-			throw new \InvalidArgumentException( 'CSV file exceeds 1 MB.' );
+			throw new \InvalidArgumentException( esc_html__( 'CSV file exceeds 1 MB.', 'omnium-translate' ) );
 		}
 		// php://memory guarantees that uploaded contents are never copied to disk.
 		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		$stream = fopen( 'php://memory', 'r+' );
 		if ( false === $stream ) {
-			throw new \RuntimeException( 'In-memory CSV stream could not be created.' );
+			throw new \RuntimeException( esc_html__( 'In-memory CSV stream could not be created.', 'omnium-translate' ) );
 		}
 		fwrite( $stream, $content );
 		rewind( $stream );
 		$headers = fgetcsv( $stream, 0, ',', '"', '' );
 		if ( self::HEADERS !== $headers ) {
 			fclose( $stream );
-			throw new \InvalidArgumentException( 'CSV columns must be term,target_lang,translation,rule.' );
+			throw new \InvalidArgumentException( esc_html__( 'CSV columns must be term,target_lang,translation,rule.', 'omnium-translate' ) );
 		}
 
 		$count = 0;
 		$row   = fgetcsv( $stream, 0, ',', '"', '' );
 		while ( false !== $row ) {
 			if ( array( null ) === $row ) {
+				$row = fgetcsv( $stream, 0, ',', '"', '' );
 				continue;
 			}
 			if ( 4 !== count( $row ) ) {
 				fclose( $stream );
-				throw new \InvalidArgumentException( 'Every CSV row must contain four columns.' );
+				throw new \InvalidArgumentException( esc_html__( 'Every CSV row must contain four columns.', 'omnium-translate' ) );
 			}
 			$term        = sanitize_text_field( (string) $row[0] );
 			$target_lang = sanitize_key( (string) $row[1] );
@@ -119,7 +120,7 @@ final class GlossaryCsv {
 		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		$stream = fopen( 'php://memory', 'r+' );
 		if ( false === $stream ) {
-			throw new \RuntimeException( 'In-memory CSV stream could not be created.' );
+			throw new \RuntimeException( esc_html__( 'In-memory CSV stream could not be created.', 'omnium-translate' ) );
 		}
 		fputcsv( $stream, self::HEADERS, ',', '"', '' );
 		foreach ( $this->repository->all() as $row ) {
@@ -154,13 +155,13 @@ final class GlossaryCsv {
 	 */
 	public static function validate_values( string $term, string $target_lang, string $translation, string $rule ): void {
 		if ( '' === $term || 1 !== preg_match( '/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/', $target_lang ) ) {
-			throw new \InvalidArgumentException( 'Term and target language are required.' );
+			throw new \InvalidArgumentException( esc_html__( 'Term and target language are required.', 'omnium-translate' ) );
 		}
 		if ( ! in_array( $rule, array( 'translate', 'keep' ), true ) ) {
-			throw new \InvalidArgumentException( 'Rule must be translate or keep.' );
+			throw new \InvalidArgumentException( esc_html__( 'Rule must be translate or keep.', 'omnium-translate' ) );
 		}
 		if ( 'translate' === $rule && '' === $translation ) {
-			throw new \InvalidArgumentException( 'Translate rules require a translation.' );
+			throw new \InvalidArgumentException( esc_html__( 'Translate rules require a translation.', 'omnium-translate' ) );
 		}
 	}
 

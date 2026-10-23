@@ -19,6 +19,7 @@ final class GlossaryCsvSecurityTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
+		Functions\when( 'esc_html__' )->returnArg();
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $value ): string => trim( strip_tags( $value ) ) );
 		Functions\when( 'sanitize_key' )->alias(
 			static fn( string $value ): string => preg_replace( '/[^a-z0-9_-]/', '', strtolower( $value ) ) ?? ''
