@@ -31,6 +31,7 @@ final class TranslateCli {
 	 * @param Estimator            $estimator Estimator.
 	 * @param PublicContent        $content Public content resolver.
 	 * @param QueueState           $state Queue pause state.
+	 * @param Crawler              $crawler Public content crawler.
 	 */
 	public function __construct(
 		private ActionSchedulerQueue $queue,
@@ -40,7 +41,8 @@ final class TranslateCli {
 		private HourlyQuota $hourly_quota,
 		private Estimator $estimator,
 		private PublicContent $content,
-		private QueueState $state
+		private QueueState $state,
+		private Crawler $crawler
 	) {}
 
 	/** Pause the translation queue. */
@@ -88,8 +90,16 @@ final class TranslateCli {
 			}
 			$targets = array( $target );
 		}
-		$result = $this->estimator->estimate( $targets );
-		$rows   = array();
+		$this->display_estimate( $this->estimator->estimate( $targets ) );
+	}
+
+	/**
+	 * Render an estimate as a CLI table.
+	 *
+	 * @param array<string, int|float|string|null> $result Estimate.
+	 */
+	private function display_estimate( array $result ): void {
+		$rows = array();
 		foreach ( $result as $key => $value ) {
 			if ( 'cost' === $key && null === $value ) {
 				$value = __( 'unknown cost', 'omnium-translate' );
@@ -130,7 +140,23 @@ final class TranslateCli {
 	 */
 	public function translate( array $args, array $assoc_args ): void {
 		$this->guard();
-		unset( $assoc_args );
+		if ( isset( $assoc_args['all'] ) ) {
+			$targets = $this->content->all();
+			if ( array() === $targets ) {
+				\WP_CLI::error( __( 'No published public content was selected.', 'omnium-translate' ) );
+				return;
+			}
+			$this->display_estimate( $this->estimator->estimate( $targets ) );
+			if ( ! isset( $assoc_args['yes'] ) ) {
+				\WP_CLI::confirm( __( 'Queue the translation of all these pages?', 'omnium-translate' ) );
+			}
+			if ( $this->queue->enqueue_urls( $targets ) ) {
+				\WP_CLI::success( __( 'Full-site translation queued.', 'omnium-translate' ) );
+				return;
+			}
+			\WP_CLI::error( $this->queue->last_reason() );
+			return;
+		}
 
 		if ( array() === $args ) {
 			\WP_CLI::error( __( 'Provide a post id or a URL.', 'omnium-translate' ) );
@@ -164,6 +190,23 @@ final class TranslateCli {
 
 		$reason = $this->queue->last_reason();
 		\WP_CLI::error( '' !== $reason ? $reason : __( 'The URL was refused.', 'omnium-translate' ) );
+	}
+
+	/**
+	 * Crawl public content and queue only new or changed pages.
+	 *
+	 * @param list<string>         $args Unused positional arguments.
+	 * @param array<string, mixed> $assoc_args Unused associative arguments.
+	 */
+	public function crawl( array $args, array $assoc_args ): void {
+		$this->guard();
+		unset( $args, $assoc_args );
+		$result = $this->crawler->crawl();
+		if ( '' !== $result['reason'] ) {
+			\WP_CLI::error( $result['reason'] );
+			return;
+		}
+		\WP_CLI\Utils\format_items( 'table', array( $result ), array( 'scanned', 'changed', 'unchanged', 'failed', 'queued' ) );
 	}
 
 	/**

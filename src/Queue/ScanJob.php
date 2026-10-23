@@ -77,7 +77,7 @@ final class ScanJob {
 
 		$html = $this->fetch( $url );
 		if ( null === $html ) {
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			$this->logger->log( 'error', 'queue:scan', sprintf( 'Scan failed: the page could not be fetched (post_id=%d).', $post_id ) );
 			throw new \RuntimeException( 'omtr: scan fetch failed' );
 		}
@@ -87,7 +87,7 @@ final class ScanJob {
 
 		if ( array() === $found ) {
 			$this->logger->log( 'info', 'queue:scan', sprintf( 'Scan finished: no translatable segment (post_id=%d).', $post_id ) );
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 
@@ -100,7 +100,7 @@ final class ScanJob {
 
 		if ( 0 === $total_batches ) {
 			$this->logger->log( 'info', 'queue:scan', sprintf( 'Scan finished: nothing left to translate (post_id=%d).', $post_id ) );
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 

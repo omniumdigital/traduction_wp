@@ -96,19 +96,46 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @return bool False if refused (foreign URL, cap reached, lock held).
 	 */
 	public function enqueue_url( string $url, int $post_id = 0 ): bool {
+		return $this->enqueue_urls(
+			array(
+				array(
+					'url'     => $url,
+					'post_id' => $post_id,
+				),
+			)
+		);
+	}
+
+	/**
+	 * Schedule several public pages as one locked run.
+	 *
+	 * @param list<array{url: string, post_id: int}> $targets Public targets.
+	 */
+	public function enqueue_urls( array $targets ): bool {
 		if ( null !== $this->state && $this->state->is_paused() ) {
 			$this->reason = __( 'The translation queue is paused.', 'omnium-translate' );
 			return false;
 		}
-		$normalized = $this->normalize_url( $url );
-		if ( null === $normalized ) {
-			$this->reason = __( 'The URL is not part of this site or uses a non-public path.', 'omnium-translate' );
-			return false;
+		$accepted = array();
+		foreach ( $targets as $target ) {
+			$normalized = $this->normalize_url( $target['url'] );
+			if ( null === $normalized ) {
+				$this->reason = __( 'The URL is not part of this site or uses a non-public path.', 'omnium-translate' );
+				return false;
+			}
+			$resolved_post_id = $target['post_id'] > 0 ? $target['post_id'] : (int) url_to_postid( $normalized );
+			if ( $resolved_post_id <= 0 || ! $this->is_public_post( $resolved_post_id ) || $this->is_sensitive_post( $resolved_post_id ) ) {
+				$this->reason = __( 'Only published, non-protected content can be translated.', 'omnium-translate' );
+				$this->logger->log( 'warning', 'queue', sprintf( 'Enqueue refused: post is not public (post_id=%d).', $resolved_post_id ) );
+				return false;
+			}
+			$accepted[ $normalized ] = array(
+				'url'     => $normalized,
+				'post_id' => $resolved_post_id,
+			);
 		}
-		$resolved_post_id = $post_id > 0 ? $post_id : (int) url_to_postid( $normalized );
-		if ( $resolved_post_id > 0 && ( ! $this->is_public_post( $resolved_post_id ) || $this->is_sensitive_post( $resolved_post_id ) ) ) {
-			$this->reason = __( 'Only published, non-protected content can be translated.', 'omnium-translate' );
-			$this->logger->log( 'warning', 'queue', sprintf( 'Enqueue refused: post is not public (post_id=%d).', $resolved_post_id ) );
+		if ( array() === $accepted ) {
+			$this->reason = __( 'No published public content was selected.', 'omnium-translate' );
 			return false;
 		}
 
@@ -130,8 +157,10 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 			return false;
 		}
 
-		$this->schedule_scan( $normalized, $post_id, $run_id );
-		$this->logger->log( 'info', 'queue', sprintf( 'Scan scheduled (post_id=%d).', $post_id ) );
+		foreach ( $accepted as $target ) {
+			$this->schedule_scan( $target['url'], $target['post_id'], $run_id );
+		}
+		$this->logger->log( 'info', 'queue', sprintf( 'Scan run scheduled (pages=%d).', count( $accepted ) ) );
 
 		return true;
 	}
@@ -326,6 +355,25 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		);
 	}
 
+	/** Count outstanding scan and batch actions. */
+	public function pending_work_count(): int {
+		$total = 0;
+		foreach ( array( self::ACTION_SCAN, self::ACTION_BATCH ) as $hook ) {
+			$total += count(
+				as_get_scheduled_actions(
+					array(
+						'hook'     => $hook,
+						'group'    => self::GROUP,
+						'status'   => array( 'pending', 'in-progress' ),
+						'per_page' => -1,
+					),
+					'ids'
+				)
+			);
+		}
+		return $total;
+	}
+
 	/**
 	 * Settle a run: release the lock once no batch of the group is outstanding.
 	 *
@@ -336,7 +384,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		if ( '' === $run_id ) {
 			return;
 		}
-		$remaining = $this->pending_batch_count();
+		$remaining = $this->pending_work_count();
 		if ( $remaining > ( $current_batch ? 1 : 0 ) ) {
 			return;
 		}

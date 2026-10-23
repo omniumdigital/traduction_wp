@@ -121,6 +121,14 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_Post' ) ) {
+	/** Minimal post double. */
+	class WP_Post {
+		public int $ID = 0;
+		public string $post_status = 'draft';
+	}
+}
+
 /**
  * Minimal WP_CLI double: static methods record calls instead of printing.
  */
@@ -195,6 +203,11 @@ if ( ! class_exists( 'WP_CLI' ) ) {
 		 */
 		public static function log( $message = '' ): void {
 			self::record( 'log', $message );
+		}
+
+		/** Record a confirmation prompt. */
+		public static function confirm( $message = '' ): void {
+			self::record( 'confirm', $message );
 		}
 
 		/**

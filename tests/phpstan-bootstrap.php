@@ -74,6 +74,16 @@ final class WP_CLI {
 	}
 
 	/**
+	 * Ask for confirmation.
+	 *
+	 * @param string $message Confirmation message.
+	 * @return void
+	 */
+	public static function confirm( $message ) {
+		unset( $message );
+	}
+
+	/**
 	 * Prompt for a value.
 	 *
 	 * @param string              $question Question.

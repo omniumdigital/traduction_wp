@@ -13,6 +13,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Providers\Pricing;
 use Omnium\Translate\Queue\ActionSchedulerQueue;
+use Omnium\Translate\Queue\Crawler;
 use Omnium\Translate\Queue\Estimator;
 use Omnium\Translate\Queue\HourlyQuota;
 use Omnium\Translate\Queue\PublicContent;
@@ -27,6 +28,7 @@ use Omnium\Translate\Tests\Unit\Doubles\FakeSegmentRepository;
 use Omnium\Translate\Tests\Unit\Doubles\FakeTranslationRepository;
 use Omnium\Translate\Tests\Unit\Doubles\OptionStore;
 use Omnium\Translate\Tests\Unit\Doubles\SpyLogger;
+use Omnium\Translate\Store\PageRepository;
 
 final class TranslateCliTest extends TestCase {
 
@@ -55,10 +57,18 @@ final class TranslateCliTest extends TestCase {
 		Functions\when( 'get_post_status' )->justReturn( 'publish' );
 		Functions\when( 'get_post_type' )->justReturn( 'post' );
 		Functions\when( 'get_post_type_object' )->justReturn( (object) array( 'public' => true ) );
+		Functions\when( 'get_post_types' )->justReturn( array( 'post' => 'post' ) );
+		Functions\when( 'get_posts' )->justReturn( array( 42 ) );
 		Functions\when( 'post_password_required' )->justReturn( false );
 		Functions\when( 'url_to_postid' )->justReturn( 0 );
 		Functions\when( 'as_schedule_single_action' )->justReturn( 1 );
 		Functions\when( 'as_get_scheduled_actions' )->justReturn( array() );
+		Functions\when( 'add_filter' )->justReturn( true );
+		Functions\when( 'remove_filter' )->justReturn( true );
+		Functions\when( 'is_wp_error' )->justReturn( false );
+		Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
+		Functions\when( 'wp_remote_retrieve_body' )->justReturn( '<p>Bonjour</p>' );
+		Functions\when( 'wp_safe_remote_get' )->justReturn( array( 'response' => array( 'code' => 200 ), 'body' => '<p>Bonjour</p>' ) );
 		$settings = new Settings();
 		$lock     = new RunLock();
 		$word_cap = new WordCap( $settings );
@@ -79,7 +89,8 @@ final class TranslateCliTest extends TestCase {
 		$content         = new PublicContent();
 		$translations    = new FakeTranslationRepository();
 		$estimator       = new Estimator( $settings, $content, new FakeSegmentExtractor(), $translations, $word_cap, $registry, new Pricing() );
-		$this->command   = new TranslateCli( $queue, $settings, $lock, $word_cap, $hourly, $estimator, $content, new QueueState() );
+		$crawler         = new Crawler( $content, new PageRepository( new \wpdb() ), $queue, new SpyLogger() );
+		$this->command   = new TranslateCli( $queue, $settings, $lock, $word_cap, $hourly, $estimator, $content, new QueueState(), $crawler );
 	}
 
 	public function test_registers_only_the_omtr_command_in_cli_context(): void {
@@ -102,6 +113,16 @@ final class TranslateCliTest extends TestCase {
 
 		$this->assertArrayHasKey( 'error', \WP_CLI::$calls );
 		$this->assertArrayNotHasKey( 'success', \WP_CLI::$calls );
+	}
+
+	public function test_translate_all_displays_estimate_and_asks_for_confirmation(): void {
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/page/' );
+		Functions\when( 'WP_CLI\\Utils\\format_items' )->justReturn( null );
+
+		$this->command->translate( array(), array( 'all' => true ) );
+
+		$this->assertArrayHasKey( 'confirm', \WP_CLI::$calls );
+		$this->assertArrayHasKey( 'success', \WP_CLI::$calls );
 	}
 
 	public function test_status_formats_provider_queue_and_limits(): void {

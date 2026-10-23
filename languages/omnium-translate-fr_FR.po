@@ -95,3 +95,18 @@ msgstr "active"
 
 msgid "The translation queue is unavailable."
 msgstr "La file de traduction est indisponible."
+
+msgid "Queue the translation of all these pages?"
+msgstr "Mettre en file la traduction de toutes ces pages ?"
+
+msgid "Full-site translation queued."
+msgstr "Traduction de tout le site mise en file."
+
+msgid "Translate"
+msgstr "Traduire"
+
+msgid "You are not allowed to translate this content."
+msgstr "Vous n’êtes pas autorisé à traduire ce contenu."
+
+msgid "Only published public content can be translated."
+msgstr "Seul un contenu public publié peut être traduit."

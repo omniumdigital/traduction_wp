@@ -15,6 +15,9 @@ use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Providers\Pricing;
 use Omnium\Translate\Render\SegmentExtractorInterface;
+use Omnium\Translate\Router\CurrentLanguage;
+use Omnium\Translate\Router\RequestGuard;
+use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
 
@@ -99,6 +102,40 @@ final class QueueModule implements ModuleInterface {
 		);
 
 		$container->set(
+			Crawler::class,
+			static fn( Container $c ): Crawler => new Crawler(
+				$c->get( PublicContent::class ),
+				$c->get( PageRepository::class ),
+				$c->get( ActionSchedulerQueue::class ),
+				$c->get( LoggerInterface::class )
+			)
+		);
+		$container->set(
+			AutoTrigger::class,
+			static fn( Container $c ): AutoTrigger => new AutoTrigger(
+				$c->get( Settings::class ),
+				$c->get( PublicContent::class ),
+				$c->get( ActionSchedulerQueue::class )
+			)
+		);
+		$container->set(
+			OnTheFlyTrigger::class,
+			static fn( Container $c ): OnTheFlyTrigger => new OnTheFlyTrigger(
+				$c->get( Settings::class ),
+				$c->get( RequestGuard::class ),
+				$c->get( CurrentLanguage::class ),
+				$c->get( PublicContent::class ),
+				$c->get( SegmentExtractorInterface::class ),
+				$c->get( SegmentRepositoryInterface::class ),
+				$c->get( TranslationRepositoryInterface::class ),
+				$c->get( ActionSchedulerQueue::class ),
+				$c->get( WordCap::class ),
+				$c->get( HourlyQuota::class ),
+				$c->get( QueueState::class )
+			)
+		);
+
+		$container->set(
 			TranslateCli::class,
 			static fn( Container $c ): TranslateCli => new TranslateCli(
 				$c->get( ActionSchedulerQueue::class ),
@@ -108,7 +145,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( HourlyQuota::class ),
 				$c->get( Estimator::class ),
 				$c->get( PublicContent::class ),
-				$c->get( QueueState::class )
+				$c->get( QueueState::class ),
+				$c->get( Crawler::class )
 			)
 		);
 	}
@@ -129,6 +167,10 @@ final class QueueModule implements ModuleInterface {
 			10,
 			3
 		);
+		$auto = $container->get( AutoTrigger::class );
+		add_action( 'save_post', array( $auto, 'on_save' ), 20, 3 );
+		add_action( AutoTrigger::ACTION, array( $auto, 'handle' ) );
+		add_action( 'shutdown', array( $container->get( OnTheFlyTrigger::class ), 'flush' ), 20 );
 
 		add_action(
 			ActionSchedulerQueue::ACTION_BATCH,
