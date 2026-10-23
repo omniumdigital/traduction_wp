@@ -116,6 +116,7 @@ omnium-translate/
 | `translations` | id, segment_id, target_lang, text, status (`auto`/`edited`/`locked`/`failed`), provider, model, updated_at |
 | `pages` | post_id, url_hash, content_hash, last_scan_at |
 | `slugs` | post_id, target_lang, slug (unique par langue) |
+| `slug_history` | post_id, target_lang, slug — anciens slugs traduits, redirigés en 301 vers le slug courant |
 | `glossary` | id, term, target_lang, translation, rule (`translate`/`keep`) |
 | `log` | id, level, context, message, created_at — purge 30 jours |
 
