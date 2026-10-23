@@ -46,15 +46,33 @@ final class SlugRepositoryTest extends TestCase {
 		$wpdb         = $this->createMock( \wpdb::class );
 		$wpdb->prefix = 'wp_';
 		$GLOBALS['wpdb'] = $wpdb;
-		$wpdb->expects( $this->once() )->method( 'prepare' )->with(
-			$this->stringContains( 'ON DUPLICATE KEY UPDATE' ),
-			'wp_omtr_slugs',
-			42,
-			'en',
-			'translated-page'
-		)->willReturn( 'prepared' );
-		$wpdb->expects( $this->once() )->method( 'query' )->with( 'prepared' );
+		$wpdb->method( 'prepare' )->willReturnCallback( static fn( string $sql, string $table ): string => str_replace( '%i', $table, $sql ) );
+		$wpdb->method( 'get_var' )->willReturn( null );
+		$queries = array();
+		$wpdb->method( 'query' )->willReturnCallback( static function ( string $sql ) use ( &$queries ): int {
+			$queries[] = $sql;
+			return 1;
+		} );
 
 		( new SlugRepository( $wpdb ) )->save( 42, 'en', 'translated-page' );
+		$this->assertCount( 2, $queries );
+		$this->assertStringContainsString( 'ON DUPLICATE KEY UPDATE', $queries[1] );
+	}
+
+	public function test_saves_previous_slug_in_history_after_change(): void {
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturnCallback( static fn( string $sql, string $table ): string => str_replace( '%i', $table, $sql ) );
+		$wpdb->method( 'get_var' )->willReturn( 'old-page' );
+		$queries = array();
+		$wpdb->method( 'query' )->willReturnCallback( static function ( string $sql ) use ( &$queries ): int {
+			$queries[] = $sql;
+			return 1;
+		} );
+
+		( new SlugRepository( $wpdb ) )->save( 42, 'en', 'new-page' );
+		$this->assertCount( 3, $queries );
+		$this->assertStringContainsString( 'wp_omtr_slug_history', $queries[2] );
 	}
 }

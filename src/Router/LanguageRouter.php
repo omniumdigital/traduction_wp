@@ -16,6 +16,12 @@ defined( 'ABSPATH' ) || exit;
  * Removes a supported language prefix before WordPress parses the request.
  */
 final class LanguageRouter {
+	/**
+	 * Post identified by a historical slug on this request.
+	 *
+	 * @var int|null
+	 */
+	private ?int $old_slug_post_id = null;
 
 	/**
 	 * Constructor.
@@ -23,13 +29,15 @@ final class LanguageRouter {
 	 * @param CurrentLanguage     $current_language Current request language.
 	 * @param Settings            $settings         Plugin settings.
 	 * @param RequestGuard        $guard            Front-request guard.
-	 * @param SlugRepository|null $slugs        Translated slug repository.
+	 * @param SlugRepository|null $slugs            Translated slug repository.
+	 * @param UrlTranslator|null  $url_translator   Internal URL translator.
 	 */
 	public function __construct(
 		private CurrentLanguage $current_language,
 		private Settings $settings,
 		private RequestGuard $guard,
-		private ?SlugRepository $slugs = null
+		private ?SlugRepository $slugs = null,
+		private ?UrlTranslator $url_translator = null
 	) {}
 
 	/**
@@ -86,6 +94,10 @@ final class LanguageRouter {
 		$parts   = explode( '/', $trimmed );
 		$slug    = rawurldecode( (string) end( $parts ) );
 		$post_id = $this->slugs->find_post_id( $slug, $lang );
+		if ( null === $post_id ) {
+			$post_id                = $this->slugs->find_historical_post_id( $slug, $lang );
+			$this->old_slug_post_id = $post_id;
+		}
 		if ( null === $post_id || 'publish' !== get_post_status( $post_id ) ) {
 			return $relative_path;
 		}
@@ -99,5 +111,25 @@ final class LanguageRouter {
 			$source_path = substr( $source_path, strlen( $home_path ) );
 		}
 		return '/' . ltrim( $source_path, '/' );
+	}
+
+	/** Return the new URL for an obsolete slug, if the request matched one. */
+	public function old_slug_redirect_url(): ?string {
+		if ( null === $this->old_slug_post_id || null === $this->url_translator ) {
+			return null;
+		}
+		$permalink = get_permalink( $this->old_slug_post_id );
+		if ( ! is_string( $permalink ) ) {
+			return null;
+		}
+		return $this->url_translator->translate( $permalink, $this->current_language->get() );
+	}
+
+	/** Redirect obsolete translated slugs after WordPress resolves the post. */
+	public function redirect_old_slug(): void {
+		$url = $this->old_slug_redirect_url();
+		if ( null !== $url && wp_safe_redirect( $url, 301 ) ) {
+			exit;
+		}
 	}
 }

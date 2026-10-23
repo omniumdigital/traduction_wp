@@ -39,7 +39,8 @@ final class RouterModule implements ModuleInterface {
 				$c->get( CurrentLanguage::class ),
 				$c->get( Settings::class ),
 				$c->get( RequestGuard::class ),
-				$c->get( SlugRepository::class )
+				$c->get( SlugRepository::class ),
+				$c->get( UrlTranslator::class )
 			)
 		);
 		$container->set( UrlTranslator::class, static fn( Container $c ) => new UrlTranslator( $c->get( Settings::class ) ) );
@@ -66,6 +67,7 @@ final class RouterModule implements ModuleInterface {
 	public function boot( Container $container ): void {
 		$router = $container->get( LanguageRouter::class );
 		add_filter( 'do_parse_request', array( $router, 'strip_language_prefix' ), 0 );
+		add_action( 'template_redirect', array( $router, 'redirect_old_slug' ), 0 );
 		add_action( 'rest_api_init', array( $container->get( SlugRestController::class ), 'register_routes' ) );
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$container->get( SlugCli::class )->register();

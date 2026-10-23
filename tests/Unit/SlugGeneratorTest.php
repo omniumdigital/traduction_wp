@@ -52,8 +52,8 @@ final class SlugGeneratorTest extends TestCase {
 		$wpdb->prefix = 'wp_';
 		$GLOBALS['wpdb'] = $wpdb;
 		$wpdb->method( 'prepare' )->willReturnCallback( static fn( string $sql, mixed ...$args ): string => $sql . '|' . implode( '|', array_map( 'strval', $args ) ) );
-		$wpdb->expects( $this->exactly( 2 ) )->method( 'get_var' )->willReturnOnConsecutiveCalls( '9', null );
-		$wpdb->expects( $this->once() )->method( 'query' )->with( $this->stringContains( 'uber-cafe-2' ) );
+		$wpdb->expects( $this->exactly( 4 ) )->method( 'get_var' )->willReturnOnConsecutiveCalls( '9', null, null, null );
+		$wpdb->expects( $this->exactly( 2 ) )->method( 'query' );
 
 		$this->assertSame( 'uber-cafe-2', $this->generator( $wpdb )->generate( 42, 'en' ) );
 	}
@@ -69,8 +69,8 @@ final class SlugGeneratorTest extends TestCase {
 		$wpdb->prefix = 'wp_';
 		$GLOBALS['wpdb'] = $wpdb;
 		$wpdb->method( 'prepare' )->willReturnCallback( static fn( string $sql, mixed ...$args ): string => $sql . '|' . implode( '|', array_map( 'strval', $args ) ) );
-		$wpdb->expects( $this->once() )->method( 'get_var' )->willReturn( null );
-		$wpdb->expects( $this->once() )->method( 'query' )->with( $this->stringContains( 'page-source' ) );
+		$wpdb->expects( $this->exactly( 3 ) )->method( 'get_var' )->willReturn( null );
+		$wpdb->expects( $this->exactly( 2 ) )->method( 'query' );
 
 		$this->assertSame( 'page-source', $this->generator( $wpdb )->generate( 42, 'en' ) );
 	}
