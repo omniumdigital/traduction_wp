@@ -9,6 +9,7 @@ namespace Omnium\Translate\Woo;
 
 use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
+use Omnium\Translate\Router\CurrentLanguage;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,6 +25,10 @@ final class WooModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return;
+		}
+		$container->set( OrderLanguage::class, static fn( Container $c ) => new OrderLanguage( $c->get( CurrentLanguage::class ) ) );
 	}
 
 	/**
@@ -32,5 +37,9 @@ final class WooModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function boot( Container $container ): void {
+		if ( ! $container->has( OrderLanguage::class ) ) {
+			return;
+		}
+		$container->get( OrderLanguage::class )->register_hooks();
 	}
 }
