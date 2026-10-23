@@ -10,6 +10,8 @@ namespace Omnium\Translate\Tests\Unit;
 use Brain\Monkey\Functions;
 use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Settings;
+use Omnium\Translate\Glossary\GlossaryRepository;
+use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Queue\ActionSchedulerQueue;
@@ -89,13 +91,16 @@ final class BatchJobTest extends TestCase {
 		);
 		Functions\when( 'as_get_scheduled_actions' )->justReturn( array( 123 ) );
 
-		$this->job = new BatchJob(
+		$wpdb            = new \wpdb();
+		$GLOBALS['wpdb'] = $wpdb;
+		$this->job       = new BatchJob(
 			new Settings(),
 			$this->lock,
 			$queue,
 			$this->segments,
 			$this->translations,
-			$this->logger
+			$this->logger,
+			new GlossaryService( new GlossaryRepository( $wpdb ), new Settings() )
 		);
 	}
 

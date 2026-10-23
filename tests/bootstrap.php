@@ -16,6 +16,7 @@ if ( ! class_exists( 'wpdb' ) ) {
 	/** Minimal wpdb surface used by repository unit tests. */
 	class wpdb {
 		public string $prefix = 'wp_';
+		public int $insert_id = 0;
 
 		public function prepare( string $query, mixed ...$args ): string {
 			return $query . '|' . implode( '|', array_map( 'strval', $args ) );
@@ -31,6 +32,10 @@ if ( ! class_exists( 'wpdb' ) ) {
 
 		public function get_var( string $query ): string|null {
 			return null;
+		}
+
+		public function esc_like( string $text ): string {
+			return addcslashes( $text, '_%\\' );
 		}
 	}
 }
@@ -64,6 +69,54 @@ if ( ! class_exists( 'WP_Error' ) ) {
 			if ( '' !== $message ) {
 				$this->errors[] = $message;
 			}
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Request' ) ) {
+	/** Minimal REST request double. */
+	class WP_REST_Request implements ArrayAccess {
+		/** @param array<string, mixed> $params Request parameters. */
+		public function __construct( private array $params = array(), private array $files = array() ) {}
+
+		public function offsetExists( mixed $offset ): bool {
+			return isset( $this->params[ (string) $offset ] );
+		}
+
+		public function offsetGet( mixed $offset ): mixed {
+			return $this->params[ (string) $offset ] ?? null;
+		}
+
+		public function offsetSet( mixed $offset, mixed $value ): void {
+			$this->params[ (string) $offset ] = $value;
+		}
+
+		public function offsetUnset( mixed $offset ): void {
+			unset( $this->params[ (string) $offset ] );
+		}
+
+		/** @return array<string, mixed> */
+		public function get_params(): array {
+			return $this->params;
+		}
+
+		/** @return array<string, array<string, string>> */
+		public function get_file_params(): array {
+			return $this->files;
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Response' ) ) {
+	/** Minimal REST response double. */
+	class WP_REST_Response {
+		/** @var array<string, string> */
+		public array $headers = array();
+
+		public function __construct( public mixed $data = null, public int $status = 200 ) {}
+
+		public function header( string $key, string $value ): void {
+			$this->headers[ $key ] = $value;
 		}
 	}
 }

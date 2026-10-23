@@ -1,0 +1,64 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Omnium Translate\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "CSV file is not readable."
+msgstr "Le fichier CSV n’est pas lisible."
+
+msgid "CSV file exceeds 1 MB."
+msgstr "Le fichier CSV dépasse 1 Mo."
+
+msgid "File must use the CSV extension."
+msgstr "Le fichier doit utiliser l’extension CSV."
+
+msgid "Invalid CSV MIME type."
+msgstr "Le type MIME du CSV est invalide."
+
+msgid "CSV file could not be read."
+msgstr "Le fichier CSV n’a pas pu être lu."
+
+msgid "In-memory CSV stream could not be created."
+msgstr "Le flux CSV en mémoire n’a pas pu être créé."
+
+msgid "CSV columns must be term,target_lang,translation,rule."
+msgstr "Les colonnes CSV doivent être term,target_lang,translation,rule."
+
+msgid "Every CSV row must contain four columns."
+msgstr "Chaque ligne CSV doit contenir quatre colonnes."
+
+msgid "Term and target language are required."
+msgstr "Le terme et la langue cible sont obligatoires."
+
+msgid "Rule must be translate or keep."
+msgstr "La règle doit être translate ou keep."
+
+msgid "Translate rules require a translation."
+msgstr "Les règles translate nécessitent une traduction."
+
+msgid "Usage: wp omtr glossary add <term> <target_lang> <translation> <rule>."
+msgstr "Utilisation : wp omtr glossary add <term> <target_lang> <translation> <rule>."
+
+msgid "Glossary rule %d added."
+msgstr "Règle de glossaire %d ajoutée."
+
+msgid "Provide a glossary rule id."
+msgstr "Indiquez l’identifiant d’une règle de glossaire."
+
+msgid "Glossary rule deleted."
+msgstr "Règle de glossaire supprimée."
+
+msgid "Provide a CSV file."
+msgstr "Indiquez un fichier CSV."
+
+msgid "%d glossary rules imported."
+msgstr "%d règles de glossaire importées."
+
+msgid "You need the omtr_manage capability (try --user=admin)."
+msgstr "La capacité omtr_manage est requise (essayez --user=admin)."
+
+msgid "Provide a valid CSV file."
+msgstr "Fournissez un fichier CSV valide."

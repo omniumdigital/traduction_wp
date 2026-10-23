@@ -9,6 +9,8 @@ namespace Omnium\Translate\Admin;
 
 use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
+use Omnium\Translate\Glossary\GlossaryCsv;
+use Omnium\Translate\Glossary\GlossaryRepository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,6 +26,15 @@ final class AdminModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
+		$container->set( SegmentEditorRepository::class, static fn() => new SegmentEditorRepository( $GLOBALS['wpdb'] ) );
+		$container->set(
+			RestController::class,
+			static fn( Container $c ) => new RestController(
+				$c->get( GlossaryRepository::class ),
+				$c->get( GlossaryCsv::class ),
+				$c->get( SegmentEditorRepository::class )
+			)
+		);
 	}
 
 	/**
@@ -32,5 +43,6 @@ final class AdminModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function boot( Container $container ): void {
+		add_action( 'rest_api_init', array( $container->get( RestController::class ), 'register_routes' ) );
 	}
 }
