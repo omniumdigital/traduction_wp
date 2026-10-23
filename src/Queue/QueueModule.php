@@ -11,6 +11,7 @@ use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\LoggerInterface;
 use Omnium\Translate\Core\ModuleInterface;
 use Omnium\Translate\Core\Settings;
+use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
@@ -71,7 +72,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( ActionSchedulerQueue::class ),
 				$c->get( SegmentRepositoryInterface::class ),
 				$c->get( TranslationRepositoryInterface::class ),
-				$c->get( LoggerInterface::class )
+				$c->get( LoggerInterface::class ),
+				$c->get( GlossaryService::class )
 			)
 		);
 

@@ -9,7 +9,7 @@ namespace Omnium\Translate\Queue;
 
 use Omnium\Translate\Core\LoggerInterface;
 use Omnium\Translate\Core\Settings;
-use Omnium\Translate\Glossary\Glossary;
+use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderInterface;
 use Omnium\Translate\Security\Sanitizer;
@@ -40,6 +40,7 @@ final class BatchJob {
 	 * @param SegmentRepositoryInterface     $segments     Segments repository.
 	 * @param TranslationRepositoryInterface $translations Translations repository.
 	 * @param LoggerInterface                $logger       Logger.
+	 * @param GlossaryService                $glossary     Glossary service.
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -47,7 +48,8 @@ final class BatchJob {
 		private ActionSchedulerQueue $queue,
 		private SegmentRepositoryInterface $segments,
 		private TranslationRepositoryInterface $translations,
-		private LoggerInterface $logger
+		private LoggerInterface $logger,
+		private GlossaryService $glossary
 	) {}
 
 	/**
@@ -89,15 +91,8 @@ final class BatchJob {
 			return;
 		}
 
-		$glossary = new Glossary(
-			array(),
-			array(),
-			(string) $this->settings->get( 'site_tone' ),
-			(string) $this->settings->get( 'site_context' )
-		);
-
 		try {
-			$translated = $provider->translate_batch( $pending, $this->settings->source_lang(), $lang, $glossary );
+			$translated = $provider->translate_batch( $pending, $this->settings->source_lang(), $lang, $this->glossary->for_language( $lang ) );
 		} catch ( ProviderException $e ) {
 			$this->handle_error( $e, $pending, $segments, $lang, $run_id, $attempt );
 			return;

@@ -9,6 +9,7 @@ namespace Omnium\Translate\Glossary;
 
 use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
+use Omnium\Translate\Core\Settings;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,6 +25,14 @@ final class GlossaryModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
+		$container->set( GlossaryRepository::class, static fn() => new GlossaryRepository( $GLOBALS['wpdb'] ) );
+		$container->set(
+			GlossaryService::class,
+			static fn( Container $c ): GlossaryService => new GlossaryService(
+				$c->get( GlossaryRepository::class ),
+				$c->get( Settings::class )
+			)
+		);
 	}
 
 	/**
