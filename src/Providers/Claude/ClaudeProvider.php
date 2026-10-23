@@ -22,10 +22,10 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Calls the Anthropic Messages API over HTTPS with the client's own key.
  *
- * API facts verified against the official documentation on 2026-10-21:
+ * API facts verified against the official documentation on 2026-10-23:
  * - Endpoint: POST https://api.anthropic.com/v1/messages (hard-coded, HTTPS only).
  * - Required headers: x-api-key, anthropic-version: 2023-06-01, content-type: application/json.
- * - Model ids and pricing: https://docs.anthropic.com/en/docs/about-claude/models/overview
+ * - Model ids and pricing: https://platform.claude.com/docs/en/about-claude/models/overview
  */
 final class ClaudeProvider implements ProviderInterface {
 
@@ -33,12 +33,18 @@ final class ClaudeProvider implements ProviderInterface {
 	private const API_VERSION = '2023-06-01';
 
 	/**
-	 * Default model: the fastest and least expensive active Claude model.
+	 * Default model: the fastest and least expensive current Claude model.
 	 *
-	 * Verified in Anthropic's official model overview and deprecation table on
-	 * 2026-10-21. Use the dated API id so behavior cannot change behind an alias.
+	 * Claude Haiku 5.5 (comparative latency "Fastest", from $0.10 / $0.50 per
+	 * MTok), verified on 2026-10-23 at
+	 * https://platform.claude.com/docs/en/models/haiku-5-5/overview — the
+	 * previous default claude-haiku-4-5-20251001 is legacy and past its
+	 * retirement floor ("not sooner than October 15, 2026").
+	 *
+	 * Since the 4.6 generation every Claude API id, dateless included, is a
+	 * pinned snapshot, so this id cannot silently change behind an alias.
 	 */
-	private const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+	private const DEFAULT_MODEL = 'claude-haiku-5-5';
 
 	/**
 	 * Constructor.
@@ -76,9 +82,9 @@ final class ClaudeProvider implements ProviderInterface {
 	 */
 	public function models(): array {
 		return array(
-			self::DEFAULT_MODEL => 'Claude Haiku 4.5 — fast and cost-effective (recommended)',
-			'claude-sonnet-5'   => 'Claude Sonnet 5 — best speed/quality balance',
-			'claude-opus-5'     => 'Claude Opus 5 — highest quality',
+			self::DEFAULT_MODEL => 'Claude Haiku 5.5 — fast and cost-effective (recommended)',
+			'claude-sonnet-5-5' => 'Claude Sonnet 5.5 — best speed/quality balance',
+			'claude-opus-5-5'   => 'Claude Opus 5.5 — highest quality',
 		);
 	}
 

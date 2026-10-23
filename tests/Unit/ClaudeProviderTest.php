@@ -142,19 +142,19 @@ final class ClaudeProviderTest extends TestCase {
 		$this->assertSame( '2023-06-01', $this->requests[0]['args']['headers']['anthropic-version'] );
 
 		$sent = json_decode( (string) $this->requests[0]['args']['body'], true );
-		$this->assertSame( 'claude-haiku-4-5-20251001', $sent['model'] );
+		$this->assertSame( 'claude-haiku-5-5', $sent['model'] );
 		$this->assertGreaterThan( 0, $sent['max_tokens'] );
 		$this->assertSame( 'user', $sent['messages'][0]['role'] );
 	}
 
 	public function test_model_setting_is_respected(): void {
-		$provider = $this->make_provider( array( 'model' => 'claude-sonnet-5' ) );
+		$provider = $this->make_provider( array( 'model' => 'claude-sonnet-5-5' ) );
 		$this->stub_http( array( array( 'code' => 200, 'body' => $this->response_body( array( 1 => 'Hi' ) ) ) ) );
 
 		$provider->translate_batch( array( 'hash-1' => 'Salut' ), 'fr', 'en', new Glossary() );
 
 		$sent = json_decode( (string) $this->requests[0]['args']['body'], true );
-		$this->assertSame( 'claude-sonnet-5', $sent['model'] );
+		$this->assertSame( 'claude-sonnet-5-5', $sent['model'] );
 	}
 
 	public function test_invalid_json_gets_exactly_one_retry(): void {
