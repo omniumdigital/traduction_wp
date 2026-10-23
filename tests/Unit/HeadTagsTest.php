@@ -40,6 +40,7 @@ final class HeadTagsTest extends TestCase {
 				'target_langs' => array( 'en', 'es' ),
 			)
 		);
+		Functions\when( 'get_queried_object_id' )->justReturn( 0 );
 		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://safe.test' . $path );
 		// No translated slug in these tests: UrlTranslator falls back to the source slug.
 		Functions\when( 'url_to_postid' )->justReturn( 0 );
