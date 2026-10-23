@@ -22,16 +22,18 @@ final class HeadTags {
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings        $settings         Plugin settings.
-	 * @param CurrentLanguage $current_language Current request language.
-	 * @param RequestGuard    $guard            Front-request guard.
-	 * @param UrlTranslator   $url_translator   Language URL translator.
+	 * @param Settings            $settings         Plugin settings.
+	 * @param CurrentLanguage     $current_language Current request language.
+	 * @param RequestGuard        $guard            Front-request guard.
+	 * @param UrlTranslator       $url_translator   Language URL translator.
+	 * @param TranslationCoverage $coverage     Translation completion service.
 	 */
 	public function __construct(
 		private Settings $settings,
 		private CurrentLanguage $current_language,
 		private RequestGuard $guard,
-		private UrlTranslator $url_translator
+		private UrlTranslator $url_translator,
+		private TranslationCoverage $coverage
 	) {}
 
 	/**
@@ -112,7 +114,16 @@ final class HeadTags {
 	 * @return list<string>
 	 */
 	private function languages(): array {
-		return array_values( array_unique( array_merge( array( $this->settings->source_lang() ), $this->settings->target_langs() ) ) );
+		$languages = array_values( array_unique( array_merge( array( $this->settings->source_lang() ), $this->settings->target_langs() ) ) );
+		if ( ! (bool) $this->settings->get( 'noindex_partial' ) ) {
+			return $languages;
+		}
+		return array_values(
+			array_filter(
+				$languages,
+				fn( string $language ): bool => $this->coverage->is_complete( $language )
+			)
+		);
 	}
 
 	/**

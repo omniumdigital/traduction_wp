@@ -28,13 +28,24 @@ final class SeoModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
+		$container->set( TranslationCoverage::class, static fn( Container $c ) => new TranslationCoverage( $GLOBALS['wpdb'], $c->get( Settings::class ) ) );
 		$container->set(
 			HeadTags::class,
 			static fn( Container $c ) => new HeadTags(
 				$c->get( Settings::class ),
 				$c->get( CurrentLanguage::class ),
 				$c->get( RequestGuard::class ),
-				$c->get( UrlTranslator::class )
+				$c->get( UrlTranslator::class ),
+				$c->get( TranslationCoverage::class )
+			)
+		);
+		$container->set(
+			Robots::class,
+			static fn( Container $c ) => new Robots(
+				$c->get( Settings::class ),
+				$c->get( CurrentLanguage::class ),
+				$c->get( RequestGuard::class ),
+				$c->get( TranslationCoverage::class )
 			)
 		);
 	}
@@ -50,5 +61,10 @@ final class SeoModule implements ModuleInterface {
 		add_action( 'wp_head', array( $head_tags, 'render' ), 1 );
 		add_filter( 'wpseo_canonical', array( $head_tags, 'filter_yoast_canonical' ), 99 );
 		add_filter( 'rank_math/frontend/canonical', array( $head_tags, 'filter_rank_math_canonical' ), 99 );
+
+		$robots = $container->get( Robots::class );
+		add_filter( 'wp_robots', array( $robots, 'filter_wp_robots' ), 99 );
+		add_filter( 'wpseo_robots', array( $robots, 'filter_yoast_robots' ), 99 );
+		add_filter( 'rank_math/frontend/robots', array( $robots, 'filter_rank_math_robots' ), 99 );
 	}
 }

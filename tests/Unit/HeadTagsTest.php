@@ -13,6 +13,7 @@ use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\RequestGuard;
 use Omnium\Translate\Router\UrlTranslator;
 use Omnium\Translate\Seo\HeadTags;
+use Omnium\Translate\Seo\TranslationCoverage;
 use Omnium\Translate\Tests\TestCase;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -129,7 +130,7 @@ final class HeadTagsTest extends TestCase {
 	#[RunInSeparateProcess]
 	#[PreserveGlobalState( false )]
 	public function test_outputs_nothing_for_rest_request(): void {
-		define( 'REST_REQUEST', true );
+		define( 'REST_REQUEST', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- WordPress core request constant in isolated test.
 
 		ob_start();
 		$this->tags( new CurrentLanguage( 'fr' ) )->render();
@@ -143,6 +144,6 @@ final class HeadTagsTest extends TestCase {
 	 */
 	private function tags( CurrentLanguage $current ): HeadTags {
 		$settings = new Settings();
-		return new HeadTags( $settings, $current, new RequestGuard(), new UrlTranslator( $settings ) );
+		return new HeadTags( $settings, $current, new RequestGuard(), new UrlTranslator( $settings ), new TranslationCoverage( $this->createMock( \wpdb::class ), $settings ) );
 	}
 }
