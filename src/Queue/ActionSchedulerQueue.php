@@ -74,6 +74,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @param LoggerInterface                     $logger       Logger.
 	 * @param SegmentRepositoryInterface|null     $segments     Segments repository (only enqueue_segments needs it).
 	 * @param TranslationRepositoryInterface|null $translations Translations repository (only enqueue_segments needs it).
+	 * @param QueueState|null                     $state        Manual pause state.
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -83,7 +84,8 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		private ProviderRegistry $providers,
 		private LoggerInterface $logger,
 		private ?SegmentRepositoryInterface $segments = null,
-		private ?TranslationRepositoryInterface $translations = null
+		private ?TranslationRepositoryInterface $translations = null,
+		private ?QueueState $state = null
 	) {}
 
 	/**
@@ -94,6 +96,10 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @return bool False if refused (foreign URL, cap reached, lock held).
 	 */
 	public function enqueue_url( string $url, int $post_id = 0 ): bool {
+		if ( null !== $this->state && $this->state->is_paused() ) {
+			$this->reason = __( 'The translation queue is paused.', 'omnium-translate' );
+			return false;
+		}
 		$normalized = $this->normalize_url( $url );
 		if ( null === $normalized ) {
 			$this->reason = __( 'The URL is not part of this site or uses a non-public path.', 'omnium-translate' );
@@ -137,6 +143,10 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @param string    $target_lang Target language.
 	 */
 	public function enqueue_segments( array $segment_ids, string $target_lang ): void {
+		if ( null !== $this->state && $this->state->is_paused() ) {
+			$this->logger->log( 'warning', 'queue', 'Segment enqueue refused: queue is paused.' );
+			return;
+		}
 		if ( array() === $segment_ids || null === $this->segments || null === $this->translations ) {
 			return;
 		}
@@ -251,10 +261,11 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @param string $url     Normalized URL.
 	 * @param int    $post_id Post id.
 	 * @param string $run_id  Run id.
+	 * @param int    $delay   Delay in seconds.
 	 */
-	public function schedule_scan( string $url, int $post_id, string $run_id ): void {
+	public function schedule_scan( string $url, int $post_id, string $run_id, int $delay = 0 ): void {
 		as_schedule_single_action(
-			time(),
+			time() + max( 0, $delay ),
 			self::ACTION_SCAN,
 			array(
 				'url'     => $url,

@@ -16,6 +16,7 @@ use Omnium\Translate\Queue\ActionSchedulerQueue;
 use Omnium\Translate\Queue\Estimator;
 use Omnium\Translate\Queue\HourlyQuota;
 use Omnium\Translate\Queue\PublicContent;
+use Omnium\Translate\Queue\QueueState;
 use Omnium\Translate\Queue\RunLock;
 use Omnium\Translate\Queue\TranslateCli;
 use Omnium\Translate\Queue\WordCap;
@@ -78,7 +79,7 @@ final class TranslateCliTest extends TestCase {
 		$content         = new PublicContent();
 		$translations    = new FakeTranslationRepository();
 		$estimator       = new Estimator( $settings, $content, new FakeSegmentExtractor(), $translations, $word_cap, $registry, new Pricing() );
-		$this->command   = new TranslateCli( $queue, $settings, $lock, $word_cap, $hourly, $estimator, $content );
+		$this->command   = new TranslateCli( $queue, $settings, $lock, $word_cap, $hourly, $estimator, $content, new QueueState() );
 	}
 
 	public function test_registers_only_the_omtr_command_in_cli_context(): void {

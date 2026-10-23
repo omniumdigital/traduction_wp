@@ -37,6 +37,7 @@ final class QueueModule implements ModuleInterface {
 		$container->set( WordCap::class, static fn( Container $c ) => new WordCap( $c->get( Settings::class ) ) );
 		$container->set( HourlyQuota::class, static fn( Container $c ) => new HourlyQuota( $c->get( Settings::class ) ) );
 		$container->set( PublicContent::class, static fn() => new PublicContent() );
+		$container->set( QueueState::class, static fn() => new QueueState() );
 		if ( ! $container->has( Pricing::class ) ) {
 			$container->set( Pricing::class, static fn() => new Pricing() );
 		}
@@ -63,7 +64,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( ProviderRegistry::class ),
 				$c->get( LoggerInterface::class ),
 				$c->get( SegmentRepositoryInterface::class ),
-				$c->get( TranslationRepositoryInterface::class )
+				$c->get( TranslationRepositoryInterface::class ),
+				$c->get( QueueState::class )
 			)
 		);
 
@@ -77,7 +79,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( SegmentExtractorInterface::class ),
 				$c->get( SegmentRepositoryInterface::class ),
 				$c->get( TranslationRepositoryInterface::class ),
-				$c->get( LoggerInterface::class )
+				$c->get( LoggerInterface::class ),
+				$c->get( QueueState::class )
 			)
 		);
 
@@ -90,7 +93,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( SegmentRepositoryInterface::class ),
 				$c->get( TranslationRepositoryInterface::class ),
 				$c->get( LoggerInterface::class ),
-				$c->get( GlossaryService::class )
+				$c->get( GlossaryService::class ),
+				$c->get( QueueState::class )
 			)
 		);
 
@@ -103,7 +107,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( WordCap::class ),
 				$c->get( HourlyQuota::class ),
 				$c->get( Estimator::class ),
-				$c->get( PublicContent::class )
+				$c->get( PublicContent::class ),
+				$c->get( QueueState::class )
 			)
 		);
 	}

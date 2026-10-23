@@ -13,6 +13,7 @@ use Omnium\Translate\Glossary\GlossaryCsv;
 use Omnium\Translate\Glossary\GlossaryRepository;
 use Omnium\Translate\Queue\Estimator;
 use Omnium\Translate\Queue\PublicContent;
+use Omnium\Translate\Queue\QueueState;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -36,7 +37,8 @@ final class AdminModule implements ModuleInterface {
 				$c->get( GlossaryCsv::class ),
 				$c->get( SegmentEditorRepository::class ),
 				$c->get( Estimator::class ),
-				$c->get( PublicContent::class )
+				$c->get( PublicContent::class ),
+				$c->get( QueueState::class )
 			)
 		);
 	}

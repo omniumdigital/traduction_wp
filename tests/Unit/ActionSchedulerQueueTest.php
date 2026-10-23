@@ -13,6 +13,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Queue\ActionSchedulerQueue;
 use Omnium\Translate\Queue\HourlyQuota;
+use Omnium\Translate\Queue\QueueState;
 use Omnium\Translate\Queue\RunLock;
 use Omnium\Translate\Queue\WordCap;
 use Omnium\Translate\Tests\TestCase;
@@ -34,6 +35,7 @@ final class ActionSchedulerQueueTest extends TestCase {
 	private FakeSegmentRepository $segments;
 	private FakeTranslationRepository $translations;
 	private ActionSchedulerQueue $queue;
+	private QueueState $state;
 	private int $sequence = 0;
 
 	/**
@@ -52,6 +54,7 @@ final class ActionSchedulerQueueTest extends TestCase {
 		$this->segments      = new FakeSegmentRepository();
 		$this->translations  = new FakeTranslationRepository();
 		$this->translations->id_hash = array();
+		$this->state         = new QueueState();
 
 		Functions\when( '__' )->returnArg();
 		Functions\when( 'home_url' )->justReturn( 'https://example.test' );
@@ -78,7 +81,8 @@ final class ActionSchedulerQueueTest extends TestCase {
 			$registry,
 			$this->logger,
 			$this->segments,
-			$this->translations
+			$this->translations,
+			$this->state
 		);
 
 		Functions\when( 'as_schedule_single_action' )->alias(
@@ -148,6 +152,16 @@ final class ActionSchedulerQueueTest extends TestCase {
 		$this->assertFalse( $this->queue->enqueue_url( 'https://evil.example.com/x' ) );
 		$this->assertCount( 0, $this->scheduled );
 		$this->assertNotSame( '', $this->queue->last_reason() );
+	}
+
+	public function test_paused_queue_refuses_every_enqueue(): void {
+		$this->state->pause();
+		$this->segments->seed( 'hash-a', 'Hello' );
+
+		$this->assertFalse( $this->queue->enqueue_url( 'https://example.test/page/', 42 ) );
+		$this->queue->enqueue_segments( array( $this->segments->ids['hash-a'] ), 'en' );
+		$this->assertCount( 0, $this->scheduled );
+		$this->assertStringContainsString( 'paused', $this->queue->last_reason() );
 	}
 
 	public function test_enqueue_url_refuses_draft_or_password_protected_post(): void {

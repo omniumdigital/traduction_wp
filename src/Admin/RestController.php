@@ -11,6 +11,7 @@ use Omnium\Translate\Glossary\GlossaryCsv;
 use Omnium\Translate\Glossary\GlossaryRepository;
 use Omnium\Translate\Queue\Estimator;
 use Omnium\Translate\Queue\PublicContent;
+use Omnium\Translate\Queue\QueueState;
 use Omnium\Translate\Security\Capabilities;
 use Omnium\Translate\Security\Sanitizer;
 
@@ -30,18 +31,37 @@ final class RestController {
 	 * @param SegmentEditorRepository $segments Segment editor repository.
 	 * @param Estimator|null          $estimator Estimator.
 	 * @param PublicContent|null      $content Public content resolver.
+	 * @param QueueState|null         $queue_state Queue pause state.
 	 */
 	public function __construct(
 		private GlossaryRepository $glossary,
 		private GlossaryCsv $csv,
 		private SegmentEditorRepository $segments,
 		private ?Estimator $estimator = null,
-		private ?PublicContent $content = null
+		private ?PublicContent $content = null,
+		private ?QueueState $queue_state = null
 	) {}
 
 	/** Register every private route. */
 	public function register_routes(): void {
 		$permission = array( Capabilities::class, 'rest_permission' );
+		register_rest_route(
+			self::NAMESPACE,
+			'/queue/(?P<command>pause|resume)',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'queue_command' ),
+				'permission_callback' => $permission,
+				'args'                => array(
+					'command' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'enum'              => array( 'pause', 'resume' ),
+						'sanitize_callback' => 'sanitize_key',
+					),
+				),
+			)
+		);
 		register_rest_route(
 			self::NAMESPACE,
 			'/estimate',
@@ -173,6 +193,23 @@ final class RestController {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Pause or resume the translation queue.
+	 *
+	 * @param \WP_REST_Request $request REST request.
+	 */
+	public function queue_command( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( null === $this->queue_state ) {
+			return new \WP_Error( 'omtr_unavailable', __( 'The translation queue is unavailable.', 'omnium-translate' ), array( 'status' => 503 ) );
+		}
+		if ( 'pause' === (string) $request['command'] ) {
+			$this->queue_state->pause();
+		} else {
+			$this->queue_state->resume();
+		}
+		return new \WP_REST_Response( array( 'paused' => $this->queue_state->is_paused() ) );
 	}
 
 	/**

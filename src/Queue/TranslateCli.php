@@ -30,6 +30,7 @@ final class TranslateCli {
 	 * @param HourlyQuota          $hourly_quota Hourly on-the-fly quota.
 	 * @param Estimator            $estimator Estimator.
 	 * @param PublicContent        $content Public content resolver.
+	 * @param QueueState           $state Queue pause state.
 	 */
 	public function __construct(
 		private ActionSchedulerQueue $queue,
@@ -38,8 +39,23 @@ final class TranslateCli {
 		private WordCap $word_cap,
 		private HourlyQuota $hourly_quota,
 		private Estimator $estimator,
-		private PublicContent $content
+		private PublicContent $content,
+		private QueueState $state
 	) {}
+
+	/** Pause the translation queue. */
+	public function pause(): void {
+		$this->guard();
+		$this->state->pause();
+		\WP_CLI::success( __( 'Translation queue paused.', 'omnium-translate' ) );
+	}
+
+	/** Resume the translation queue. */
+	public function resume(): void {
+		$this->guard();
+		$this->state->resume();
+		\WP_CLI::success( __( 'Translation queue resumed.', 'omnium-translate' ) );
+	}
 
 	/**
 	 * Estimate an untranslated workload without enqueuing it.
@@ -166,6 +182,10 @@ final class TranslateCli {
 
 		$provider = $this->queue->current_provider();
 		$rows     = array(
+			array(
+				'key'   => 'queue',
+				'value' => $this->state->is_paused() ? __( 'paused', 'omnium-translate' ) : __( 'running', 'omnium-translate' ),
+			),
 			array(
 				'key'   => 'provider',
 				'value' => null !== $provider ? $provider->label() . ' (' . $provider->id() . ')' : __( 'none', 'omnium-translate' ),

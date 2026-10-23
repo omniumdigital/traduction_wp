@@ -77,3 +77,21 @@ msgstr "L’estimateur est indisponible."
 
 msgid "No published public content was selected."
 msgstr "Aucun contenu public publié n’a été sélectionné."
+
+msgid "The translation queue is paused."
+msgstr "La file de traduction est en pause."
+
+msgid "Translation queue paused."
+msgstr "File de traduction mise en pause."
+
+msgid "Translation queue resumed."
+msgstr "File de traduction reprise."
+
+msgid "paused"
+msgstr "en pause"
+
+msgid "running"
+msgstr "active"
+
+msgid "The translation queue is unavailable."
+msgstr "La file de traduction est indisponible."
