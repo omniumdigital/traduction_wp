@@ -16,6 +16,7 @@ if ( ! class_exists( 'wpdb' ) ) {
 	/** Minimal wpdb surface used by repository unit tests. */
 	class wpdb {
 		public string $prefix = 'wp_';
+		public int $insert_id = 0;
 
 		public function prepare( string $query, mixed ...$args ): string {
 			return $query . '|' . implode( '|', array_map( 'strval', $args ) );

@@ -33,6 +33,14 @@ final class GlossaryModule implements ModuleInterface {
 				$c->get( Settings::class )
 			)
 		);
+		$container->set( GlossaryCsv::class, static fn( Container $c ) => new GlossaryCsv( $c->get( GlossaryRepository::class ) ) );
+		$container->set(
+			GlossaryCli::class,
+			static fn( Container $c ) => new GlossaryCli(
+				$c->get( GlossaryRepository::class ),
+				$c->get( GlossaryCsv::class )
+			)
+		);
 	}
 
 	/**
@@ -41,5 +49,8 @@ final class GlossaryModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function boot( Container $container ): void {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$container->get( GlossaryCli::class )->register();
+		}
 	}
 }
