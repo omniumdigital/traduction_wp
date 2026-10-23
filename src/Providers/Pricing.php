@@ -22,6 +22,8 @@ defined( 'ABSPATH' ) || exit;
  *   }
  *
  * Every model returned by a provider's models() must have an entry here.
+ * Temporary promotional prices are never used: estimates rely on the regular
+ * price so they never under-state the cost.
  */
 final class Pricing {
 
@@ -106,15 +108,17 @@ final class Pricing {
 					'source' => $gemini,
 				),
 				'gemini-3.8-flash'      => array(
-					// Until 2026-12-31, then $1.50 / $7.50: re-check before release.
-					'input'  => 0.75,
-					'output' => 3.75,
+					// Regular price. Promotional $0.75 / $3.75 until 2026-12-31 is ignored
+					// so estimates never under-state the cost.
+					'input'  => 1.50,
+					'output' => 7.50,
 					'source' => $gemini,
 				),
 				'gemini-4-argon'        => array(
-					// Until 2026-11-30, then $4.00 / $20.00: re-check before release.
-					'input'  => 2.00,
-					'output' => 10.00,
+					// Regular price. Promotional $2.00 / $10.00 until 2026-11-30 is ignored
+					// so estimates never under-state the cost.
+					'input'  => 4.00,
+					'output' => 20.00,
 					'source' => $gemini,
 				),
 			),
