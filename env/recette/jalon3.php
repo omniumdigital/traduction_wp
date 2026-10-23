@@ -72,7 +72,7 @@ $users_table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wp
 $omtr_check( "tri hors liste blanche neutralisé ({$status})", in_array( $status, array( 200, 400 ), true ) && $users_table_exists );
 
 // Segment editor: XSS in a manual edit is neutralised whatever the role.
-$omtr_segment_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i ORDER BY id DESC LIMIT 1', $wpdb->prefix . 'omtr_segments' ) );
+$omtr_segment_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE source_text <> %s ORDER BY id DESC LIMIT 1', $wpdb->prefix . 'omtr_segments', 'atelier de recette pour le glossaire' ) );
 if ( $omtr_segment_id > 0 ) {
 	$response = $omtr_rest(
 		'PUT',
@@ -128,6 +128,14 @@ $wpdb->query(
 );
 $affected_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE hash = %s', $wpdb->prefix . 'omtr_segments', $affected_hash ) );
 if ( $affected_id > 0 ) {
+	$wpdb->delete(
+		$wpdb->prefix . 'omtr_translations',
+		array(
+			'segment_id'  => $affected_id,
+			'target_lang' => 'en',
+		),
+		array( '%d', '%s' )
+	);
 	( new \Omnium\Translate\Store\TranslationRepository( $wpdb ) )->save_auto( array( $affected_id => 'automatic workshop translation' ), 'en', 'recette', 'recette' );
 }
 $omtr_check( 'fixture auto prête pour la retraduction après glossaire', $affected_id > 0 );

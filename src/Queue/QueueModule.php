@@ -106,6 +106,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( PublicContent::class ),
 				$c->get( PageRepository::class ),
 				$c->get( ActionSchedulerQueue::class ),
+				$c->get( SegmentExtractorInterface::class ),
+				$c->get( Settings::class ),
 				$c->get( LoggerInterface::class )
 			)
 		);

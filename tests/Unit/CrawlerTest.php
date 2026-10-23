@@ -18,12 +18,13 @@ use Omnium\Translate\Queue\RunLock;
 use Omnium\Translate\Queue\WordCap;
 use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Tests\TestCase;
+use Omnium\Translate\Tests\Unit\Doubles\FakeSegmentExtractor;
 use Omnium\Translate\Tests\Unit\Doubles\OptionStore;
 use Omnium\Translate\Tests\Unit\Doubles\SpyLogger;
 
 /** Verifies content-hash change detection. */
 final class CrawlerTest extends TestCase {
-	public function test_only_new_or_changed_html_is_queued(): void {
+	public function test_only_new_or_changed_segments_are_queued(): void {
 		( new OptionStore() )->install();
 		Functions\when( '__' )->returnArg();
 		Functions\when( 'home_url' )->justReturn( 'https://example.test' );
@@ -39,8 +40,20 @@ final class CrawlerTest extends TestCase {
 		Functions\when( 'remove_filter' )->justReturn( true );
 		Functions\when( 'is_wp_error' )->justReturn( false );
 		Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
-		Functions\when( 'wp_remote_retrieve_body' )->justReturn( '<html><p>Public</p></html>' );
-		Functions\when( 'wp_safe_remote_get' )->justReturn( array( 'response' => array( 'code' => 200 ), 'body' => '<html><p>Public</p></html>' ) );
+		Functions\when( 'wp_remote_retrieve_body' )->alias(
+			static fn( array $response ): string => (string) $response['body']
+		);
+		$request = 0;
+		Functions\when( 'wp_safe_remote_get' )->alias(
+			static function () use ( &$request ): array {
+				++$request;
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '<html><label for="quantity_' . $request . '">Public</label></html>',
+				);
+			}
+		);
+		Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
 		Functions\when( 'current_time' )->justReturn( '2026-10-23 12:00:00' );
 		Functions\when( 'wp_generate_uuid4' )->justReturn( 'crawl-run' );
 		Functions\when( 'as_get_scheduled_actions' )->justReturn( array() );
@@ -75,7 +88,9 @@ final class CrawlerTest extends TestCase {
 		);
 		$settings = new Settings();
 		$queue = new ActionSchedulerQueue( $settings, new RunLock(), new WordCap( $settings ), new HourlyQuota( $settings ), new ProviderRegistry(), new SpyLogger() );
-		$crawler = new Crawler( new PublicContent(), new PageRepository( $wpdb ), $queue, new SpyLogger() );
+		$extractor = new FakeSegmentExtractor();
+		$extractor->segments = array( 'stable-hash' => 'Public' );
+		$crawler = new Crawler( new PublicContent(), new PageRepository( $wpdb ), $queue, $extractor, $settings, new SpyLogger() );
 
 		$first = $crawler->crawl();
 		$second = $crawler->crawl();

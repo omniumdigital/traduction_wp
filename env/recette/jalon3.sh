@@ -96,6 +96,8 @@ W --exec="$EXEC" omtr crawl --user=admin | sed 's/^/   /'
 RUN_QUEUE
 SECOND="$(W --exec="$EXEC" omtr crawl --user=admin)"
 echo "$SECOND" | sed 's/^/   2e passage : /'
+SECOND_CHANGED="$(echo "$SECOND" | tail -1 | awk '{print $2}')"
+check "deuxième crawl inchangé => aucune page remise en file" "$([ "${SECOND_CHANGED:-x}" = "0" ] && echo 1 || echo 0)"
 RUN_QUEUE
 
 echo "-- Pause et reprise"

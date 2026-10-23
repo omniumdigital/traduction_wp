@@ -8,6 +8,8 @@
 namespace Omnium\Translate\Queue;
 
 use Omnium\Translate\Core\LoggerInterface;
+use Omnium\Translate\Core\Settings;
+use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Store\PageRepository;
 
 defined( 'ABSPATH' ) || exit;
@@ -17,15 +19,19 @@ final class Crawler {
 	/**
 	 * Constructor.
 	 *
-	 * @param PublicContent        $content Public content service.
-	 * @param PageRepository       $pages Page scan repository.
-	 * @param ActionSchedulerQueue $queue Translation queue.
-	 * @param LoggerInterface      $logger Logger.
+	 * @param PublicContent             $content Public content service.
+	 * @param PageRepository            $pages Page scan repository.
+	 * @param ActionSchedulerQueue      $queue Translation queue.
+	 * @param SegmentExtractorInterface $extractor Segment extractor.
+	 * @param Settings                  $settings Plugin settings.
+	 * @param LoggerInterface           $logger Logger.
 	 */
 	public function __construct(
 		private PublicContent $content,
 		private PageRepository $pages,
 		private ActionSchedulerQueue $queue,
+		private SegmentExtractorInterface $extractor,
+		private Settings $settings,
 		private LoggerInterface $logger
 	) {}
 
@@ -46,7 +52,9 @@ final class Crawler {
 				continue;
 			}
 			++$scanned;
-			$content_hash = hash( 'sha256', $html );
+			$segments = $this->extractor->extract( $html, $this->settings->source_lang() );
+			ksort( $segments );
+			$content_hash = hash( 'sha256', (string) wp_json_encode( $segments ) );
 			if ( $this->pages->content_hash( $target['url'] ) === $content_hash ) {
 				++$unchanged;
 				continue;
