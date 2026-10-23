@@ -313,8 +313,9 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @param string             $run_id   Run id, '' when standalone.
 	 * @param int                $attempt  Attempt number (1-based).
 	 * @param int                $delay    Seconds to wait before execution.
+	 * @param int                $post_id  Related post id, or zero for standalone segments.
 	 */
-	public function schedule_batch( array $segments, string $lang, string $run_id, int $attempt, int $delay = 0 ): void {
+	public function schedule_batch( array $segments, string $lang, string $run_id, int $attempt, int $delay = 0, int $post_id = 0 ): void {
 		as_schedule_single_action(
 			time() + max( 0, $delay ),
 			self::ACTION_BATCH,
@@ -323,6 +324,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 				'lang'     => $lang,
 				'run_id'   => $run_id,
 				'attempt'  => $attempt,
+				'post_id'  => $post_id,
 			),
 			self::GROUP
 		);

@@ -16,6 +16,7 @@ use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Providers\Pricing;
 use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Router\RequestGuard;
+use Omnium\Translate\Router\SlugGenerator;
 use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
@@ -96,7 +97,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( TranslationRepositoryInterface::class ),
 				$c->get( LoggerInterface::class ),
 				$c->get( GlossaryService::class ),
-				$c->get( QueueState::class )
+				$c->get( QueueState::class ),
+				$c->get( SlugGenerator::class )
 			)
 		);
 
@@ -171,11 +173,11 @@ final class QueueModule implements ModuleInterface {
 
 		add_action(
 			ActionSchedulerQueue::ACTION_BATCH,
-			static function ( array $segments, string $lang, string $run_id, int $attempt ) use ( $container ): void {
-				$container->get( BatchJob::class )->handle( $segments, $lang, $run_id, $attempt );
+			static function ( array $segments, string $lang, string $run_id, int $attempt, int $post_id = 0 ) use ( $container ): void {
+				$container->get( BatchJob::class )->handle( $segments, $lang, $run_id, $attempt, $post_id );
 			},
 			10,
-			4
+			5
 		);
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {

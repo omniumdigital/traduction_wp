@@ -9,6 +9,7 @@ define( 'ABSPATH', __DIR__ . '/' );
 define( 'AUTH_KEY', 'test-auth-key-not-a-secret' );
 define( 'SECURE_AUTH_SALT', 'test-salt-not-a-secret' );
 define( 'ARRAY_A', 'ARRAY_A' );
+define( 'OBJECT', 'OBJECT' );
 define( 'MINUTE_IN_SECONDS', 60 );
 define( 'DAY_IN_SECONDS', 86400 );
 
@@ -65,7 +66,8 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		 *
 		 * @param string $message Error message.
 		 */
-		public function __construct( string $message = '' ) {
+		public function __construct( string $message = '', string $code = '', mixed $data = null ) {
+			unset( $code, $data );
 			if ( '' !== $message ) {
 				$this->errors[] = $message;
 			}
@@ -126,6 +128,7 @@ if ( ! class_exists( 'WP_Post' ) ) {
 	class WP_Post {
 		public int $ID = 0;
 		public string $post_status = 'draft';
+		public string $post_name = '';
 	}
 }
 

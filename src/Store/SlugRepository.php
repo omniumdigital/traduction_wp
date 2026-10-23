@@ -38,7 +38,7 @@ final class SlugRepository {
 		);
 		$value = $this->wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
 
-		return is_string( $value ) && '' !== $value ? $value : null;
+		return is_string( $value ) ? $value : null;
 	}
 
 	/**

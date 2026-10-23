@@ -110,3 +110,18 @@ msgstr "Vous n’êtes pas autorisé à traduire ce contenu."
 
 msgid "Only published public content can be translated."
 msgstr "Seul un contenu public publié peut être traduit."
+
+msgid "Provide one post id, or use --all."
+msgstr "Indiquez un identifiant de contenu, ou utilisez --all."
+
+msgid "%d translated slug(s) generated."
+msgstr "%d slug(s) traduit(s) généré(s)."
+
+msgid "Usage: wp omtr slugs set <post_id> <lang> <slug>."
+msgstr "Utilisation : wp omtr slugs set <post_id> <lang> <slug>."
+
+msgid "The translated slug is invalid."
+msgstr "Le slug traduit est invalide."
+
+msgid "Translated slug set to %s."
+msgstr "Slug traduit défini sur %s."
