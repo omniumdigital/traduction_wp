@@ -33,8 +33,9 @@ settings false false
 clear_queue
 
 echo "-- Clé API"
-check "aucune clé enregistrée affichée en clair" "$(W omtr key status --user=admin | grep -c 'sk-')"
-[ "$(W omtr key status --user=admin | grep -c 'sk-')" = "0" ] && FAIL=$((FAIL - 1)) && PASS=$((PASS + 1)) && echo "   (corrigé : 0 clé en clair attendu)"
+KEYS="$(W omtr key status --user=admin)"
+echo "$KEYS" | sed 's/^/   /'
+check "aucune clé affichée en clair (masque uniquement)" "$(echo "$KEYS" | grep -cE '(sk-|AIza)[A-Za-z0-9_-]{12,}' | sed 's/^0$/1/;t;s/.*/0/')"
 
 echo "-- Glossaire"
 W omtr glossary add Omnium en '' keep --user=admin >/dev/null
