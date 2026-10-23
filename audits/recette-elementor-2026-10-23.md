@@ -86,26 +86,20 @@ Configuration : Yoast désactivé, Rank Math actif, assistant local marqué term
 - ✅ `/en/?wc-ajax=get_refreshed_fragments` répond HTTP 200 en JSON, avec `widget_shopping_cart_content`, le produit et un `cart_hash`.
 - ✅ Les pages personnalisées panier/commande sont rendues mais ne sont jamais crawlées ni envoyées au fournisseur IA.
 
-## Performance sur 20 requêtes
+## Performance
 
-Commande représentative après une requête de chauffe :
+Mesure corrigée par le coordinateur le 2026-10-23. La première série comparait `/en/` plugin actif à `/en/` plugin inactif ; or, plugin inactif, cette URL redirige vers la page source et ajoute le coût d'une redirection, d'où un surcoût négatif (−27,56 ms) non significatif.
 
-```bash
-for i in $(seq 1 20); do
-  curl -fsSL -o /dev/null -w '%{time_total}\n' \
-    http://localhost:8882/en/atelier-ceramique/
-done
-```
+Méthode : 3 requêtes de chauffe puis 30 requêtes mesurées par cas (`curl -s -o /dev/null -w '%{time_total}'`), cache objet WordPress non persistant (aucun Redis/Memcached), même page `atelier-ceramique`.
 
-La même URL `/en/` est mesurée plugin actif puis inactif. `-L` suit, dans le cas inactif, la redirection canonique vers la page source ; la bascule de l'option `active_plugins` évite le coût parasite des hooks d'activation. Une requête préalable chauffe les fichiers générés et le rendu. wp-env utilise le cache objet WordPress non persistant fourni par défaut (aucun drop-in Redis/Memcached).
+| Cas | Médiane | Moyenne |
+| --- | ---: | ---: |
+| Plugin inactif, page source `/atelier-ceramique/` | 82,9 ms | 83,6 ms |
+| Plugin actif, page source `/atelier-ceramique/` | 81,6 ms | 96,2 ms |
+| Plugin actif, page traduite `/en/atelier-ceramique/` | 89,1 ms | 105,4 ms |
 
-| État | Moyenne | Minimum | Maximum |
-| --- | ---: | ---: | ---: |
-| Omnium Translate actif | 96,51 ms | 84,51 ms | 117,37 ms |
-| Omnium Translate inactif | 124,06 ms | 106,88 ms | 151,16 ms |
-| Surcoût observé | **−27,56 ms** |  |  |
-
-- ✅ Objectif de la charte `< 50 ms` respecté sur cette série.
+- Surcoût de la page traduite par rapport à la page source sans plugin : **+6,2 ms en médiane**, +21,8 ms en moyenne (quelques requêtes lentes tirent la moyenne vers le haut).
+- ✅ Objectif de la charte `< 50 ms` respecté sur cette série. À remesurer avec un cache objet persistant et un cache de page (WP Rocket, LiteSpeed) au jalon 4.
 
 ## Conclusion
 
