@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Migrations {
 
-	public const DB_VERSION = 1;
+	public const DB_VERSION = 2;
 
 	/**
 	 * Run migrations if the stored version is behind.
@@ -74,6 +74,7 @@ final class Migrations {
 		$translations = Tables::name( Tables::TRANSLATIONS );
 		$pages        = Tables::name( Tables::PAGES );
 		$slugs        = Tables::name( Tables::SLUGS );
+		$slug_history = Tables::name( Tables::SLUG_HISTORY );
 		$glossary     = Tables::name( Tables::GLOSSARY );
 		$log          = Tables::name( Tables::LOG );
 
@@ -118,6 +119,15 @@ final class Migrations {
   PRIMARY KEY  (id),
   UNIQUE KEY post_lang (post_id,target_lang),
   UNIQUE KEY lang_slug (target_lang,slug)
+) {$charset};",
+			"CREATE TABLE {$slug_history} (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  post_id bigint(20) unsigned NOT NULL,
+  target_lang varchar(12) NOT NULL,
+  slug varchar(200) NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY lang_slug (target_lang,slug),
+  KEY post_lang (post_id,target_lang)
 ) {$charset};",
 			"CREATE TABLE {$glossary} (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,

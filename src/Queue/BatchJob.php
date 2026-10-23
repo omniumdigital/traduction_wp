@@ -12,6 +12,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderInterface;
+use Omnium\Translate\Router\SlugGenerator;
 use Omnium\Translate\Security\Sanitizer;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
@@ -42,6 +43,7 @@ final class BatchJob {
 	 * @param LoggerInterface                $logger       Logger.
 	 * @param GlossaryService                $glossary     Glossary service.
 	 * @param QueueState|null                $state        Manual pause state.
+	 * @param SlugGenerator|null             $slug_generator Translated slug generator.
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -51,7 +53,8 @@ final class BatchJob {
 		private TranslationRepositoryInterface $translations,
 		private LoggerInterface $logger,
 		private GlossaryService $glossary,
-		private ?QueueState $state = null
+		private ?QueueState $state = null,
+		private ?SlugGenerator $slug_generator = null
 	) {}
 
 	/**
@@ -61,10 +64,11 @@ final class BatchJob {
 	 * @param string             $lang     Target language.
 	 * @param string             $run_id   Run id owning the lock ('' when standalone).
 	 * @param int                $attempt  Attempt number (1-based).
+	 * @param int                $post_id  Related post id.
 	 */
-	public function handle( array $segments, string $lang, string $run_id, int $attempt ): void {
+	public function handle( array $segments, string $lang, string $run_id, int $attempt, int $post_id = 0 ): void {
 		if ( null !== $this->state && $this->state->is_paused() ) {
-			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt, 60 );
+			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt, 60, $post_id );
 			$this->logger->log( 'info', 'queue:batch', 'Batch deferred: queue is paused.' );
 			return;
 		}
@@ -72,7 +76,7 @@ final class BatchJob {
 			$this->lock->acquire( $run_id );
 		}
 		if ( '' !== $run_id && $this->lock->current_run() !== $run_id ) {
-			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt, 60 );
+			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt, 60, $post_id );
 			$this->logger->log( 'warning', 'queue:batch', 'Batch deferred: another run owns the lock.' );
 			return;
 		}
@@ -109,7 +113,7 @@ final class BatchJob {
 		try {
 			$translated = $provider->translate_batch( $pending, $this->settings->source_lang(), $lang, $this->glossary->for_language( $lang ) );
 		} catch ( ProviderException $e ) {
-			$this->handle_error( $e, $pending, $segments, $lang, $run_id, $attempt );
+			$this->handle_error( $e, $pending, $segments, $lang, $run_id, $attempt, $post_id );
 			return;
 		}
 
@@ -124,6 +128,9 @@ final class BatchJob {
 
 		if ( array() !== $saved ) {
 			$this->translations->save_auto( $saved, $lang, $provider->id(), $this->model_id( $provider ) );
+			if ( $post_id > 0 && null !== $this->slug_generator ) {
+				$this->slug_generator->generate( $post_id, $lang );
+			}
 		}
 
 		$untranslated = array_diff( array_keys( $pending ), array_keys( $translated ) );
@@ -145,8 +152,9 @@ final class BatchJob {
 	 * @param string                $lang     Target language.
 	 * @param string                $run_id   Run id.
 	 * @param int                   $attempt  Attempt number (1-based).
+	 * @param int                   $post_id  Related post id.
 	 */
-	private function handle_error( ProviderException $e, array $pending, array $segments, string $lang, string $run_id, int $attempt ): void {
+	private function handle_error( ProviderException $e, array $pending, array $segments, string $lang, string $run_id, int $attempt, int $post_id ): void {
 		if ( $e->retryable && $attempt < ActionSchedulerQueue::MAX_ATTEMPTS ) {
 			$delay = $this->queue->backoff_delay( $attempt );
 			$this->logger->log(
@@ -154,7 +162,7 @@ final class BatchJob {
 				'queue:batch',
 				sprintf( 'Batch retry scheduled (http=%d, attempt=%d/%d, delay=%ds).', $e->http_code, $attempt + 1, ActionSchedulerQueue::MAX_ATTEMPTS, $delay )
 			);
-			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt + 1, $delay );
+			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt + 1, $delay, $post_id );
 			return;
 		}
 

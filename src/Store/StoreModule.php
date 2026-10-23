@@ -15,7 +15,6 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Repositories for segments, translations, pages, slugs and log (CLAUDE.md section 4).
- * TODO(jalon 4): slugs repository.
  */
 final class StoreModule implements ModuleInterface {
 
@@ -28,6 +27,7 @@ final class StoreModule implements ModuleInterface {
 		$container->set( SegmentRepositoryInterface::class, static fn() => new SegmentRepository( $GLOBALS['wpdb'] ) );
 		$container->set( TranslationRepositoryInterface::class, static fn() => new TranslationRepository( $GLOBALS['wpdb'] ) );
 		$container->set( PageRepository::class, static fn() => new PageRepository( $GLOBALS['wpdb'] ) );
+		$container->set( SlugRepository::class, static fn() => new SlugRepository( $GLOBALS['wpdb'] ) );
 		$container->set( LoggerInterface::class, static fn() => new DbLogger( $GLOBALS['wpdb'] ) );
 	}
 

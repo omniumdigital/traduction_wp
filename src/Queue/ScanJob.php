@@ -95,7 +95,7 @@ final class ScanJob {
 
 		$total_batches = 0;
 		foreach ( $this->settings->target_langs() as $lang ) {
-			$total_batches += $this->schedule_language( $found, $hash_ids, $lang, $run_id );
+			$total_batches += $this->schedule_language( $found, $hash_ids, $lang, $run_id, $post_id );
 		}
 
 		if ( 0 === $total_batches ) {
@@ -114,9 +114,10 @@ final class ScanJob {
 	 * @param array<string, int>    $hash_ids  Hash => segment id.
 	 * @param string                $lang      Target language.
 	 * @param string                $run_id    Run id owning the lock.
+	 * @param int                   $post_id   Related post id.
 	 * @return int Number of batches scheduled.
 	 */
-	private function schedule_language( array $found, array $hash_ids, string $lang, string $run_id ): int {
+	private function schedule_language( array $found, array $hash_ids, string $lang, string $run_id, int $post_id ): int {
 		// Never pay twice: only segments without a translation for this language.
 		$existing = $this->translations->find_many( array_keys( $found ), $lang );
 		$missing  = array_diff_key( $found, $existing );
@@ -144,7 +145,7 @@ final class ScanJob {
 			}
 
 			// The run id travels with every batch so the lock can be settled.
-			$this->queue->schedule_batch( $payload, $lang, $run_id, 1 );
+			$this->queue->schedule_batch( $payload, $lang, $run_id, 1, 0, $post_id );
 			++$scheduled;
 		}
 

@@ -18,6 +18,7 @@ final class Tables {
 	public const TRANSLATIONS = 'translations';
 	public const PAGES        = 'pages';
 	public const SLUGS        = 'slugs';
+	public const SLUG_HISTORY = 'slug_history';
 	public const GLOSSARY     = 'glossary';
 	public const LOG          = 'log';
 
@@ -37,6 +38,6 @@ final class Tables {
 	 * @return list<string>
 	 */
 	public static function all(): array {
-		return array( self::SEGMENTS, self::TRANSLATIONS, self::PAGES, self::SLUGS, self::GLOSSARY, self::LOG );
+		return array( self::SEGMENTS, self::TRANSLATIONS, self::PAGES, self::SLUGS, self::SLUG_HISTORY, self::GLOSSARY, self::LOG );
 	}
 }

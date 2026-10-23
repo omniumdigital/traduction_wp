@@ -8,6 +8,7 @@
 namespace Omnium\Translate\Router;
 
 use Omnium\Translate\Core\Settings;
+use Omnium\Translate\Store\SlugRepository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -71,10 +72,12 @@ final class UrlTranslator {
 			if ( $relative_path === $prefix || str_starts_with( $relative_path, $prefix . '/' ) ) {
 				$relative_path = substr( $relative_path, strlen( $prefix ) );
 				$relative_path = '' === $relative_path ? '/' : $relative_path;
+				$relative_path = $this->source_slug_path( $relative_path, $target, $home_path );
 				break;
 			}
 		}
 		if ( $lang !== $this->settings->source_lang() ) {
+			$relative_path = $this->translated_slug_path( $relative_path, $lang, $home_authority . $home_path );
 			$relative_path = '/' . rawurlencode( $lang ) . ( '/' === $relative_path ? '/' : '/' . ltrim( $relative_path, '/' ) );
 		}
 		$path = $home_path . $relative_path;
@@ -90,5 +93,63 @@ final class UrlTranslator {
 			$authority .= ':' . (int) $parts['port'];
 		}
 		return $authority . $path . $query . $fragment;
+	}
+
+	/**
+	 * Recover the source permalink when switching away from a translated URL.
+	 *
+	 * @param string $relative_path Path below the language prefix.
+	 * @param string $lang          Language of the incoming URL.
+	 * @param string $home_path     WordPress installation path.
+	 */
+	private function source_slug_path( string $relative_path, string $lang, string $home_path ): string {
+		if ( '/' === $relative_path || ! isset( $GLOBALS['wpdb'] ) || ! $GLOBALS['wpdb'] instanceof \wpdb ) {
+			return $relative_path;
+		}
+		$segments = explode( '/', trim( $relative_path, '/' ) );
+		$post_id  = ( new SlugRepository( $GLOBALS['wpdb'] ) )->find_post_id( rawurldecode( (string) end( $segments ) ), $lang );
+		if ( null === $post_id || 'publish' !== get_post_status( $post_id ) ) {
+			return $relative_path;
+		}
+		$permalink = get_permalink( $post_id );
+		$parts     = is_string( $permalink ) ? wp_parse_url( $permalink ) : false;
+		if ( ! is_array( $parts ) || ! isset( $parts['path'] ) ) {
+			return $relative_path;
+		}
+		$path = (string) $parts['path'];
+		return '' !== $home_path && str_starts_with( $path, $home_path . '/' ) ? substr( $path, strlen( $home_path ) ) : $path;
+	}
+
+	/**
+	 * Replace source hierarchy segments with stored translated slugs.
+	 *
+	 * The public constructor and translate() signature intentionally remain
+	 * unchanged because SEO and rendering integrations depend on that contract.
+	 *
+	 * @param string $relative_path Source path below home_url().
+	 * @param string $lang          Target language.
+	 * @param string $home_base     Absolute home base without trailing slash.
+	 */
+	private function translated_slug_path( string $relative_path, string $lang, string $home_base ): string {
+		$post_id = (int) url_to_postid( rtrim( $home_base, '/' ) . '/' . ltrim( $relative_path, '/' ) );
+		if ( $post_id <= 0 || ! isset( $GLOBALS['wpdb'] ) || ! $GLOBALS['wpdb'] instanceof \wpdb ) {
+			return $relative_path;
+		}
+
+		$repository = new SlugRepository( $GLOBALS['wpdb'] );
+		$ids        = array_reverse( array_map( 'intval', get_post_ancestors( $post_id ) ) );
+		$ids[]      = $post_id;
+		$segments   = explode( '/', trim( $relative_path, '/' ) );
+		$position   = count( $segments ) - 1;
+		foreach ( array_reverse( $ids ) as $id ) {
+			$translated = $repository->get( $id, $lang );
+			if ( null !== $translated && $position >= 0 ) {
+				$segments[ $position ] = rawurlencode( $translated );
+			}
+			--$position;
+		}
+
+		$trailing = str_ends_with( $relative_path, '/' ) ? '/' : '';
+		return '/' . implode( '/', $segments ) . $trailing;
 	}
 }
