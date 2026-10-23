@@ -10,12 +10,12 @@ Verdict : ✅ VALIDÉ
 
 ## Findings
 
-Aucun finding Critique ou Haute. La méta de commande ne stocke que le code de langue; les fragments sont rendus avec les traductions existantes et ne sont jamais envoyés à l'IA.
+Aucun finding Critique ou Haute restant. Le défaut de formatage d'email et la lecture du seul gabarit par défaut sont corrigés : le texte personnalisé du marchand est traduit avant substitution des variables. La méta de commande ne stocke que le code de langue; les fragments sont rendus avec les traductions existantes et ne sont jamais envoyés à l'IA.
 
 ## Checklist
 
 - Crawler et traduction à la volée : ✅ aucun déclenchement ajouté aux emails/fragments; le renderer n'envoie rien pendant ces requêtes.
-- Emails transactionnels : ✅ extraction de sujets/en-têtes textuels et contenu additionnel depuis les gabarits/réglages; la valeur déjà personnalisée est ignorée; emails admin sans méta de commande inchangés.
+- Emails transactionnels : ✅ extraction des sujets, titres et contenu additionnel depuis les gabarits/réglages; la valeur déjà personnalisée est ignorée pendant l'extraction, puis `format_string()` substitue les variables après traduction; emails admin sans méta de commande inchangés. Test avec `client@example.test` exclu par `PiiFilter`.
 - Données de commande : ✅ nom, adresse, produits, montants et headers restent hors des segments; seule `_omtr_order_language` est persistée.
 - Fragments : ✅ `lang`/`language` et Referer sont validés contre source + cibles; une langue étrangère/non configurée est refusée.
 - Front : ✅ aucune ressource externe, cookie ou stockage navigateur ajouté.
