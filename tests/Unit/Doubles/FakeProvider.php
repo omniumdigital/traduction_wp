@@ -68,6 +68,18 @@ final class FakeProvider implements ProviderInterface {
 		return new RateLimits( 50, 20, 10000 );
 	}
 
+	public function key_url(): string {
+		return 'https://example.test/keys';
+	}
+
+	public function region(): string {
+		return 'eu';
+	}
+
+	public function has_free_tier(): bool {
+		return false;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 *

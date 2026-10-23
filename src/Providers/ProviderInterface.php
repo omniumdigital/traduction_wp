@@ -58,4 +58,20 @@ interface ProviderInterface {
 	 * Rate limits to respect when batching.
 	 */
 	public function limits(): RateLimits;
+
+	/**
+	 * Official page where the site owner creates an API key (hard-coded HTTPS URL).
+	 */
+	public function key_url(): string;
+
+	/**
+	 * Data processing location shown to the site owner: "eu" or "non-eu".
+	 */
+	public function region(): string;
+
+	/**
+	 * Whether the provider offers a free tier, which may reuse submitted data.
+	 * Settings must show a warning when the site uses it.
+	 */
+	public function has_free_tier(): bool;
 }

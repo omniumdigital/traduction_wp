@@ -91,6 +91,27 @@ final class ClaudeProvider implements ProviderInterface {
 
 	/**
 	 * {@inheritDoc}
+	 */
+	public function key_url(): string {
+		return 'https://console.anthropic.com/settings/keys';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function region(): string {
+		return 'non-eu';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function has_free_tier(): bool {
+		return false;
+	}
+
+	/**
+	 * {@inheritDoc}
 	 *
 	 * @param array<string, string> $segments Segment hash => source text.
 	 * @param string                $source   Source language code.
