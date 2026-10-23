@@ -108,8 +108,11 @@ final class Translator {
 	 */
 	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array $stored, bool $excluded ): void {
 		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
+			$tag = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			if ( ! $excluded && 'script' === $tag && 'application/ld+json' === strtolower( trim( (string) $node->getAttribute( 'type' ) ) ) ) {
+				$node->textContent = JsonLdProcessor::translate( (string) $node->textContent, $source_lang, $this->current_language->get(), $stored, $this->url_translator ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			}
 			$excluded = $excluded || $this->is_excluded_element( $node );
-			$tag      = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
 					if ( 'link' === $tag && 'title' === $attribute ) {

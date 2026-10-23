@@ -68,6 +68,34 @@ final class UrlTranslatorTest extends TestCase {
 		$this->assertSame( 'https://example.test/en/translated-page/', $translator->translate( 'https://example.test/page-source/', 'en' ) );
 	}
 
+	public function test_known_post_never_resolves_its_url(): void {
+		$resolutions = 0;
+		Functions\when( 'url_to_postid' )->alias( static function () use ( &$resolutions ): int {
+			++$resolutions;
+			return 0;
+		} );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/page-source/' );
+		$wpdb = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$wpdb->method( 'get_var' )->willReturn( 'translated-page' );
+		$this->assertSame( 'https://example.test/en/translated-page/', ( new UrlTranslator( new Settings() ) )->translate_post( 42, 'en' ) );
+		$this->assertSame( 0, $resolutions );
+	}
+
+	public function test_repeated_url_uses_one_post_resolution(): void {
+		$resolutions = 0;
+		Functions\when( 'url_to_postid' )->alias( static function () use ( &$resolutions ): int {
+			++$resolutions;
+			return 0;
+		} );
+		$translator = new UrlTranslator( new Settings() );
+		$this->assertSame( '/en/page', $translator->translate( '/page', 'en' ) );
+		$this->assertSame( '/en/page', $translator->translate( '/page', 'en' ) );
+		$this->assertSame( 1, $resolutions );
+	}
+
 	public function test_switches_translated_url_back_to_source_permalink(): void {
 		Functions\when( 'get_post_status' )->justReturn( 'publish' );
 		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/parent-source/page-source/' );

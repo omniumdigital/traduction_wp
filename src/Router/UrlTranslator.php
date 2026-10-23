@@ -32,6 +32,13 @@ final class UrlTranslator {
 	private ?array $prepared_slugs = null;
 
 	/**
+	 * Identifiers covered by the current batch, including missing slugs.
+	 *
+	 * @var array<int, bool>
+	 */
+	private array $prepared_ids = array();
+
+	/**
 	 * URL resolution cache for this request.
 	 *
 	 * @var array<string, int>
@@ -78,6 +85,7 @@ final class UrlTranslator {
 				$ids[] = (int) $ancestor;
 			}
 		}
+		$this->prepared_ids   = array_fill_keys( $ids, true );
 		$this->prepared_slugs = isset( $GLOBALS['wpdb'] ) && $GLOBALS['wpdb'] instanceof \wpdb
 			? ( new SlugRepository( $GLOBALS['wpdb'] ) )->many( $ids, $languages )
 			: array();
@@ -213,7 +221,7 @@ final class UrlTranslator {
 		$segments   = explode( '/', trim( $relative_path, '/' ) );
 		$position   = count( $segments ) - 1;
 		foreach ( array_reverse( $ids ) as $id ) {
-			$translated = null !== $this->prepared_slugs ? ( $this->prepared_slugs[ $id ][ $lang ] ?? null ) : $repository->get( $id, $lang );
+			$translated = isset( $this->prepared_ids[ $id ] ) ? ( $this->prepared_slugs[ $id ][ $lang ] ?? null ) : $repository->get( $id, $lang );
 			if ( null !== $translated && $position >= 0 ) {
 				$segments[ $position ] = rawurlencode( $translated );
 			}

@@ -198,8 +198,27 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	 */
 	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array &$segments, bool $excluded ): void {
 		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
+			$tag = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			if ( ! $excluded && 'omtr-ph' === $tag && $node instanceof \DOMElement && null !== self::$fallback_state ) {
+				$document = $node->ownerDocument; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+				if ( null !== $document && isset( self::$fallback_state[ $document ] ) ) {
+					$state  = self::$fallback_state[ $document ];
+					$marker = $node->getAttribute( 'data-omtr-placeholder' );
+					$prefix = $state['token'] . '-';
+					if ( str_starts_with( $marker, $prefix ) ) {
+						$index = (int) substr( $marker, strlen( $prefix ) );
+						$block = $state['blocks'][ $index ] ?? '';
+						if ( preg_match( '~^<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>(.*?)</script\s*>$~is', $block, $matches ) ) {
+							$segments = array_merge( $segments, JsonLdProcessor::segments( $matches[1], $source_lang, $this->pii_filter ) );
+						}
+					}
+				}
+			}
+
+			if ( ! $excluded && 'script' === $tag && 'application/ld+json' === strtolower( trim( (string) $node->getAttribute( 'type' ) ) ) ) {
+				$segments = array_merge( $segments, JsonLdProcessor::segments( (string) $node->textContent, $source_lang, $this->pii_filter ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			}
 			$excluded = $excluded || $this->is_excluded_element( $node );
-			$tag      = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
 					if ( 'link' === $tag && 'title' === $attribute ) {
