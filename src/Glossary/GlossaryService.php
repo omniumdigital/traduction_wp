@@ -51,4 +51,16 @@ final class GlossaryService {
 			(string) $this->settings->get( 'site_context' )
 		);
 	}
+
+	/**
+	 * Propose auto translations affected by a glossary rule.
+	 *
+	 * This method is read-only: callers decide whether to retranslate later.
+	 *
+	 * @param int $rule_id Glossary rule id.
+	 * @return list<array{segment_id: int, source_text: string, translation_id: int, translation: string, target_lang: string, status: string}>
+	 */
+	public function affected( int $rule_id ): array {
+		return $this->repository->affected( $rule_id );
+	}
 }

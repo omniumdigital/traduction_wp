@@ -38,7 +38,8 @@ final class GlossaryModule implements ModuleInterface {
 			GlossaryCli::class,
 			static fn( Container $c ) => new GlossaryCli(
 				$c->get( GlossaryRepository::class ),
-				$c->get( GlossaryCsv::class )
+				$c->get( GlossaryCsv::class ),
+				$c->get( GlossaryService::class )
 			)
 		);
 	}

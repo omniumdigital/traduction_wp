@@ -33,6 +33,10 @@ if ( ! class_exists( 'wpdb' ) ) {
 		public function get_var( string $query ): string|null {
 			return null;
 		}
+
+		public function esc_like( string $text ): string {
+			return addcslashes( $text, '_%\\' );
+		}
 	}
 }
 

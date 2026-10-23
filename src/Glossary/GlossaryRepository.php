@@ -141,6 +141,49 @@ final class GlossaryRepository {
 	}
 
 	/**
+	 * Find auto translations whose source contains the rule term.
+	 *
+	 * Edited and locked translations are excluded by the SQL status condition.
+	 *
+	 * @param int $id Glossary rule id.
+	 * @return list<array{segment_id: int, source_text: string, translation_id: int, translation: string, target_lang: string, status: string}>
+	 */
+	public function affected( int $id ): array {
+		$rule = $this->find( $id );
+		if ( null === $rule ) {
+			return array();
+		}
+
+		$segments     = Tables::name( Tables::SEGMENTS );
+		$translations = Tables::name( Tables::TRANSLATIONS );
+		$like         = '%' . $this->wpdb->esc_like( $rule['term'] ) . '%';
+		$sql          = $this->wpdb->prepare(
+			'SELECT s.id AS segment_id, s.source_text, t.id AS translation_id, t.text AS translation, t.target_lang, t.status
+			FROM %i s INNER JOIN %i t ON t.segment_id = s.id
+			WHERE t.target_lang = %s AND t.status = %s AND s.source_text LIKE %s
+			ORDER BY s.id ASC',
+			$segments,
+			$translations,
+			$rule['target_lang'],
+			'auto',
+			$like
+		);
+		$rows         = $this->wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
+		$result       = array();
+		foreach ( $rows as $row ) {
+			$result[] = array(
+				'segment_id'     => (int) $row['segment_id'],
+				'source_text'    => (string) $row['source_text'],
+				'translation_id' => (int) $row['translation_id'],
+				'translation'    => (string) $row['translation'],
+				'target_lang'    => (string) $row['target_lang'],
+				'status'         => (string) $row['status'],
+			);
+		}
+		return $result;
+	}
+
+	/**
 	 * Normalize database rows.
 	 *
 	 * @param array<int, array<string, mixed>> $rows Database rows.
