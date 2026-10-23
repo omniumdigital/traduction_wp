@@ -28,14 +28,63 @@ final class TranslateCli {
 	 * @param RunLock              $lock     Translation run lock.
 	 * @param WordCap              $word_cap Monthly word cap.
 	 * @param HourlyQuota          $hourly_quota Hourly on-the-fly quota.
+	 * @param Estimator            $estimator Estimator.
+	 * @param PublicContent        $content Public content resolver.
 	 */
 	public function __construct(
 		private ActionSchedulerQueue $queue,
 		private Settings $settings,
 		private RunLock $lock,
 		private WordCap $word_cap,
-		private HourlyQuota $hourly_quota
+		private HourlyQuota $hourly_quota,
+		private Estimator $estimator,
+		private PublicContent $content
 	) {}
+
+	/**
+	 * Estimate an untranslated workload without enqueuing it.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<post_id|url>]
+	 * : One published public post or URL.
+	 *
+	 * [--all]
+	 * : Estimate every published public post.
+	 *
+	 * @param list<string>         $args Positional arguments.
+	 * @param array<string, mixed> $assoc_args Associative arguments.
+	 */
+	public function estimate( array $args, array $assoc_args ): void {
+		$this->guard();
+		$all = isset( $assoc_args['all'] );
+		if ( ( $all && array() !== $args ) || ( ! $all && array() === $args ) ) {
+			\WP_CLI::error( __( 'Provide one post id or URL, or use --all.', 'omnium-translate' ) );
+			return;
+		}
+		if ( $all ) {
+			$targets = $this->content->all();
+		} else {
+			$target = $this->content->resolve( $args[0] );
+			if ( null === $target ) {
+				\WP_CLI::error( __( 'Only a published public post can be estimated.', 'omnium-translate' ) );
+				return;
+			}
+			$targets = array( $target );
+		}
+		$result = $this->estimator->estimate( $targets );
+		$rows   = array();
+		foreach ( $result as $key => $value ) {
+			if ( 'cost' === $key && null === $value ) {
+				$value = __( 'unknown cost', 'omnium-translate' );
+			}
+			$rows[] = array(
+				'key'   => $key,
+				'value' => is_float( $value ) ? number_format( $value, 6, '.', '' ) : (string) $value,
+			);
+		}
+		\WP_CLI\Utils\format_items( 'table', $rows, array( 'key', 'value' ) );
+	}
 
 	/**
 	 * Register the commands (called during boot, WP-CLI context only).

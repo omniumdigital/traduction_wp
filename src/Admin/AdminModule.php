@@ -11,6 +11,8 @@ use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
 use Omnium\Translate\Glossary\GlossaryCsv;
 use Omnium\Translate\Glossary\GlossaryRepository;
+use Omnium\Translate\Queue\Estimator;
+use Omnium\Translate\Queue\PublicContent;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -32,7 +34,9 @@ final class AdminModule implements ModuleInterface {
 			static fn( Container $c ) => new RestController(
 				$c->get( GlossaryRepository::class ),
 				$c->get( GlossaryCsv::class ),
-				$c->get( SegmentEditorRepository::class )
+				$c->get( SegmentEditorRepository::class ),
+				$c->get( Estimator::class ),
+				$c->get( PublicContent::class )
 			)
 		);
 	}

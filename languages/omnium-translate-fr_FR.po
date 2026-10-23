@@ -62,3 +62,18 @@ msgstr "La capacité omtr_manage est requise (essayez --user=admin)."
 
 msgid "Provide a valid CSV file."
 msgstr "Fournissez un fichier CSV valide."
+
+msgid "Provide one post id or URL, or use --all."
+msgstr "Indiquez un identifiant d’article ou une URL, ou utilisez --all."
+
+msgid "Only a published public post can be estimated."
+msgstr "Seul un contenu public publié peut être estimé."
+
+msgid "unknown cost"
+msgstr "coût inconnu"
+
+msgid "The estimator is unavailable."
+msgstr "L’estimateur est indisponible."
+
+msgid "No published public content was selected."
+msgstr "Aucun contenu public publié n’a été sélectionné."

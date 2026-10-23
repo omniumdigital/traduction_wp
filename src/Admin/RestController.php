@@ -9,6 +9,8 @@ namespace Omnium\Translate\Admin;
 
 use Omnium\Translate\Glossary\GlossaryCsv;
 use Omnium\Translate\Glossary\GlossaryRepository;
+use Omnium\Translate\Queue\Estimator;
+use Omnium\Translate\Queue\PublicContent;
 use Omnium\Translate\Security\Capabilities;
 use Omnium\Translate\Security\Sanitizer;
 
@@ -26,16 +28,59 @@ final class RestController {
 	 * @param GlossaryRepository      $glossary Glossary repository.
 	 * @param GlossaryCsv             $csv      CSV service.
 	 * @param SegmentEditorRepository $segments Segment editor repository.
+	 * @param Estimator|null          $estimator Estimator.
+	 * @param PublicContent|null      $content Public content resolver.
 	 */
 	public function __construct(
 		private GlossaryRepository $glossary,
 		private GlossaryCsv $csv,
-		private SegmentEditorRepository $segments
+		private SegmentEditorRepository $segments,
+		private ?Estimator $estimator = null,
+		private ?PublicContent $content = null
 	) {}
 
 	/** Register every private route. */
 	public function register_routes(): void {
 		$permission = array( Capabilities::class, 'rest_permission' );
+		register_rest_route(
+			self::NAMESPACE,
+			'/estimate',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'estimate' ),
+				'permission_callback' => $permission,
+				'args'                => array(
+					'post_ids'  => array(
+						'type'              => 'array',
+						'items'             => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+						),
+						'sanitize_callback' => static fn( array $ids ): array => array_values( array_filter( array_map( 'absint', $ids ) ) ),
+					),
+					'urls'      => array(
+						'type'              => 'array',
+						'items'             => array(
+							'type'   => 'string',
+							'format' => 'uri',
+						),
+						'sanitize_callback' => static fn( array $urls ): array => array_values( array_map( 'esc_url_raw', $urls ) ),
+					),
+					'all'       => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
+					'languages' => array(
+						'type'              => 'array',
+						'items'             => array(
+							'type'    => 'string',
+							'pattern' => '^[a-z]{2,3}(?:-[A-Z]{2})?$',
+						),
+						'sanitize_callback' => static fn( array $languages ): array => array_values( array_map( 'sanitize_key', $languages ) ),
+					),
+				),
+			)
+		);
 		register_rest_route(
 			self::NAMESPACE,
 			'/glossary',
@@ -128,6 +173,36 @@ final class RestController {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Estimate public posts without enqueuing work.
+	 *
+	 * @param \WP_REST_Request $request REST request.
+	 */
+	public function estimate( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		if ( null === $this->estimator || null === $this->content ) {
+			return new \WP_Error( 'omtr_unavailable', __( 'The estimator is unavailable.', 'omnium-translate' ), array( 'status' => 503 ) );
+		}
+		$params  = $request->get_params();
+		$targets = ! empty( $params['all'] ) ? $this->content->all() : array();
+		foreach ( (array) ( $params['post_ids'] ?? array() ) as $post_id ) {
+			$resolved = $this->content->resolve( (int) $post_id );
+			if ( null !== $resolved ) {
+				$targets[ $resolved['url'] ] = $resolved;
+			}
+		}
+		foreach ( (array) ( $params['urls'] ?? array() ) as $url ) {
+			$resolved = $this->content->resolve( (string) $url );
+			if ( null !== $resolved ) {
+				$targets[ $resolved['url'] ] = $resolved;
+			}
+		}
+		if ( array() === $targets ) {
+			return new \WP_Error( 'omtr_no_public_target', __( 'No published public content was selected.', 'omnium-translate' ), array( 'status' => 400 ) );
+		}
+		$languages = isset( $params['languages'] ) && is_array( $params['languages'] ) ? $params['languages'] : null;
+		return new \WP_REST_Response( $this->estimator->estimate( array_values( $targets ), $languages ) );
 	}
 
 	/**

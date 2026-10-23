@@ -13,6 +13,7 @@ use Omnium\Translate\Core\ModuleInterface;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderRegistry;
+use Omnium\Translate\Providers\Pricing;
 use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
@@ -35,6 +36,22 @@ final class QueueModule implements ModuleInterface {
 		$container->set( RunLock::class, static fn() => new RunLock() );
 		$container->set( WordCap::class, static fn( Container $c ) => new WordCap( $c->get( Settings::class ) ) );
 		$container->set( HourlyQuota::class, static fn( Container $c ) => new HourlyQuota( $c->get( Settings::class ) ) );
+		$container->set( PublicContent::class, static fn() => new PublicContent() );
+		if ( ! $container->has( Pricing::class ) ) {
+			$container->set( Pricing::class, static fn() => new Pricing() );
+		}
+		$container->set(
+			Estimator::class,
+			static fn( Container $c ): Estimator => new Estimator(
+				$c->get( Settings::class ),
+				$c->get( PublicContent::class ),
+				$c->get( SegmentExtractorInterface::class ),
+				$c->get( TranslationRepositoryInterface::class ),
+				$c->get( WordCap::class ),
+				$c->get( ProviderRegistry::class ),
+				$c->get( Pricing::class )
+			)
+		);
 
 		$container->set(
 			ActionSchedulerQueue::class,
@@ -84,7 +101,9 @@ final class QueueModule implements ModuleInterface {
 				$c->get( Settings::class ),
 				$c->get( RunLock::class ),
 				$c->get( WordCap::class ),
-				$c->get( HourlyQuota::class )
+				$c->get( HourlyQuota::class ),
+				$c->get( Estimator::class ),
+				$c->get( PublicContent::class )
 			)
 		);
 	}
