@@ -36,6 +36,7 @@ final class ScanJob {
 	 * @param SegmentRepositoryInterface     $segments     Segments repository.
 	 * @param TranslationRepositoryInterface $translations Translations repository.
 	 * @param LoggerInterface                $logger       Logger.
+	 * @param QueueState|null                $state        Manual pause state.
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -45,7 +46,8 @@ final class ScanJob {
 		private SegmentExtractorInterface $extractor,
 		private SegmentRepositoryInterface $segments,
 		private TranslationRepositoryInterface $translations,
-		private LoggerInterface $logger
+		private LoggerInterface $logger,
+		private ?QueueState $state = null
 	) {}
 
 	/**
@@ -57,6 +59,16 @@ final class ScanJob {
 	 * @throws \RuntimeException When the page cannot be fetched (marks the action failed).
 	 */
 	public function handle( string $url, int $post_id, string $run_id ): void {
+		if ( null !== $this->state && $this->state->is_paused() ) {
+			$this->queue->schedule_scan( $url, $post_id, $run_id, 60 );
+			$this->logger->log( 'info', 'queue:scan', 'Scan deferred: queue is paused.' );
+			return;
+		}
+
+		// Action Scheduler preserves actions across process interruptions.
+		if ( null === $this->lock->current_run() ) {
+			$this->lock->acquire( $run_id );
+		}
 		// The run was cancelled or replaced: do nothing.
 		if ( $this->lock->current_run() !== $run_id ) {
 			$this->logger->log( 'warning', 'queue:scan', 'Scan skipped: run no longer owns the lock.' );
@@ -65,7 +77,7 @@ final class ScanJob {
 
 		$html = $this->fetch( $url );
 		if ( null === $html ) {
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			$this->logger->log( 'error', 'queue:scan', sprintf( 'Scan failed: the page could not be fetched (post_id=%d).', $post_id ) );
 			throw new \RuntimeException( 'omtr: scan fetch failed' );
 		}
@@ -75,7 +87,7 @@ final class ScanJob {
 
 		if ( array() === $found ) {
 			$this->logger->log( 'info', 'queue:scan', sprintf( 'Scan finished: no translatable segment (post_id=%d).', $post_id ) );
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 
@@ -88,7 +100,7 @@ final class ScanJob {
 
 		if ( 0 === $total_batches ) {
 			$this->logger->log( 'info', 'queue:scan', sprintf( 'Scan finished: nothing left to translate (post_id=%d).', $post_id ) );
-			$this->queue->settle_run( $run_id );
+			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 

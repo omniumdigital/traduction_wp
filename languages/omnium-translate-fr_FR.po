@@ -62,3 +62,51 @@ msgstr "La capacité omtr_manage est requise (essayez --user=admin)."
 
 msgid "Provide a valid CSV file."
 msgstr "Fournissez un fichier CSV valide."
+
+msgid "Provide one post id or URL, or use --all."
+msgstr "Indiquez un identifiant d’article ou une URL, ou utilisez --all."
+
+msgid "Only a published public post can be estimated."
+msgstr "Seul un contenu public publié peut être estimé."
+
+msgid "unknown cost"
+msgstr "coût inconnu"
+
+msgid "The estimator is unavailable."
+msgstr "L’estimateur est indisponible."
+
+msgid "No published public content was selected."
+msgstr "Aucun contenu public publié n’a été sélectionné."
+
+msgid "The translation queue is paused."
+msgstr "La file de traduction est en pause."
+
+msgid "Translation queue paused."
+msgstr "File de traduction mise en pause."
+
+msgid "Translation queue resumed."
+msgstr "File de traduction reprise."
+
+msgid "paused"
+msgstr "en pause"
+
+msgid "running"
+msgstr "active"
+
+msgid "The translation queue is unavailable."
+msgstr "La file de traduction est indisponible."
+
+msgid "Queue the translation of all these pages?"
+msgstr "Mettre en file la traduction de toutes ces pages ?"
+
+msgid "Full-site translation queued."
+msgstr "Traduction de tout le site mise en file."
+
+msgid "Translate"
+msgstr "Traduire"
+
+msgid "You are not allowed to translate this content."
+msgstr "Vous n’êtes pas autorisé à traduire ce contenu."
+
+msgid "Only published public content can be translated."
+msgstr "Seul un contenu public publié peut être traduit."

@@ -28,6 +28,13 @@ final class Translator {
 	 * with HtmlSegmentExtractor::TRANSLATABLE_META: non-textual SEO metas
 	 * (locale, type, URL, card…) must never be rewritten with a translation.
 	 */
+	/**
+	 * Number of segments of the last translated response without a stored translation.
+	 *
+	 * @var int
+	 */
+	private int $missing = 0;
+
 	private const TRANSLATABLE_META = array( 'description', 'og:title', 'og:description', 'og:site_name', 'twitter:title', 'twitter:description' );
 
 	/**
@@ -51,6 +58,7 @@ final class Translator {
 	 * @param string $html Rendered response.
 	 */
 	public function translate( string $html ): string {
+		$this->missing = 0;
 		if ( ! $this->current_language->is_translated() || '' === trim( $html ) ) {
 			return $html;
 		}
@@ -73,12 +81,21 @@ final class Translator {
 			$stored = $this->translations->find_many( $hashes, $this->current_language->get() );
 			wp_cache_set( $cache_key, $stored, TranslationRepository::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 		}
+		$this->missing = count( array_diff_key( $segments, $stored ) );
 
 		$this->walk( $document, $source_lang, $stored, false );
 		$this->set_document_language( $document );
 		$this->rewrite_links( $document );
 		$output = HtmlSegmentExtractor::save_document( $document );
 		return false === $output ? $html : $output;
+	}
+
+	/**
+	 * Segments of the last translated response that had no stored translation.
+	 * Computed during translate(), so callers get it without parsing the page again.
+	 */
+	public function missing_count(): int {
+		return $this->missing;
 	}
 
 	/**

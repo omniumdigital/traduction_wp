@@ -41,6 +41,7 @@ final class BatchJob {
 	 * @param TranslationRepositoryInterface $translations Translations repository.
 	 * @param LoggerInterface                $logger       Logger.
 	 * @param GlossaryService                $glossary     Glossary service.
+	 * @param QueueState|null                $state        Manual pause state.
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -49,7 +50,8 @@ final class BatchJob {
 		private SegmentRepositoryInterface $segments,
 		private TranslationRepositoryInterface $translations,
 		private LoggerInterface $logger,
-		private GlossaryService $glossary
+		private GlossaryService $glossary,
+		private ?QueueState $state = null
 	) {}
 
 	/**
@@ -61,6 +63,19 @@ final class BatchJob {
 	 * @param int                $attempt  Attempt number (1-based).
 	 */
 	public function handle( array $segments, string $lang, string $run_id, int $attempt ): void {
+		if ( null !== $this->state && $this->state->is_paused() ) {
+			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt, 60 );
+			$this->logger->log( 'info', 'queue:batch', 'Batch deferred: queue is paused.' );
+			return;
+		}
+		if ( '' !== $run_id && null === $this->lock->current_run() ) {
+			$this->lock->acquire( $run_id );
+		}
+		if ( '' !== $run_id && $this->lock->current_run() !== $run_id ) {
+			$this->queue->schedule_batch( $segments, $lang, $run_id, $attempt, 60 );
+			$this->logger->log( 'warning', 'queue:batch', 'Batch deferred: another run owns the lock.' );
+			return;
+		}
 		if ( '' !== $run_id ) {
 			$this->lock->heartbeat( $run_id );
 		}

@@ -9,6 +9,7 @@ namespace Omnium\Translate\Render;
 
 use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
+use Omnium\Translate\Queue\OnTheFlyTrigger;
 use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\RequestGuard;
 use Omnium\Translate\Router\UrlTranslator;
@@ -44,7 +45,8 @@ final class RenderModule implements ModuleInterface {
 			static fn( Container $c ) => new OutputBuffer(
 				$c->get( CurrentLanguage::class ),
 				$c->get( RequestGuard::class ),
-				$c->get( Translator::class )
+				$c->get( Translator::class ),
+				$c->get( OnTheFlyTrigger::class )
 			)
 		);
 	}

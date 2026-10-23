@@ -24,6 +24,7 @@ final class Options {
 	public const HOUR_SEGMENTS      = 'omtr_hour_segments';
 	public const MONTH_WORDS_LOCK   = 'omtr_month_words_lock';
 	public const HOUR_SEGMENTS_LOCK = 'omtr_hour_segments_lock';
+	public const QUEUE_PAUSED       = 'omtr_queue_paused';
 
 	/**
 	 * All option names.
@@ -42,6 +43,7 @@ final class Options {
 			self::HOUR_SEGMENTS,
 			self::MONTH_WORDS_LOCK,
 			self::HOUR_SEGMENTS_LOCK,
+			self::QUEUE_PAUSED,
 		);
 	}
 }

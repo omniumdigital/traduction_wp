@@ -89,7 +89,9 @@ final class BatchJobTest extends TestCase {
 				return 1;
 			}
 		);
-		Functions\when( 'as_get_scheduled_actions' )->justReturn( array( 123 ) );
+		Functions\when( 'as_get_scheduled_actions' )->alias(
+			static fn( array $query ): array => ActionSchedulerQueue::ACTION_BATCH === $query['hook'] ? array( 123 ) : array()
+		);
 
 		$wpdb            = new \wpdb();
 		$GLOBALS['wpdb'] = $wpdb;
