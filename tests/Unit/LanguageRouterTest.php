@@ -108,4 +108,19 @@ final class LanguageRouterTest extends TestCase {
 		$this->assertSame( '/source-page/', $_SERVER['REQUEST_URI'] );
 		$this->assertSame( 'https://example.test/en/new-page/', $router->old_slug_redirect_url() );
 	}
+
+	public function test_does_not_redirect_historical_slug_for_unpublished_post(): void {
+		Functions\when( 'get_post_status' )->justReturn( 'private' );
+		$_SERVER['REQUEST_URI'] = '/en/old-page/';
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$wpdb->method( 'get_var' )->willReturnOnConsecutiveCalls( null, '42' );
+		$router = new LanguageRouter( new CurrentLanguage( 'fr' ), new Settings(), new RequestGuard(), new SlugRepository( $wpdb ), new UrlTranslator( new Settings() ) );
+
+		$router->strip_language_prefix( true );
+		$this->assertSame( '/old-page/', $_SERVER['REQUEST_URI'] );
+		$this->assertNull( $router->old_slug_redirect_url() );
+	}
 }

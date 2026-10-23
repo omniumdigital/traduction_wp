@@ -91,15 +91,18 @@ final class LanguageRouter {
 		if ( '' === $trimmed ) {
 			return $relative_path;
 		}
-		$parts   = explode( '/', $trimmed );
-		$slug    = rawurldecode( (string) end( $parts ) );
-		$post_id = $this->slugs->find_post_id( $slug, $lang );
+		$parts         = explode( '/', $trimmed );
+		$slug          = rawurldecode( (string) end( $parts ) );
+		$post_id       = $this->slugs->find_post_id( $slug, $lang );
+		$is_historical = null === $post_id;
 		if ( null === $post_id ) {
-			$post_id                = $this->slugs->find_historical_post_id( $slug, $lang );
-			$this->old_slug_post_id = $post_id;
+			$post_id = $this->slugs->find_historical_post_id( $slug, $lang );
 		}
 		if ( null === $post_id || 'publish' !== get_post_status( $post_id ) ) {
 			return $relative_path;
+		}
+		if ( $is_historical ) {
+			$this->old_slug_post_id = $post_id;
 		}
 		$permalink = get_permalink( $post_id );
 		$parsed    = is_string( $permalink ) ? wp_parse_url( $permalink ) : false;
