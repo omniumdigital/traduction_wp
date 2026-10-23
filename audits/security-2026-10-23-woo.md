@@ -7,12 +7,12 @@ Verdict : ✅ VALIDÉ
 | --- | --- |
 | PHPCS | ✅ Pass |
 | PHPStan niveau 6 | ✅ 0 erreur |
-| PHPUnit `@group security` | ✅ 129 tests, 349 assertions |
+| PHPUnit `@group security` | ✅ 130 tests, 358 assertions |
 | Composer audit | ✅ Aucune vulnérabilité |
 | npm audit (high) | ✅ 0 vulnérabilité |
 | Gitleaks | ✅ Aucun secret détecté (78 commits, scan Docker) |
-| PHPUnit PHP 8.1 | ✅ 271 tests, 769 assertions |
-| PHPUnit PHP 8.5 | ✅ 271 tests, 765 assertions, 1 test ignoré |
+| PHPUnit PHP 8.1 | ✅ 272 tests, 778 assertions |
+| PHPUnit PHP 8.5 | ✅ 272 tests, 774 assertions, 1 test ignoré |
 
 ## Findings
 

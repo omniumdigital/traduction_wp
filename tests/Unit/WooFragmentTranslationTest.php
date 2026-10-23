@@ -11,6 +11,7 @@ use Brain\Monkey\Functions;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Queue\TranslationQueueInterface;
 use Omnium\Translate\Render\HtmlSegmentExtractor;
+use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Render\Translator;
 use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\UrlTranslator;
@@ -38,6 +39,7 @@ final class WooFragmentTranslationTest extends TestCase {
 		Functions\when( 'wp_unslash' )->returnArg();
 		Functions\when( 'home_url' )->alias( static fn( string $path = '' ): string => 'https://example.test' . $path );
 		Functions\when( 'wp_parse_url' )->alias( static fn( string $url ): array|false => parse_url( $url ) );
+		Functions\when( 'url_to_postid' )->justReturn( 0 );
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $text ): string => trim( strip_tags( $text ) ) );
 		Functions\when( 'esc_attr' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 		Functions\when( 'wp_kses' )->alias( static fn( string $text ): string => strip_tags( $text, '<strong><em><b><i><br><span><a>' ) );
@@ -70,9 +72,28 @@ final class WooFragmentTranslationTest extends TestCase {
 		$this->assertSame( 'Choose an option', $result['show_option_none'] );
 	}
 
+	public function test_fragment_keeps_excluded_blocks_and_rewrites_links(): void {
+		$current = new CurrentLanguage( 'fr' );
+		$current->set( 'en' );
+		$translator = $this->translator( $current, array( 'Panier' => 'Cart', 'Ignorer' => 'Ignore' ) );
+		$html = '<script>const tag = "<b>é</b>";</script><a href="https://example.test/panier/" title="Panier">Panier</a><pre>Ignorer</pre>';
+		$result = $translator->translate_fragment( $html );
+		$this->assertStringContainsString( '<script>const tag = "<b>é</b>";</script>', $result );
+		$this->assertStringContainsString( 'href="https://example.test/en/panier/"', $result );
+		$this->assertStringContainsString( 'title="Cart"', $result );
+		$this->assertStringContainsString( '>Cart</a>', $result );
+		$this->assertStringContainsString( '<pre>Ignorer</pre>', $result );
+	}
+
 	public function test_email_template_is_formatted_and_customized_without_customer_extraction(): void {
 		$current = new CurrentLanguage( 'fr' );
-		$extractor = new HtmlSegmentExtractor( new PiiFilter() );
+		$extractor = new class implements SegmentExtractorInterface {
+			public array $inputs = array();
+			public function extract( string $html, string $source_lang ): array {
+				$this->inputs[] = $html;
+				return ( new HtmlSegmentExtractor( new PiiFilter() ) )->extract( $html, $source_lang );
+			}
+		};
 		$translator = $this->translator( $current, array( 'Votre commande {order_number}' => 'Your order {order_number}', 'Commande spéciale {order_number}' => 'Special order {order_number}' ) );
 		$segments = $this->createMock( SegmentRepositoryInterface::class );
 		$segments->expects( $this->never() )->method( 'upsert_many' );
@@ -104,6 +125,10 @@ final class WooFragmentTranslationTest extends TestCase {
 		$email->template = '';
 		$this->assertSame( 'Texte original 314', $service->translate_additional_content( 'Texte original 314', $order, $email ) );
 		$this->assertSame( array(), $extractor->extract( '<div>client@example.test</div>', 'fr' ) );
+		foreach ( array_slice( $extractor->inputs, 0, -1 ) as $input ) {
+			$this->assertStringNotContainsString( '314', $input );
+			$this->assertStringNotContainsString( 'client@example.test', $input );
+		}
 	}
 
 	/** @param array<string, string> $translations Source text => target text. */
