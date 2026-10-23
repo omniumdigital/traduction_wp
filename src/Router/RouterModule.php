@@ -38,7 +38,8 @@ final class RouterModule implements ModuleInterface {
 			static fn( Container $c ) => new LanguageRouter(
 				$c->get( CurrentLanguage::class ),
 				$c->get( Settings::class ),
-				$c->get( RequestGuard::class )
+				$c->get( RequestGuard::class ),
+				$c->get( SlugRepository::class )
 			)
 		);
 		$container->set( UrlTranslator::class, static fn( Container $c ) => new UrlTranslator( $c->get( Settings::class ) ) );

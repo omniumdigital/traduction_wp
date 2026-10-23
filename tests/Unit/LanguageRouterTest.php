@@ -12,6 +12,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\LanguageRouter;
 use Omnium\Translate\Router\RequestGuard;
+use Omnium\Translate\Store\SlugRepository;
 use Omnium\Translate\Tests\TestCase;
 
 final class LanguageRouterTest extends TestCase {
@@ -67,5 +68,24 @@ final class LanguageRouterTest extends TestCase {
 
 		$this->assertSame( 'en', $current->get() );
 		$this->assertSame( '/blog/bonjour/?a=1', $_SERVER['REQUEST_URI'] );
+	}
+
+	public function test_resolves_translated_slug_to_source_permalink_in_subdirectory(): void {
+		Functions\when( 'home_url' )->justReturn( 'https://example.test/blog/' );
+		Functions\when( 'get_post_status' )->justReturn( 'publish' );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/blog/parent-source/page-source/' );
+		$_SERVER['REQUEST_URI'] = '/blog/en/parent-translated/page-translated/?a=1';
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$wpdb->expects( $this->once() )->method( 'get_var' )->with( 'prepared' )->willReturn( '42' );
+		$current = new CurrentLanguage( 'fr' );
+		$router  = new LanguageRouter( $current, new Settings(), new RequestGuard(), new SlugRepository( $wpdb ) );
+
+		$router->strip_language_prefix( true );
+
+		$this->assertSame( 'en', $current->get() );
+		$this->assertSame( '/blog/parent-source/page-source/?a=1', $_SERVER['REQUEST_URI'] );
 	}
 }
