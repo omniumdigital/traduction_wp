@@ -15,7 +15,6 @@ use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Providers\Pricing;
 use Omnium\Translate\Render\SegmentExtractorInterface;
-use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\RequestGuard;
 use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
@@ -123,11 +122,7 @@ final class QueueModule implements ModuleInterface {
 			static fn( Container $c ): OnTheFlyTrigger => new OnTheFlyTrigger(
 				$c->get( Settings::class ),
 				$c->get( RequestGuard::class ),
-				$c->get( CurrentLanguage::class ),
 				$c->get( PublicContent::class ),
-				$c->get( SegmentExtractorInterface::class ),
-				$c->get( SegmentRepositoryInterface::class ),
-				$c->get( TranslationRepositoryInterface::class ),
 				$c->get( ActionSchedulerQueue::class ),
 				$c->get( WordCap::class ),
 				$c->get( HourlyQuota::class ),

@@ -49,9 +49,11 @@ final class OutputBuffer {
 	 * @param string $html Final output.
 	 */
 	public function process( string $html ): string {
+		$output = $this->translator->translate( $html );
 		if ( null !== $this->on_the_fly ) {
-			$this->on_the_fly->capture( $html );
+			// Only a count leaves the render: the visitor's HTML is never used as a translation source.
+			$this->on_the_fly->capture( $this->translator->missing_count() );
 		}
-		return $this->translator->translate( $html );
+		return $output;
 	}
 }

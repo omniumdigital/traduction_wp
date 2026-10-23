@@ -26,7 +26,7 @@ Périmètre : estimation, plafonds, pause/reprise et déclencheurs du jalon 3, p
 
 | Sévérité | Fichier:ligne | Problème | Correctif proposé |
 | --- | --- | --- | --- |
-| — | — | Aucun finding bloquant ou non bloquant sur le périmètre audité. | — |
+| Haute (corrigé) | `src/Queue/OnTheFlyTrigger.php` (version initiale, `capture()`/`flush()`) | Revue du coordinateur : la traduction à la volée extrayait les segments du HTML rendu pour le visiteur, query string comprise. Un paramètre réfléchi dans la page (recherche `?s=`, widgets, notices) permettait à un anonyme d'injecter du texte envoyé à l'IA aux frais du client (attaque par coût, §11). | Corrigé : `capture()` ne reçoit plus qu'un nombre de segments manquants calculé par `Translator::missing_count()` ; seule l'URL canonique (permalink normalisé) est mise en file via `TranslationQueueInterface::enqueue_url`, et `ScanJob` la récupère en anonyme sans query string ni cookie. Fenêtre anti-rafale d'une heure par URL canonique. Tests : `OnTheFlyTriggerSecurityTest` (injection `?s=`, rafale de 100 requêtes, connecté, panier, URL inconnue, type `int` de `capture()`). |
 
 ## Checklist manuelle
 
@@ -55,7 +55,7 @@ Périmètre : estimation, plafonds, pause/reprise et déclencheurs du jalon 3, p
 
 - **OK** — Une URL doit appartenir exactement à `home_url()`, être liée à un contenu publié public et ne pas être sensible (`src/Queue/PublicContent.php:121-177`, `src/Queue/ActionSchedulerQueue.php:114-145`).
 - **OK** — La query string est supprimée lors de la normalisation (`src/Queue/PublicContent.php:121-152`).
-- **OK** — L’à-la-volée impose option active, visiteur anonyme, garde de requête, pause, quota horaire, plafond mensuel et anti-rafale (`src/Queue/OnTheFlyTrigger.php:64-104`).
+- **OK** — L’à-la-volée impose option active, visiteur anonyme, garde de requête, pause, quota horaire, plafond mensuel et anti-rafale d'une heure par URL canonique ; il ne met en file que l'URL canonique, jamais de segment issu du rendu visiteur (`src/Queue/OnTheFlyTrigger.php`, `src/Render/OutputBuffer.php`).
 - **OK** — Le plafond est réservé par lot et les traductions existantes sont retirées avant planification (`src/Queue/ScanJob.php:119-145`, `src/Queue/ActionSchedulerQueue.php:194-220`).
 - **OK** — `RunLock` empêche deux traductions complètes concurrentes (`src/Queue/RunLock.php:31-76`).
 - **OK** — Aucun appel IA pendant le rendu : le rendu ne conserve qu’une charge en mémoire et l’écriture est exécutée à `shutdown`.

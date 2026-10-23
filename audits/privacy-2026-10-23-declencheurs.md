@@ -17,7 +17,7 @@ Périmètre : crawler, rendu front et déclencheur à la volée du jalon 3. Aucu
 
 | Sévérité | Fichier:ligne | Problème | Correctif proposé |
 | --- | --- | --- | --- |
-| — | — | Aucun finding Critique, Haute, Moyenne ou Basse sur le périmètre modifié. | — |
+| Haute (corrigé) | `src/Queue/OnTheFlyTrigger.php` (version initiale) | Le rendu visiteur utilisé comme source de segments pouvait contenir des données liées à sa session WooCommerce (mini-panier, notices), contraire au §10 (« seul le contenu de pages publiques rendues en session anonyme part vers l'IA »). | Corrigé : plus aucune extraction depuis le rendu visiteur ; seul le crawler anonyme (`ScanJob`, sans cookie) fournit les segments. Voir `OnTheFlyTriggerSecurityTest`. |
 
 ## Checklist
 
