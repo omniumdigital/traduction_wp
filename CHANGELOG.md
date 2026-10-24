@@ -27,3 +27,5 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 - Liaison du contrat `TranslationQueueInterface` lorsque WooCommerce initialise la traduction des emails.
 - Désactivation du plugin : l'élément de menu du sélecteur est mis en brouillon (jamais supprimé) pour éviter un lien mort « #omtr-switcher » tant que le plugin est inactif ; il est republié automatiquement à la réactivation.
 - API REST des réglages : acceptation des paramètres de transport `_locale`, `_embed`, `_fields`, `_method`, `_envelope`, `_wpnonce` (échec de `PUT /settings` sinon).
+- Caractères accentués des traductions : sur PHP < 8.4 (sans l'analyseur HTML5 natif), le sérialiseur HTML4 historique convertissait chaque caractère non-ASCII des traductions insérées en entité HTML (`é` → `&eacute;`), rendant le code source incohérent avec la page d'origine. Décodage ciblé, sans jamais altérer les entités structurelles (`&amp; &lt; &gt; &quot; &#039;`).
+- Éditeur de traductions (admin) : clé React dupliquée sur la liste des segments lorsqu'un même segment a plusieurs langues cibles, pouvant mélanger l'état d'édition entre lignes.

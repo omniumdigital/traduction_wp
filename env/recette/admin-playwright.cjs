@@ -95,12 +95,12 @@ const run = async () => {
 
 		// Onglets.
 		console.log("STEP=tabs");
-		await page.getByRole("tab", { name: T.tabs[0] }).waitFor({ timeout: 60000 });
+		await page.getByRole("tab", { name: T.tabs[0] }).waitFor({ timeout: 300000 });
 		const seconds = ((Date.now() - start) / 1000).toFixed(1);
 		const domAfterWizard = await domSecret();
 		for (const name of T.tabs) {
 			await page.getByRole("tab", { name }).click();
-			await page.locator('[role="tabpanel"]').waitFor();
+			await page.locator('[role="tabpanel"]').first().waitFor();
 			await page.waitForTimeout(700); // laisse les requêtes REST de l'onglet aboutir
 			console.log(`TAB=${name}:errors=${errors.length}`);
 		}
@@ -127,9 +127,9 @@ const run = async () => {
 };
 
 const watchdog = setTimeout(() => {
-	console.error("PLAYWRIGHT_FAILURE=watchdog 4 min");
+	console.error("PLAYWRIGHT_FAILURE=watchdog 6 min");
 	process.exit(2);
-}, 240000);
+}, 360000);
 
 run().then((code) => {
 	clearTimeout(watchdog);

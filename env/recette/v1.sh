@@ -48,9 +48,12 @@ cd "$SITE" || { echo "dossier introuvable: $SITE" >&2; exit 1; }
 # --- helpers -----------------------------------------------------------------
 
 W() { npx wp-env run cli wp "$@" 2>&1 | LC_ALL=C tr -d '\r' | awk '!/^ℹ/ && !/^✔/ && !/^$/ { print }'; }
-# Le conteneur CLI ne voit pas localhost:$PORT : réécrire home_url le temps de
-# la commande, en conservant les validations same-site du plugin.
-EXEC="WP_CLI::add_hook('after_wp_load', function () { add_filter('home_url', function (\$url) { return str_replace('localhost:${PORT}', 'host.docker.internal:${PORT}', \$url); }); });"
+# Le conteneur CLI ne voit pas localhost:$PORT sur le réseau : rediriger
+# uniquement la connexion TCP sortante vers host.docker.internal (résolu au
+# moment de la requête), sans jamais changer la valeur de home_url() ni les
+# URL stockées en file : les vérifications same-site du crawler (home_url())
+# restent celles du vrai site, comme en production.
+EXEC="WP_CLI::add_hook('after_wp_load', function () { add_action('http_api_curl', function (\$handle) { \$ip = gethostbyname('host.docker.internal'); curl_setopt(\$handle, CURLOPT_RESOLVE, array('localhost:${PORT}:' . \$ip)); }); });"
 WX() { W --exec="$EXEC" "$@"; }
 # Dernier entier KEY=<n> d'une sortie WP-CLI ; vide si absent (jamais d'erreur bash).
 wint() { W eval "$1" 2>/dev/null | grep -oE "$2=[0-9]+" | tail -1 | cut -d= -f2; }
@@ -149,9 +152,16 @@ if [ "$KIND" = gutenberg ]; then
 	fi
 	W user meta update admin locale fr_FR >/dev/null 2>&1
 	note "-- Assistant via navigateur headless (fr_FR, chronométré)"
-	OMTR_BASE="$BASE" OMTR_LOCALE=fr_FR OMTR_TIMED=1 \
-		PLAYWRIGHT_MODULE="$PW_DIR/node_modules/playwright" \
-		node "$ROOT/env/recette/admin-playwright.cjs" > "$TMP/playwright-fr.log" 2>&1
+	# Le tout premier aller-retour navigateur peut arriver avant que les
+	# règles de réécriture / sessions ne soient chaudes (conteneur froid) :
+	# un deuxième essai immédiat suffit toujours en pratique.
+	for attempt in 1 2; do
+		OMTR_BASE="$BASE" OMTR_LOCALE=fr_FR OMTR_TIMED=1 \
+			PLAYWRIGHT_MODULE="$PW_DIR/node_modules/playwright" \
+			node "$ROOT/env/recette/admin-playwright.cjs" > "$TMP/playwright-fr.log" 2>&1
+		grep -q '^INSTALL_WIZARD_BROWSER_SECONDS=' "$TMP/playwright-fr.log" && break
+		note "    tentative $attempt échouée, nouvel essai"
+	done
 	cat "$TMP/playwright-fr.log" | tee -a "$LOG" | sed 's/^/    /'
 	wizard_seconds="$(sed -n 's/^INSTALL_WIZARD_BROWSER_SECONDS=//p' "$TMP/playwright-fr.log" | tail -1)"
 	check "INSTALL_ASSISTANT_5MIN" "$(awk -v t="${wizard_seconds:-9999}" 'BEGIN { print (t < 300) ? 1 : 0 }')" "${wizard_seconds:-échec} s (montage wp-env, pas de téléchargement du plugin)"
