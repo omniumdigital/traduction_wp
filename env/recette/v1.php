@@ -351,7 +351,7 @@ if ( 'seed' === $stage ) {
 	WP_CLI::line( "TRACES_OPTIONS={$options}" );
 	WP_CLI::line( "TRACES_META={$meta}" );
 	WP_CLI::line( "TRACES_ACTIONS={$actions}" );
-	WP_CLI::line( 'TRACES_MOCK_OPTION=' . ( null === $mock ? 'absent' : 'present' ) );
+	WP_CLI::line( 'TRACES_MOCK_OPTION=' . ( false === $mock ? 'absent' : 'present' ) );
 	WP_CLI::line( "TRACES_MENU_ITEMS={$menu_item}" );
 } else {
 	WP_CLI::error( "Unknown stage: {$stage}" );

@@ -195,8 +195,8 @@ esac
 
 # URL EN/ES de la page 01 depuis son hreflang (slugs traduits fiables).
 fetch "$BASE/recette-v1-01/" "$TMP/src-01.html" >/dev/null
-EN_URL="$(grep -oE '<link rel="alternate" href="[^"]+" hreflang="en"' "$TMP/src-01.html" | grep -oE 'href="[^"]+"' | head -1 | cut -d'"' -f2)"
-ES_URL="$(grep -oE '<link rel="alternate" href="[^"]+" hreflang="es"' "$TMP/src-01.html" | grep -oE 'href="[^"]+"' | head -1 | cut -d'"' -f2)"
+EN_URL="$(grep -oE '<link rel="alternate" hreflang="en" href="[^"]+"' "$TMP/src-01.html" | grep -oE 'href="[^"]+"' | head -1 | cut -d'"' -f2)"
+ES_URL="$(grep -oE '<link rel="alternate" hreflang="es" href="[^"]+"' "$TMP/src-01.html" | grep -oE 'href="[^"]+"' | head -1 | cut -d'"' -f2)"
 check "HREFLANG_URLS" "$([ -n "$EN_URL" ] && [ -n "$ES_URL" ] && echo 1 || echo 0)" "en=$EN_URL es=$ES_URL"
 
 for lang in en es; do
@@ -236,10 +236,16 @@ for lang in en es; do
 	check "SEO_${upper}_HEAD" "$([ "${hl:-0}" -ge 1 ] && [ "${xd:-0}" -ge 1 ] && [ "${can:-0}" -ge 1 ] && echo 1 || echo 0)" "hreflang=$hl x-default=$xd canonical=$can"
 done
 
-code="$(fetch "$BASE/wp-sitemap.xml" "$TMP/wp-sitemap.xml")"
-sm_en="$(grep -c "recette-v1-01</loc>" "$TMP/wp-sitemap.xml" >/dev/null 2>&1 && grep -c "/en/" "$TMP/wp-sitemap.xml" || echo 0)"
-sm_xhtml="$(grep -c 'xhtml:link' "$TMP/wp-sitemap.xml" || true)"
-check "SITEMAP_NATIF" "$([ "$code" = "200" ] && [ "${sm_en:-0}" -ge 1 ] && [ "${sm_xhtml:-0}" -ge 1 ] && echo 1 || echo 0)" "wp-sitemap.xml HTTP $code, /en/: $sm_en, xhtml:link: $sm_xhtml"
+# Sur un site sans plugin SEO, c'est le sitemap natif qui doit porter
+# hreflang/xhtml:link. Yoast et Rank Math désactivent et redirigent
+# wp-sitemap.xml (HTTP 301) : seul leur propre sitemap est alors pertinent
+# (vérifié ci-dessous par SITEMAP_SEO_PLUGIN), conformément à la charte §7.
+if [ "$KIND" = gutenberg ]; then
+	code="$(fetch "$BASE/wp-sitemap.xml" "$TMP/wp-sitemap.xml")"
+	sm_en="$(grep -c "recette-v1-01</loc>" "$TMP/wp-sitemap.xml" >/dev/null 2>&1 && grep -c "/en/" "$TMP/wp-sitemap.xml" || echo 0)"
+	sm_xhtml="$(grep -c 'xhtml:link' "$TMP/wp-sitemap.xml" || true)"
+	check "SITEMAP_NATIF" "$([ "$code" = "200" ] && [ "${sm_en:-0}" -ge 1 ] && [ "${sm_xhtml:-0}" -ge 1 ] && echo 1 || echo 0)" "wp-sitemap.xml HTTP $code, /en/: $sm_en, xhtml:link: $sm_xhtml"
+fi
 # Sitemap du plugin SEO actif (Yoast sur elementor, Rank Math sur oxygen).
 if [ "$KIND" != gutenberg ]; then
 	fetch "$BASE/sitemap_index.xml" "$TMP/seo-index.xml" >/dev/null
@@ -370,7 +376,7 @@ check "SURCOIT_50MS" "$(awk -v o="${overhead:-9999}" 'BEGIN { print (o < 50) ? 1
 # Les query strings de version (?ver=...) des assets (dont le CSS généré par
 # Elementor) changent naturellement au fil du temps, indépendamment du
 # plugin : elles sont ignorées pour ne comparer que le contenu réel.
-strip_asset_versions() { sed -E "s/\?ver=[0-9]+//g" "$1"; }
+strip_asset_versions() { sed -E "s/\?ver=[0-9]+//g; s/\.css[a-f0-9]{8,}/.css/g" "$1"; }
 for n in 01 15 30; do
 	fetch "$BASE/recette-v1-$n/" "$TMP/after-$n.html" >/dev/null
 	if diff -q <(strip_asset_versions "$TMP/before-$n.html") <(strip_asset_versions "$TMP/after-$n.html") >/dev/null; then
