@@ -143,6 +143,23 @@ final class AdministrationSecurityTest extends TestCase {
 		$this->assertTrue( $response->data['settings']['updates_disabled'] );
 	}
 
+	/** Shorter language lists replace the stored list instead of merging by index. */
+	public function test_shorter_target_list_is_not_merged_by_index(): void {
+		$api = $this->api();
+		$api->put_settings( new \WP_REST_Request( array( 'target_langs' => array( 'en', 'es' ) ) ) );
+		$response = $api->put_settings(
+			new \WP_REST_Request(
+				array(
+					'source_lang'  => 'es',
+					'target_langs' => array( 'fr' ),
+				)
+			)
+		);
+		$this->assertInstanceOf( \WP_REST_Response::class, $response );
+		$this->assertSame( 'es', $response->data['settings']['source_lang'] );
+		$this->assertSame( array( 'fr' ), $response->data['settings']['target_langs'] );
+	}
+
 	/** A valid JSON configuration imports its settings and glossary. */
 	public function test_imports_valid_configuration(): void {
 		$body     = json_encode(

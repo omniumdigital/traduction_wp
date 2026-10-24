@@ -705,7 +705,10 @@ final class Administration {
 			}
 			$values[ $key ] = rest_sanitize_value_from_schema( $value, $schema[ $key ], $key );
 		}
-		$merged = array_replace_recursive( $this->settings->all(), $values );
+		$merged = array_merge( $this->settings->all(), $values );
+		if ( isset( $values['switcher'] ) ) {
+			$merged['switcher'] = array_replace_recursive( $this->settings->get( 'switcher' ), $values['switcher'] );
+		}
 		if ( in_array( $merged['source_lang'], $merged['target_langs'], true ) || null === $this->providers->get( $merged['provider'] ) ) {
 			return $this->invalid();
 		}
