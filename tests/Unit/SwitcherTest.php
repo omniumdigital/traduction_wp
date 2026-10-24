@@ -112,6 +112,15 @@ final class SwitcherTest extends TestCase {
 		$this->assertSame( 1, $this->script_calls );
 	}
 
+	/** Preference attributes are absent by default and contain only configured codes when enabled. */
+	public function test_optional_preference_cookie_marker(): void {
+		Functions\when( 'get_option' )->justReturn( array( 'source_lang' => 'fr', 'target_langs' => array( 'en' ) ) );
+		$this->assertStringNotContainsString( 'data-omtr-pref=', $this->switcher( new CurrentLanguage( 'fr' ) )->render() );
+
+		Functions\when( 'get_option' )->justReturn( array( 'source_lang' => 'fr', 'target_langs' => array( 'en' ), 'pref_cookie' => true ) );
+		$this->assertStringContainsString( 'data-omtr-pref="en"', $this->switcher( new CurrentLanguage( 'fr' ) )->render() );
+	}
+
 	/** Inline/code options work and assets are only requested once. */
 	public function test_inline_code_variant_and_assets_are_rendered_once(): void {
 		Functions\when( 'get_option' )->justReturn(

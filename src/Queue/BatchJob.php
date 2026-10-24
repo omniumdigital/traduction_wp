@@ -9,6 +9,7 @@ namespace Omnium\Translate\Queue;
 
 use Omnium\Translate\Core\LoggerInterface;
 use Omnium\Translate\Core\Settings;
+use Omnium\Translate\Core\TranslationCachePurger;
 use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderInterface;
@@ -131,6 +132,7 @@ final class BatchJob {
 			if ( $post_id > 0 && null !== $this->slug_generator ) {
 				$this->slug_generator->generate( $post_id, $lang );
 			}
+			TranslationCachePurger::purge( $post_id, $lang );
 		}
 
 		$untranslated = array_diff( array_keys( $pending ), array_keys( $translated ) );

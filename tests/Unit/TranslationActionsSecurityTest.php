@@ -59,4 +59,20 @@ final class TranslationActionsSecurityTest extends TestCase {
 		$this->expectException( \RuntimeException::class );
 		$this->actions->handle();
 	}
+
+	public function test_classic_meta_box_is_hidden_without_capability(): void {
+		Functions\when( 'current_user_can' )->justReturn( false );
+		$post     = new \WP_Post();
+		$post->ID = 7;
+		ob_start();
+		$this->actions->meta_box( $post );
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	public function test_block_editor_asset_is_hidden_without_capability(): void {
+		Functions\when( 'current_user_can' )->justReturn( false );
+		Functions\expect( 'wp_enqueue_script' )->never();
+		$this->actions->enqueue_block_editor();
+		$this->assertFalse( \Omnium\Translate\Security\Capabilities::current_user_can_manage() );
+	}
 }
