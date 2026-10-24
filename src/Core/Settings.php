@@ -32,6 +32,16 @@ final class Settings {
 		'pref_cookie'      => false,
 		'site_tone'        => '',
 		'site_context'     => '',
+		'flags'            => array( 'en' => 'gb' ),
+		'switcher'         => array(
+			'variant' => 'dropdown',
+			'display' => 'flag-name',
+			'position' => 'bottom-right',
+			'dark_mode' => false,
+			'colors' => array( 'bg' => '#ffffff', 'fg' => '#0a0a0a', 'hover' => '#f4f4f5', 'border' => '#e4e4e7' ),
+			'radius' => 8,
+			'flag_size' => 18,
+		),
 	);
 
 	/**
@@ -52,7 +62,9 @@ final class Settings {
 	 */
 	public function all(): array {
 		$stored = get_option( Options::SETTINGS, array() );
-		return array_merge( self::DEFAULTS, is_array( $stored ) ? $stored : array() );
+		$all = array_merge( self::DEFAULTS, is_array( $stored ) ? array_intersect_key( $stored, self::DEFAULTS ) : array() );
+		$all['switcher'] = array_replace_recursive( self::DEFAULTS['switcher'], is_array( $all['switcher'] ) ? $all['switcher'] : array() );
+		return $all;
 	}
 
 	/**
