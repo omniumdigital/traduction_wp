@@ -21,50 +21,74 @@ use function Breakdance\Elements\c;
  */
 final class LanguageSwitcher extends \Breakdance\Elements\Element {
 
-	/** Return the Oxygen builder icon. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the Oxygen builder icon.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function uiIcon() {
 		return 'GlobeIcon';
 	}
 
-	/** Return the wrapper tag. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the wrapper tag.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function tag() {
 		return 'div';
 	}
 
-	/** Return the translated element name. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the translated element name.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function name() {
 		return __( 'Language selector', 'omnium-translate' );
 	}
 
-	/** Return the generated CSS class. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the generated CSS class.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function className() {
 		return 'omtr-oxygen-switcher';
 	}
 
-	/** Return the Oxygen element category. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the Oxygen element category.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function category() {
 		return 'other';
 	}
 
-	/** Return the stable element slug. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the stable element slug.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function slug() {
 		return __CLASS__;
 	}
 
-	/** Return the server-side rendering marker. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the server-side rendering marker.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function template() {
 		return '%%SSR%%';
 	}
 
-	/** Return default control values. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return default control values.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function defaultProperties() {
 		return array(
 			'variant' => 'dropdown',
@@ -72,8 +96,11 @@ final class LanguageSwitcher extends \Breakdance\Elements\Element {
 		);
 	}
 
-	/** Return the layout and display controls. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Return the layout and display controls.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function contentControls() {
 		return array(
 			c(
@@ -127,8 +154,11 @@ final class LanguageSwitcher extends \Breakdance\Elements\Element {
 		);
 	}
 
-	/** Restrict this element to Oxygen mode. */
-	// @phpstan-ignore missingType.return
+	/**
+	 * Restrict this element to Oxygen mode.
+	 *
+	 * @phpstan-ignore missingType.return
+	 */
 	public static function availableIn() {
 		return array( 'oxygen' );
 	}
