@@ -12,6 +12,12 @@ parameters:
         - tests/stubs/oxygen-runtime.php
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
+    ignoreErrors:
+        -
+            # assets/build/*.asset.php only exists after `npm run build`.
+            identifier: require.fileNotFound
+            path: src/Admin/Administration.php
+            reportUnmatched: false
     dynamicConstantNames:
         - OMTR_ENCRYPTION_KEY
         - OMTR_MIN_PHP

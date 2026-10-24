@@ -39,6 +39,78 @@ msgstr "La règle doit être translate ou keep."
 msgid "Translate rules require a translation."
 msgstr "Les règles translate nécessitent une traduction."
 
+msgid "%d pages and %d words will be queued."
+msgstr "%d pages et %d mots seront mis en file."
+
+msgid "API key"
+msgstr "Clé API"
+
+msgid "CSV files must not exceed 1 MB."
+msgstr "Les fichiers CSV ne doivent pas dépasser 1 Mo."
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Disable update checks"
+msgstr "Désactiver la vérification des mises à jour"
+
+msgid "EU"
+msgstr "UE"
+
+msgid "English"
+msgstr "Anglais"
+
+msgid "French"
+msgstr "Français"
+
+msgid "Export CSV"
+msgstr "Exporter en CSV"
+
+msgid "Free tier: provider may reuse submitted data."
+msgstr "Palier gratuit : le fournisseur peut réutiliser les données transmises."
+
+msgid "Glossary imported."
+msgstr "Glossaire importé."
+
+msgid "Import CSV"
+msgstr "Importer un CSV"
+
+msgid "Key test failed."
+msgstr "Le test de la clé a échoué."
+
+msgid "Language flags"
+msgstr "Drapeaux des langues"
+
+msgid "Languages"
+msgstr "Langues"
+
+msgid "Level"
+msgstr "Niveau"
+
+msgid "Prevent indexing languages with incomplete translations"
+msgstr "Empêcher l’indexation des langues dont la traduction est incomplète"
+
+msgid "Provider and limits"
+msgstr "Fournisseur et limites"
+
+msgid "SEO"
+msgstr "SEO"
+
+msgid "Setup progress"
+msgstr "Progression de la configuration"
+
+msgid "Stored key: %s"
+msgstr "Clé enregistrée : %s"
+
+msgid "Target languages (comma separated)"
+msgstr "Langues cibles (séparées par des virgules)"
+
+msgid "Translate the site"
+msgstr "Traduire le site"
+
+msgid "Your key is encrypted and will never be displayed in full."
+msgstr "Votre clé est chiffrée et ne sera jamais affichée en entier."
+
 msgid "Usage: wp omtr glossary add <term> <target_lang> <translation> <rule>."
 msgstr "Utilisation : wp omtr glossary add <term> <target_lang> <translation> <rule>."
 
@@ -168,6 +240,224 @@ msgstr "Réglages du sélecteur"
 msgid "Language links are rendered on the published page."
 msgstr "Les liens de langue sont rendus sur la page publiée."
 
+msgid "AI provider"
+msgstr "Fournisseur IA"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Add the language selector to the main menu"
+msgstr "Ajouter le sélecteur de langue au menu principal"
+
+msgid "All languages"
+msgstr "Toutes les langues"
+
+msgid "Always translate"
+msgstr "Toujours traduire"
+
+msgid "Automatic dark mode"
+msgstr "Mode sombre automatique"
+
+msgid "Back"
+msgstr "Retour"
+
+msgid "Choose the source language and the languages you want to publish."
+msgstr "Choisissez la langue source et les langues à publier."
+
+msgid "Configuration"
+msgstr "Configuration"
+
+msgid "Confirm"
+msgstr "Confirmer"
+
+msgid "Connect an AI provider"
+msgstr "Connecter un fournisseur IA"
+
+msgid "Context"
+msgstr "Contexte"
+
+msgid "Continue"
+msgstr "Continuer"
+
+msgid "Contrast ratio: %s:1"
+msgstr "Rapport de contraste : %s:1"
+
+msgid "Corner radius"
+msgstr "Rayon des angles"
+
+msgid "Cost unavailable"
+msgstr "Coût indisponible"
+
+msgid "Create an API key"
+msgstr "Créer une clé API"
+
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Delete all data on uninstall"
+msgstr "Supprimer toutes les données à la désinstallation"
+
+msgid "Export configuration"
+msgstr "Exporter la configuration"
+
+msgid "Filter segments"
+msgstr "Filtrer les segments"
+
+msgid "Flag size"
+msgstr "Taille du drapeau"
+
+msgid "Glossary"
+msgstr "Glossaire"
+
+msgid "Hourly quota"
+msgstr "Quota horaire"
+
+msgid "Import configuration"
+msgstr "Importer la configuration"
+
+msgid "Language"
+msgstr "Langue"
+
+msgid "Languages and translation"
+msgstr "Langues et traduction"
+
+msgid "Launch"
+msgstr "Lancement"
+
+msgid "Loading…"
+msgstr "Chargement…"
+
+msgid "Lock"
+msgstr "Verrouiller"
+
+msgid "Message"
+msgstr "Message"
+
+msgid "Model"
+msgstr "Modèle"
+
+msgid "Monthly word cap"
+msgstr "Plafond mensuel de mots"
+
+msgid "Never translate"
+msgstr "Ne jamais traduire"
+
+msgid "No monthly cap"
+msgstr "Aucun plafond mensuel"
+
+msgid "Outside the EU"
+msgstr "Hors UE"
+
+msgid "Pause"
+msgstr "Mettre en pause"
+
+msgid "Provider"
+msgstr "Fournisseur"
+
+msgid "Recent activity"
+msgstr "Activité récente"
+
+msgid "Resume"
+msgstr "Reprendre"
+
+msgid "Review and launch"
+msgstr "Vérifier et lancer"
+
+msgid "Rule"
+msgstr "Règle"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Save key"
+msgstr "Enregistrer la clé"
+
+msgid "Select a language"
+msgstr "Sélectionnez une langue"
+
+msgid "Set up your translations"
+msgstr "Configurer vos traductions"
+
+msgid "Settings"
+msgstr "Réglages"
+
+msgid "Site tone and context"
+msgstr "Ton et contexte du site"
+
+msgid "Source language"
+msgstr "Langue source"
+
+msgid "Target languages"
+msgstr "Langues cibles"
+
+msgid "Term"
+msgstr "Terme"
+
+msgid "Test the key"
+msgstr "Tester la clé"
+
+msgid "The key is never shown in full."
+msgstr "La clé n'est jamais affichée en entier."
+
+msgid "The request could not be completed."
+msgstr "La requête n'a pas pu être terminée."
+
+msgid "Tone"
+msgstr "Ton"
+
+msgid "Translate automatically when content changes"
+msgstr "Traduire automatiquement lorsque le contenu change"
+
+msgid "Translate new and changed content"
+msgstr "Traduire les contenus nouveaux et modifiés"
+
+msgid "Translate the whole site"
+msgstr "Traduire tout le site"
+
+msgid "Translate unknown segments on the fly"
+msgstr "Traduire les segments inconnus à la volée"
+
+msgid "Translation"
+msgstr "Traduction"
+
+msgid "Translation queue"
+msgstr "File de traduction"
+
+msgid "Translations"
+msgstr "Traductions"
+
+msgid "Unlock"
+msgstr "Déverrouiller"
+
+msgid "Use at least 4.5:1 for normal text."
+msgstr "Utilisez au moins 4,5:1 pour le texte normal."
+
+msgid "Variant"
+msgstr "Variante"
+
+msgid "Words this month"
+msgstr "Mots ce mois-ci"
+
+msgid "coverage"
+msgstr "couverture"
+
+msgid "of %d"
+msgstr "sur %d"
+
+msgid "pages"
+msgstr "pages"
+
+msgid "pending"
+msgstr "en attente"
+
+msgid "segments"
+msgstr "segments"
+
+msgid "words"
+msgstr "mots"
 msgid "The administration interface is not built yet."
 msgstr "L’interface d’administration n’est pas encore compilée."
 
@@ -194,3 +484,93 @@ msgstr "un pays hors de l’UE"
 
 msgid "Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent."
 msgstr "Omnium Translate envoie le texte des pages publiques à %1$s pour traduction. Le traitement a lieu dans %2$s. Aucune donnée de compte visiteur, de commande ou de formulaire n’est envoyée."
+
+msgid "The translation will run in the background. You can pause the queue from the dashboard."
+msgstr "La traduction s’exécutera en arrière-plan. Vous pouvez mettre la file en pause depuis le tableau de bord."
+
+msgid "This free tier may reuse submitted content. Check the provider terms before enabling it."
+msgstr "Ce palier gratuit peut réutiliser le contenu envoyé. Vérifiez les conditions du fournisseur avant de l’activer."
+
+msgid "A translation run is already in progress."
+msgstr "Une traduction est déjà en cours."
+
+msgid "API key deleted."
+msgstr "Clé API supprimée."
+
+msgid "API key stored securely."
+msgstr "Clé API enregistrée de façon sécurisée."
+
+msgid "Connection to Anthropic failed."
+msgstr "La connexion à Anthropic a échoué."
+
+msgid "Connection to Google failed."
+msgstr "La connexion à Google a échoué."
+
+msgid "Connection to Mistral failed."
+msgstr "La connexion à Mistral a échoué."
+
+msgid "Connection to OpenAI failed."
+msgstr "La connexion à OpenAI a échoué."
+
+msgid "Key test failed (HTTP %d)."
+msgstr "Le test de la clé a échoué (HTTP %d)."
+
+msgid "Key works."
+msgstr "La clé fonctionne."
+
+msgid "Omnium Translate"
+msgstr "Omnium Translate"
+
+msgid "Omnium Translate requires PHP 8.1+, the sodium extension and a complete installation (vendor folder)."
+msgstr "Omnium Translate nécessite PHP 8.1+, l’extension sodium et une installation complète (dossier vendor)."
+
+msgid "Omnium Translate status"
+msgstr "État d’Omnium Translate"
+
+msgid "Only published, non-protected content can be translated."
+msgstr "Seuls les contenus publiés et non protégés peuvent être traduits."
+
+msgid "Post %d has no public URL."
+msgstr "Le contenu %d n’a pas d’URL publique."
+
+msgid "Provide a post id or a URL."
+msgstr "Indiquez un identifiant de contenu ou une URL."
+
+msgid "Provide exactly one registered provider id."
+msgstr "Indiquez un seul identifiant de fournisseur enregistré."
+
+msgid "The API key cannot be empty."
+msgstr "La clé API ne peut pas être vide."
+
+msgid "The URL is not part of this site or uses a non-public path."
+msgstr "L’URL n’appartient pas à ce site ou utilise un chemin non public."
+
+msgid "The URL was refused."
+msgstr "L’URL a été refusée."
+
+msgid "The monthly word cap is reached."
+msgstr "Le plafond mensuel de mots est atteint."
+
+msgid "The status command does not accept a provider argument."
+msgstr "La commande status n’accepte pas d’argument fournisseur."
+
+msgid "Translation queued: run \"wp omtr status\" and the Action Scheduler queue."
+msgstr "Traduction mise en file : lancez « wp omtr status » et la file Action Scheduler."
+
+msgid "Unknown provider."
+msgstr "Fournisseur inconnu."
+
+msgid "You are not allowed to perform this action."
+msgstr "Vous n’êtes pas autorisé à effectuer cette action."
+
+msgid "free"
+msgstr "gratuit"
+
+msgid "held (a run is in progress)"
+msgstr "verrouillé (une traduction est en cours)"
+
+msgid "none"
+msgstr "aucun"
+
+msgid "unlimited"
+msgstr "illimité"

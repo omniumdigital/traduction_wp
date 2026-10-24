@@ -87,6 +87,8 @@ final class GutenbergBlockTest extends TestCase {
 
 	/** The block uses metadata and exposes only its renderer callback. */
 	public function test_registers_block_metadata_and_callback(): void {
+		Functions\when( 'generate_block_asset_handle' )->justReturn( 'omnium-translate-switcher-editor-script' );
+		Functions\expect( 'wp_set_script_translations' )->once()->with( 'omnium-translate-switcher-editor-script', 'omnium-translate', OMTR_DIR . 'languages' );
 		$this->block->register();
 
 		$this->assertSame( OMTR_DIR . 'assets/blocks/switcher', $this->registered_path );

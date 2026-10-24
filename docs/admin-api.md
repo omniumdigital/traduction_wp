@@ -15,10 +15,15 @@ Toutes les routes sont sous `omtr/v1`, avec `permission_callback` = `Capabilitie
   "restNamespace": "omtr/v1",
   "wizardDone": false,
   "siteUrl": "https://exemple.test",
+  "flagsUrl": "https://exemple.test/wp-content/plugins/omnium-translate/assets/flags/",
   "locale": "fr_FR",
   "version": "1.0.0"
 }
 ```
+
+`flagsUrl` est l’URL de base locale des drapeaux SVG embarqués dans le plugin, terminée
+par `/`. L’interface l’utilise pour l’aperçu du sélecteur ; si elle est absente, l’aperçu
+affiche uniquement le nom de la langue et ne charge aucune ressource distante.
 
 Tant que `wizardDone` est faux, l'interface affiche l'assistant au lieu des onglets.
 

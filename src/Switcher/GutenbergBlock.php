@@ -27,6 +27,8 @@ final class GutenbergBlock {
 			OMTR_DIR . 'assets/blocks/switcher',
 			array( 'render_callback' => array( $this, 'render' ) )
 		);
+		// Core only looks in WP_LANG_DIR; point the editor script at the bundled JSON catalogues.
+		wp_set_script_translations( generate_block_asset_handle( 'omnium-translate/switcher', 'editorScript' ), 'omnium-translate', OMTR_DIR . 'languages' );
 	}
 
 	/**

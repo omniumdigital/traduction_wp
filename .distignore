@@ -22,3 +22,6 @@
 /phpstan.neon.dist
 /phpunit.xml.dist
 /.phpunit.cache
+/docs
+/opencode.json
+/.wp-env.override.json
