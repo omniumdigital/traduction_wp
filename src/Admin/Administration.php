@@ -517,7 +517,7 @@ final class Administration {
 			$region = 'eu' === $provider->region() ? __( 'processing in the EU', 'omnium-translate' ) : __( 'processing outside the EU', 'omnium-translate' );
 			$items .= '<li>' . esc_html( $provider->label() . ' (' . $region . ')' ) . '</li>';
 		}
-		$text = __( 'Omnium Translate sends the text of public pages, the glossary and the site tone to the AI provider selected by the site owner, only for translation. No visitor account, order, form or personal data is sent, and nothing is sent to Omnium Digital.', 'omnium-translate' );
+		$text = __( 'Omnium Translate sends the text of public pages, the glossary, and the site tone and context to the AI provider selected by the site owner, only for translation. Visitor account, order and form data is excluded; detected personal data is filtered before sending. Nothing is sent to Omnium Digital.', 'omnium-translate' );
 		if ( null !== $selected ) {
 			/* translators: %s: provider name. */
 			$text .= ' ' . sprintf( __( 'Provider currently selected: %s.', 'omnium-translate' ), esc_html( $selected->label() ) );

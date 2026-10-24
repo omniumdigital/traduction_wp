@@ -13,6 +13,9 @@ use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\GlossaryRepository;
 use Omnium\Translate\Providers\Claude\ClaudeProvider;
+use Omnium\Translate\Providers\Gemini\GeminiProvider;
+use Omnium\Translate\Providers\Mistral\MistralProvider;
+use Omnium\Translate\Providers\OpenAI\OpenAIProvider;
 use Omnium\Translate\Providers\Pricing;
 use Omnium\Translate\Providers\PromptBuilder;
 use Omnium\Translate\Providers\ProviderRegistry;
@@ -236,12 +239,35 @@ final class AdministrationSecurityTest extends TestCase {
 		$this->assertTrue( get_option( Options::WIZARD_DONE ) );
 	}
 
+	/** The privacy notice names every provider, its region and the sent context. */
+	public function test_privacy_policy_discloses_providers_regions_and_context(): void {
+		$captured = '';
+		Functions\when( 'esc_html' )->alias( static fn( string $value ): string => htmlspecialchars( $value, ENT_QUOTES ) );
+		Functions\when( 'wp_kses_post' )->alias( static fn( string $value ): string => $value );
+		Functions\when( 'wp_add_privacy_policy_content' )->alias(
+			static function ( string $title, string $content ) use ( &$captured ): void {
+				$captured = $content;
+			}
+		);
+		$this->api()->privacy_policy();
+
+		foreach ( array( 'Claude', 'OpenAI', 'Mistral AI', 'Google Gemini' ) as $label ) {
+			$this->assertStringContainsString( $label, $captured );
+		}
+		$this->assertStringContainsString( 'processing in the EU', $captured );
+		$this->assertStringContainsString( 'processing outside the EU', $captured );
+		$this->assertStringContainsString( 'site tone and context', $captured );
+	}
+
 	/** Build the real service graph without network access. */
 	private function api(): Administration {
 		$settings  = new Settings();
 		$keys      = new ApiKeyStore( new Crypto() );
 		$providers = new ProviderRegistry();
 		$providers->add( new ClaudeProvider( $keys, $settings, new PromptBuilder(), new ResponseValidator() ) );
+		$providers->add( new OpenAIProvider( $keys, $settings, new PromptBuilder(), new ResponseValidator() ) );
+		$providers->add( new MistralProvider( $keys, $settings, new PromptBuilder(), new ResponseValidator() ) );
+		$providers->add( new GeminiProvider( $keys, $settings, new PromptBuilder(), new ResponseValidator() ) );
 		$state           = new QueueState();
 		$lock            = new RunLock();
 		$words           = new WordCap( $settings );

@@ -608,8 +608,8 @@ msgstr "traitement dans l’UE"
 msgid "processing outside the EU"
 msgstr "traitement hors UE"
 
-msgid "Omnium Translate sends the text of public pages, the glossary and the site tone to the AI provider selected by the site owner, only for translation. No visitor account, order, form or personal data is sent, and nothing is sent to Omnium Digital."
-msgstr "Omnium Translate envoie le texte des pages publiques, le glossaire et le ton du site au fournisseur d’IA choisi par l’exploitant du site, uniquement pour la traduction. Aucune donnée de compte visiteur, de commande, de formulaire ni aucune donnée personnelle n’est envoyée, et rien n’est envoyé à Omnium Digital."
+msgid "Omnium Translate sends the text of public pages, the glossary, and the site tone and context to the AI provider selected by the site owner, only for translation. Visitor account, order and form data is excluded; detected personal data is filtered before sending. Nothing is sent to Omnium Digital."
+msgstr "Omnium Translate envoie le texte des pages publiques, le glossaire, ainsi que le ton et le contexte du site au fournisseur d’IA choisi par l’exploitant du site, uniquement pour la traduction. Les données de compte visiteur, de commande et de formulaire sont exclues ; les données personnelles détectées sont filtrées avant l’envoi. Rien n’est envoyé à Omnium Digital."
 
 msgid "Provider currently selected: %s."
 msgstr "Fournisseur actuellement choisi : %s."
