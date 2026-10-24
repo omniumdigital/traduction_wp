@@ -110,8 +110,8 @@ final class Switcher {
 
 		$attributes = shortcode_atts(
 			array(
-				'variant' => 'dropdown',
-				'display' => 'flag-name',
+				'variant' => (string) $this->settings->get( 'switcher' )['variant'],
+				'display' => (string) $this->settings->get( 'switcher' )['display'],
 			),
 			$attributes,
 			'omtr_switcher'
@@ -139,26 +139,57 @@ final class Switcher {
 			);
 		}
 
-		$classes = 'omtr-switcher omtr-switcher--' . $variant . ' omtr-switcher--' . $display;
+		$switcher = $this->settings->get( 'switcher' );
+		$classes  = 'omtr-switcher omtr-switcher--' . $variant . ' omtr-switcher--' . $display;
+		if ( 'floating' === $variant ) {
+			$position = (string) $switcher['position'];
+			$classes .= ' omtr-switcher--' . ( in_array( $position, array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' ), true ) ? $position : 'bottom-right' );
+		}
+		if ( ! empty( $switcher['dark_mode'] ) ) {
+			$classes .= ' omtr-switcher--auto-dark';
+		}
+		$style = $this->style_variables( $switcher );
 		if ( 'inline' === $variant ) {
 			return sprintf(
-				'<%1$s class="%2$s" aria-label="%3$s"><ul class="omtr-switcher__list">%4$s</ul></%1$s>',
+				'<%1$s class="%2$s" style="%5$s" aria-label="%3$s"><ul class="omtr-switcher__list">%4$s</ul></%1$s>',
 				$wrapper,
 				esc_attr( $classes ),
 				esc_attr__( 'Language selector', 'omnium-translate' ),
-				$items
+				$items,
+				esc_attr( $style )
 			);
 		}
 
 		return sprintf(
-			'<%1$s class="%2$s" aria-label="%3$s"><details class="omtr-switcher__dropdown" data-omtr-switcher><summary class="omtr-switcher__trigger" aria-haspopup="true" aria-expanded="false" aria-controls="%4$s">%5$s<span class="omtr-switcher__chevron" aria-hidden="true"></span></summary><ul class="omtr-switcher__list" id="%4$s">%6$s</ul></details></%1$s>',
+			'<%1$s class="%2$s" style="%7$s" aria-label="%3$s"><details class="omtr-switcher__dropdown" data-omtr-switcher><summary class="omtr-switcher__trigger" aria-haspopup="true" aria-expanded="false" aria-controls="%4$s">%5$s<span class="omtr-switcher__chevron" aria-hidden="true"></span></summary><ul class="omtr-switcher__list" id="%4$s">%6$s</ul></details></%1$s>',
 			$wrapper,
 			esc_attr( $classes ),
 			esc_attr__( 'Language selector', 'omnium-translate' ),
 			esc_attr( $id ),
 			$this->language_content( $current, $display ),
-			$items
+			$items,
+			esc_attr( $style )
 		);
+	}
+
+	/** Build CSS custom properties from validated stored values.
+	 *
+	 * @param array<string, mixed> $switcher Switcher settings.
+	 */
+	private function style_variables( array $switcher ): string {
+		$colors = $switcher['colors'] ?? array();
+		$parts  = array();
+		foreach ( array( 'bg', 'fg', 'hover', 'border' ) as $name ) {
+			$value = $colors[ $name ] ?? '';
+			if ( is_string( $value ) && preg_match( '/^#[0-9a-fA-F]{6}$/', $value ) ) {
+				$parts[] = '--omtr-' . $name . ':' . $value;
+			}
+		}
+		$radius  = $switcher['radius'] ?? 8;
+		$size    = $switcher['flag_size'] ?? 18;
+		$parts[] = '--omtr-radius:' . ( is_numeric( $radius ) ? max( 0, min( 24, (int) $radius ) ) : 8 ) . 'px';
+		$parts[] = '--omtr-flag-size:' . ( is_numeric( $size ) ? max( 12, min( 32, (int) $size ) ) : 18 ) . 'px';
+		return implode( ';', $parts );
 	}
 
 	/**
@@ -201,9 +232,13 @@ final class Switcher {
 	 * @param string $display  Display mode.
 	 */
 	private function language_content( string $language, string $display ): string {
-		$base      = strtolower( (string) strtok( $language, '-' ) );
-		$flag_code = self::FLAGS[ $base ] ?? '';
-		$flag      = '';
+		$base       = strtolower( (string) strtok( $language, '-' ) );
+		$configured = $this->settings->get( 'flags' );
+		$flag_code  = is_array( $configured ) && isset( $configured[ $language ] ) ? (string) $configured[ $language ] : ( self::FLAGS[ $base ] ?? '' );
+		if ( ! in_array( $flag_code, array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' ), true ) ) {
+			$flag_code = '';
+		}
+		$flag = '';
 		if ( '' !== $flag_code && in_array( $display, array( 'flag-name', 'flag' ), true ) ) {
 			$flag = sprintf(
 				'<img class="omtr-switcher__flag" src="%s" alt="" width="24" height="18" loading="lazy" decoding="async" />',

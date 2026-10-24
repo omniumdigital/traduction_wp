@@ -167,3 +167,30 @@ msgstr "Réglages du sélecteur"
 
 msgid "Language links are rendered on the published page."
 msgstr "Les liens de langue sont rendus sur la page publiée."
+
+msgid "The administration interface is not built yet."
+msgstr "L’interface d’administration n’est pas encore compilée."
+
+msgid "API key is valid."
+msgstr "La clé API est valide."
+
+msgid "API key test failed."
+msgstr "Le test de la clé API a échoué."
+
+msgid "Configuration exceeds 1 MB."
+msgstr "La configuration dépasse 1 Mo."
+
+msgid "Invalid administration data."
+msgstr "Les données d’administration sont invalides."
+
+msgid "The provider operation failed."
+msgstr "L’opération du fournisseur a échoué."
+
+msgid "the EU"
+msgstr "l’UE"
+
+msgid "a country outside the EU"
+msgstr "un pays hors de l’UE"
+
+msgid "Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent."
+msgstr "Omnium Translate envoie le texte des pages publiques à %1$s pour traduction. Le traitement a lieu dans %2$s. Aucune donnée de compte visiteur, de commande ou de formulaire n’est envoyée."
