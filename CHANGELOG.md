@@ -21,7 +21,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 ### Modifié
 - WordPress 6.9 minimum (testé jusqu'à 7.1), Action Scheduler 4.2.
 - Dépendance de développement `body-parser` mise à jour vers 1.20.9 après l'avis GHSA-27r3-jxmh-p828.
+- Recette v1 : archive WooCommerce canonique sur Oxygen pour permettre à Rank Math d'émettre le schéma `Product` ; contrôle JSON-LD structuré FR/EN, parcours Playwright admin sur les trois sites et comparaison différentielle des ressources front désactivé/activé.
 
 ### Corrigé
 - Traduction des champs texte JSON-LD Yoast, Rank Math et WooCommerce sur les pages localisées, y compris avec le parseur HTML de PHP 8.1 à 8.3 ; URL internes réécrites, prix et identifiants produit préservés, sortie JSON échappée.
 - Liaison du contrat `TranslationQueueInterface` lorsque WooCommerce initialise la traduction des emails.
+- Désactivation du plugin : l'élément de menu du sélecteur est mis en brouillon (jamais supprimé) pour éviter un lien mort « #omtr-switcher » tant que le plugin est inactif ; il est republié automatiquement à la réactivation.
+- API REST des réglages : acceptation des paramètres de transport `_locale`, `_embed`, `_fields`, `_method`, `_envelope`, `_wpnonce` (échec de `PUT /settings` sinon).
+- Caractères accentués des traductions : sur PHP < 8.4 (sans l'analyseur HTML5 natif), le sérialiseur HTML4 historique convertissait chaque caractère non-ASCII des traductions insérées en entité HTML (`é` → `&eacute;`), rendant le code source incohérent avec la page d'origine. Décodage ciblé, sans jamais altérer les entités structurelles (`&amp; &lt; &gt; &quot; &#039;`).
+- Éditeur de traductions (admin) : clé React dupliquée sur la liste des segments lorsqu'un même segment a plusieurs langues cibles, pouvant mélanger l'état d'édition entre lignes.
+- Désinstallation avec purge : `wp_cache_flush()` après les suppressions SQL directes, pour que `get_option()` ne continue pas de servir une valeur déjà en cache dans le même processus (observé sur l'option de test du fournisseur simulé, mais le mécanisme concerne toute option du plugin).

@@ -40,12 +40,16 @@ final class OxygenIntegration {
 		}
 		$this->registered = true;
 
+		// The plugin's own brand name is not translated, and this runs on
+		// `plugins_loaded` (before `init`, to register in time for Oxygen to
+		// load the element) : a translation function here would trigger a
+		// `_load_textdomain_just_in_time` notice.
 		$plugin_directory = dirname( plugin_basename( OMTR_FILE ) );
 		\Breakdance\ElementStudio\registerSaveLocation(
 			$plugin_directory . '/src/Switcher',
 			'OmniumTranslate',
 			'element',
-			__( 'Omnium Translate', 'omnium-translate' ),
+			'Omnium Translate',
 			false,
 			true
 		);

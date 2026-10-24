@@ -83,6 +83,24 @@ HTML;
 		$this->assertStringNotContainsString( '<?xml', $output );
 	}
 
+	public function test_translated_accented_text_is_not_entity_encoded(): void {
+		if ( class_exists( 'Dom\\HTMLDocument' ) ) {
+			$this->markTestSkipped( 'DOMDocument fallback only: the legacy HTML4 serializer entity-encodes inserted text.' );
+		}
+		$html       = '<!doctype html><html lang="fr"><body><p>Bonjour & bienvenue</p></body></html>';
+		$hash       = SegmentKey::hash( 'fr', 'Bonjour & bienvenue' );
+		$current    = new CurrentLanguage( 'fr' );
+		$repository = $this->createMock( TranslationRepositoryInterface::class );
+		$repository->expects( $this->once() )->method( 'find_many' )->willReturn( array( $hash => 'Présentation étudiée & validée' ) );
+		$current->set( 'en' );
+
+		$output = $this->translator( $current, $repository )->translate( $html );
+
+		$this->assertStringContainsString( '<p>Présentation étudiée &amp; validée</p>', $output );
+		$this->assertStringNotContainsString( '&eacute;', $output );
+		$this->assertStringNotContainsString( '&#233;', $output );
+	}
+
 	public function test_modern_parser_rewrites_json_ld_with_stored_translations(): void {
 		if ( ! class_exists( 'Dom\\HTMLDocument' ) ) {
 			$this->markTestSkipped( 'HTML5 parser only.' );

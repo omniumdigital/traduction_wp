@@ -118,7 +118,11 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	public static function save_document( \DOMDocument|\Dom\HTMLDocument $document ): string|false {
 		if ( $document instanceof \DOMDocument ) {
 			$output = $document->saveHTML();
-			if ( false === $output || null === self::$fallback_state || ! isset( self::$fallback_state[ $document ] ) ) {
+			if ( false === $output ) {
+				return false;
+			}
+			$output = self::decode_spurious_entities( $output );
+			if ( null === self::$fallback_state || ! isset( self::$fallback_state[ $document ] ) ) {
 				return $output;
 			}
 			$state = self::$fallback_state[ $document ];
@@ -126,6 +130,27 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 			return self::restore_fallback_html( $output, $state['blocks'], $state['token'] );
 		}
 		return $document->saveHtml();
+	}
+
+	/**
+	 * Undo the legacy DOMDocument HTML4 serializer's quirk of entity-encoding
+	 * every non-ASCII character in text nodes created or imported after the
+	 * initial parse (e.g. inserted translations), while leaving the five
+	 * structurally significant XML entities untouched.
+	 *
+	 * @param string $html Serialized HTML.
+	 */
+	private static function decode_spurious_entities( string $html ): string {
+		static $placeholders = array(
+			'&amp;'  => "\x01amp\x01",
+			'&lt;'   => "\x01lt\x01",
+			'&gt;'   => "\x01gt\x01",
+			'&quot;' => "\x01quot\x01",
+			'&#039;' => "\x01apos\x01",
+		);
+		$protected           = strtr( $html, $placeholders );
+		$decoded             = html_entity_decode( $protected, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		return strtr( $decoded, array_flip( $placeholders ) );
 	}
 
 	/**

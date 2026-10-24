@@ -79,7 +79,7 @@ export function Translations({ request }) {
 					/>
 				</div>
 				{items.map((item) => (
-					<SegmentRow key={item.id} item={item} request={request} onSaved={load} />
+					<SegmentRow key={`${item.id}-${item.target_lang}`} item={item} request={request} onSaved={load} />
 				))}
 			</CardBody>
 		</Card>

@@ -14,7 +14,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class MenuIntegration {
 
-	private const ITEM_URL = '#omtr-switcher';
+	/** Marker URL stored in the navigation-menu item replaced on front. */
+	public const ITEM_URL = '#omtr-switcher';
 
 	/**
 	 * Constructor.

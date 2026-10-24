@@ -8,16 +8,17 @@ export function Wizard({ data, request, onComplete }) {
 	const [step, setStep] = useState(0);
 	const [settings, setSettings] = useState({ source_lang: "", target_langs: [], provider: "", model: "" });
 	const [providers, setProviders] = useState([]);
+	const [languages, setLanguages] = useState(data.languages || []);
 	const [key, setKey] = useState("");
 	const [keyStatus, setKeyStatus] = useState(null);
 	const [estimate, setEstimate] = useState(null);
 	const [insertMenu, setInsertMenu] = useState(true);
-	const languages = data.languages || [];
 
 	useEffect(() => {
 		Promise.all([request({ path: "/settings" }), request({ path: "/providers" })])
 			.then(([response, available]) => {
 				setSettings(response.settings || {});
+				setLanguages(response.languages || data.languages || []);
 				setProviders(available || []);
 			})
 			.catch(() => {});
