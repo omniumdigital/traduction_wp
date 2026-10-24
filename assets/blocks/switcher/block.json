@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "omnium-translate/switcher",
+  "version": "0.1.0",
+  "title": "Language selector",
+  "category": "widgets",
+  "icon": "translation",
+  "description": "Display links to every configured language.",
+  "textdomain": "omnium-translate",
+  "attributes": {
+    "variant": {
+      "type": "string",
+      "enum": ["dropdown", "inline", "floating"],
+      "default": "dropdown"
+    },
+    "display": {
+      "type": "string",
+      "enum": ["flag-name", "flag", "name", "code"],
+      "default": "flag-name"
+    }
+  },
+  "supports": {
+    "html": false,
+    "multiple": true
+  },
+  "editorScript": "file:../../build/switcher-block.js"
+}
