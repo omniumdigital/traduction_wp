@@ -34,12 +34,17 @@ final class Settings {
 		'site_context'     => '',
 		'flags'            => array( 'en' => 'gb' ),
 		'switcher'         => array(
-			'variant' => 'dropdown',
-			'display' => 'flag-name',
-			'position' => 'bottom-right',
+			'variant'   => 'dropdown',
+			'display'   => 'flag-name',
+			'position'  => 'bottom-right',
 			'dark_mode' => false,
-			'colors' => array( 'bg' => '#ffffff', 'fg' => '#0a0a0a', 'hover' => '#f4f4f5', 'border' => '#e4e4e7' ),
-			'radius' => 8,
+			'colors'    => array(
+				'bg'     => '#ffffff',
+				'fg'     => '#0a0a0a',
+				'hover'  => '#f4f4f5',
+				'border' => '#e4e4e7',
+			),
+			'radius'    => 8,
 			'flag_size' => 18,
 		),
 	);
@@ -61,9 +66,15 @@ final class Settings {
 	 * @return array<string, mixed>
 	 */
 	public function all(): array {
-		$stored = get_option( Options::SETTINGS, array() );
-		$all = array_merge( self::DEFAULTS, is_array( $stored ) ? array_intersect_key( $stored, self::DEFAULTS ) : array() );
-		$all['switcher'] = array_replace_recursive( self::DEFAULTS['switcher'], is_array( $all['switcher'] ) ? $all['switcher'] : array() );
+		$stored   = get_option( Options::SETTINGS, array() );
+		$all      = array_merge( self::DEFAULTS, is_array( $stored ) ? array_intersect_key( $stored, self::DEFAULTS ) : array() );
+		$switcher = is_array( $all['switcher'] ) ? array_intersect_key( $all['switcher'], self::DEFAULTS['switcher'] ) : array();
+		if ( isset( $switcher['colors'] ) ) {
+			$switcher['colors'] = is_array( $switcher['colors'] ) ? array_intersect_key( $switcher['colors'], self::DEFAULTS['switcher']['colors'] ) : array();
+		}
+		$all['switcher'] = array_replace_recursive( self::DEFAULTS['switcher'], $switcher );
+		$all['flags']    = is_array( $all['flags'] ) ? array_intersect_key( $all['flags'], array_flip( array( 'de', 'en', 'es', 'fr', 'it', 'nl', 'pt' ) ) ) : self::DEFAULTS['flags'];
+		$all['flags']    = array_filter( $all['flags'], static fn( mixed $flag ): bool => is_string( $flag ) && in_array( $flag, array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' ), true ) );
 		return $all;
 	}
 

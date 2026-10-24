@@ -140,7 +140,7 @@ final class Switcher {
 		}
 
 		$switcher = $this->settings->get( 'switcher' );
-		$classes = 'omtr-switcher omtr-switcher--' . $variant . ' omtr-switcher--' . $display;
+		$classes  = 'omtr-switcher omtr-switcher--' . $variant . ' omtr-switcher--' . $display;
 		if ( 'floating' === $variant ) {
 			$position = (string) $switcher['position'];
 			$classes .= ' omtr-switcher--' . ( in_array( $position, array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' ), true ) ? $position : 'bottom-right' );
@@ -172,18 +172,21 @@ final class Switcher {
 		);
 	}
 
-	/** Build CSS custom properties from validated stored values. */
+	/** Build CSS custom properties from validated stored values.
+	 *
+	 * @param array<string, mixed> $switcher Switcher settings.
+	 */
 	private function style_variables( array $switcher ): string {
 		$colors = $switcher['colors'] ?? array();
-		$parts = array();
+		$parts  = array();
 		foreach ( array( 'bg', 'fg', 'hover', 'border' ) as $name ) {
 			$value = $colors[ $name ] ?? '';
 			if ( is_string( $value ) && preg_match( '/^#[0-9a-fA-F]{6}$/', $value ) ) {
 				$parts[] = '--omtr-' . $name . ':' . $value;
 			}
 		}
-		$radius = $switcher['radius'] ?? 8;
-		$size = $switcher['flag_size'] ?? 18;
+		$radius  = $switcher['radius'] ?? 8;
+		$size    = $switcher['flag_size'] ?? 18;
 		$parts[] = '--omtr-radius:' . ( is_numeric( $radius ) ? max( 0, min( 24, (int) $radius ) ) : 8 ) . 'px';
 		$parts[] = '--omtr-flag-size:' . ( is_numeric( $size ) ? max( 12, min( 32, (int) $size ) ) : 18 ) . 'px';
 		return implode( ';', $parts );
@@ -229,13 +232,13 @@ final class Switcher {
 	 * @param string $display  Display mode.
 	 */
 	private function language_content( string $language, string $display ): string {
-		$base      = strtolower( (string) strtok( $language, '-' ) );
+		$base       = strtolower( (string) strtok( $language, '-' ) );
 		$configured = $this->settings->get( 'flags' );
-		$flag_code = is_array( $configured ) && isset( $configured[ $language ] ) ? (string) $configured[ $language ] : ( self::FLAGS[ $base ] ?? '' );
+		$flag_code  = is_array( $configured ) && isset( $configured[ $language ] ) ? (string) $configured[ $language ] : ( self::FLAGS[ $base ] ?? '' );
 		if ( ! in_array( $flag_code, array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' ), true ) ) {
 			$flag_code = '';
 		}
-		$flag      = '';
+		$flag = '';
 		if ( '' !== $flag_code && in_array( $display, array( 'flag-name', 'flag' ), true ) ) {
 			$flag = sprintf(
 				'<img class="omtr-switcher__flag" src="%s" alt="" width="24" height="18" loading="lazy" decoding="async" />',

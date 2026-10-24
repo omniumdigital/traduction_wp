@@ -137,6 +137,32 @@ final class SwitcherTest extends TestCase {
 		$this->assertSame( 1, $this->script_calls );
 	}
 
+	/** Stored appearance and country flag are reflected safely in markup. */
+	public function test_uses_configured_appearance_and_flag(): void {
+		Functions\when( 'get_option' )->justReturn(
+			array(
+				'source_lang'  => 'fr',
+				'target_langs' => array( 'en' ),
+				'flags'        => array( 'en' => 'us' ),
+				'switcher'     => array(
+					'variant'   => 'floating',
+					'position'  => 'top-left',
+					'dark_mode' => true,
+					'colors'    => array( 'bg' => '#123456' ),
+					'radius'    => 12,
+					'flag_size' => 22,
+				),
+			)
+		);
+		$html = $this->switcher( new CurrentLanguage( 'fr' ) )->render();
+		$this->assertStringContainsString( 'omtr-switcher--floating', $html );
+		$this->assertStringContainsString( 'omtr-switcher--top-left', $html );
+		$this->assertStringContainsString( 'omtr-switcher--auto-dark', $html );
+		$this->assertStringContainsString( '--omtr-bg:#123456', $html );
+		$this->assertStringContainsString( '--omtr-radius:12px', $html );
+		$this->assertStringContainsString( 'assets/flags/us.svg', $html );
+	}
+
 	/** Untrusted settings and shortcode values cannot inject markup or classes. */
 	public function test_rejects_unsafe_languages_and_invalid_variants(): void {
 		Functions\when( 'get_option' )->justReturn(
