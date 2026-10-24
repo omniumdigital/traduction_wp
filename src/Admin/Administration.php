@@ -104,6 +104,7 @@ final class Administration {
 					'siteUrl'       => home_url(),
 					'locale'        => get_locale(),
 					'version'       => OMTR_VERSION,
+					'flagsUrl'      => OMTR_URL . 'assets/flags/',
 				)
 			) . ';',
 			'before'
