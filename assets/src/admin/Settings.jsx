@@ -74,6 +74,11 @@ export function Settings({ request, data: initialData }) {
 						checked={settings.on_the_fly}
 						onChange={(on_the_fly) => save({ on_the_fly })}
 					/>
+					<ToggleControl
+						label={__("Enable visual translation editing", "omnium-translate")}
+						checked={Boolean(settings.visual_editor)}
+						onChange={(visual_editor) => save({ visual_editor })}
+					/>
 				</PanelBody>
 				<PanelBody title={__("Provider and limits", "omnium-translate")} initialOpen>
 					<SelectControl

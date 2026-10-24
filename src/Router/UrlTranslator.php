@@ -25,6 +25,85 @@ final class UrlTranslator {
 	public function __construct( private Settings $settings ) {}
 
 	/**
+	 * Slugs prepared for a sitemap batch.
+	 *
+	 * @var array<int, array<string, string>>|null
+	 */
+	private ?array $prepared_slugs = null;
+
+	/**
+	 * Identifiers covered by the current batch, including missing slugs.
+	 *
+	 * @var array<int, bool>
+	 */
+	private array $prepared_ids = array();
+
+	/**
+	 * URL resolution cache for this request.
+	 *
+	 * @var array<string, int>
+	 */
+	private array $resolved_urls = array();
+
+	/**
+	 * Known post for the current translation.
+	 *
+	 * @var int|null
+	 */
+	private ?int $known_post_id = null;
+
+	/**
+	 * Translate a known post without resolving its URL to a post ID.
+	 *
+	 * @param int    $post_id Post identifier.
+	 * @param string $lang Target language.
+	 */
+	public function translate_post( int $post_id, string $lang ): string {
+		$permalink = get_permalink( $post_id );
+		if ( ! is_string( $permalink ) || '' === $permalink ) {
+			return '';
+		}
+		$this->known_post_id = $post_id;
+		try {
+			return $this->translate( $permalink, $lang );
+		} finally {
+			$this->known_post_id = null;
+		}
+	}
+
+	/**
+	 * Load all slug translations needed by a sitemap page in one query.
+	 *
+	 * @param list<int>    $post_ids Post identifiers.
+	 * @param list<string> $languages Target languages.
+	 */
+	public function preload_posts( array $post_ids, array $languages ): void {
+		$ids = array();
+		foreach ( $post_ids as $post_id ) {
+			$ids[] = $post_id;
+			foreach ( get_post_ancestors( $post_id ) as $ancestor ) {
+				$ids[] = (int) $ancestor;
+			}
+		}
+		$this->prepared_ids   = array_fill_keys( $ids, true );
+		$this->prepared_slugs = isset( $GLOBALS['wpdb'] ) && $GLOBALS['wpdb'] instanceof \wpdb
+			? ( new SlugRepository( $GLOBALS['wpdb'] ) )->many( $ids, $languages )
+			: array();
+	}
+
+	/**
+	 * Resolve a source URL once per request.
+	 *
+	 * @param string $url Source URL.
+	 */
+	public function post_id_for_url( string $url ): int {
+		if ( ! array_key_exists( $url, $this->resolved_urls ) ) {
+			$this->resolved_urls[ $url ] = (int) url_to_postid( $url );
+		}
+		return $this->resolved_urls[ $url ];
+	}
+
+	/**
 	 * Return a page URL for a supported language.
 	 *
 	 * @param string $url  Absolute or root-relative URL.
@@ -131,7 +210,7 @@ final class UrlTranslator {
 	 * @param string $home_base     Absolute home base without trailing slash.
 	 */
 	private function translated_slug_path( string $relative_path, string $lang, string $home_base ): string {
-		$post_id = (int) url_to_postid( rtrim( $home_base, '/' ) . '/' . ltrim( $relative_path, '/' ) );
+		$post_id = $this->known_post_id ?? $this->post_id_for_url( rtrim( $home_base, '/' ) . '/' . ltrim( $relative_path, '/' ) );
 		if ( $post_id <= 0 || ! isset( $GLOBALS['wpdb'] ) || ! $GLOBALS['wpdb'] instanceof \wpdb ) {
 			return $relative_path;
 		}
@@ -142,7 +221,7 @@ final class UrlTranslator {
 		$segments   = explode( '/', trim( $relative_path, '/' ) );
 		$position   = count( $segments ) - 1;
 		foreach ( array_reverse( $ids ) as $id ) {
-			$translated = $repository->get( $id, $lang );
+			$translated = isset( $this->prepared_ids[ $id ] ) ? ( $this->prepared_slugs[ $id ][ $lang ] ?? null ) : $repository->get( $id, $lang );
 			if ( null !== $translated && $position >= 0 ) {
 				$segments[ $position ] = rawurlencode( $translated );
 			}

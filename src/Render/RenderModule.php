@@ -9,6 +9,7 @@ namespace Omnium\Translate\Render;
 
 use Omnium\Translate\Core\Container;
 use Omnium\Translate\Core\ModuleInterface;
+use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Queue\OnTheFlyTrigger;
 use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\RequestGuard;
@@ -30,6 +31,7 @@ final class RenderModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
+		$container->set( VisualEditor::class, static fn( Container $c ) => new VisualEditor( $c->get( Settings::class ), $c->get( CurrentLanguage::class ) ) );
 		$container->set( SegmentExtractorInterface::class, static fn( Container $c ) => new HtmlSegmentExtractor( $c->get( PiiFilter::class ) ) );
 		$container->set(
 			Translator::class,
@@ -37,7 +39,8 @@ final class RenderModule implements ModuleInterface {
 				$c->get( CurrentLanguage::class ),
 				$c->get( SegmentExtractorInterface::class ),
 				$c->get( TranslationRepositoryInterface::class ),
-				$c->get( UrlTranslator::class )
+				$c->get( UrlTranslator::class ),
+				$c->get( VisualEditor::class )
 			)
 		);
 		$container->set(
@@ -46,7 +49,8 @@ final class RenderModule implements ModuleInterface {
 				$c->get( CurrentLanguage::class ),
 				$c->get( RequestGuard::class ),
 				$c->get( Translator::class ),
-				$c->get( OnTheFlyTrigger::class )
+				$c->get( OnTheFlyTrigger::class ),
+				$c->get( VisualEditor::class )
 			)
 		);
 	}
@@ -59,5 +63,9 @@ final class RenderModule implements ModuleInterface {
 	public function boot( Container $container ): void {
 		$output_buffer = $container->get( OutputBuffer::class );
 		add_action( 'template_redirect', array( $output_buffer, 'start' ), 0 );
+		$visual_editor = $container->get( VisualEditor::class );
+		add_action( 'template_redirect', array( $visual_editor, 'no_cache' ), 0 );
+		add_action( 'wp_enqueue_scripts', array( $visual_editor, 'enqueue' ) );
+		add_action( 'admin_bar_menu', array( $visual_editor, 'admin_bar' ), 100 );
 	}
 }

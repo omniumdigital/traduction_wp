@@ -60,7 +60,7 @@ final class NativeSitemapRenderer {
 					$xml .= "\t\t<{$field}>" . esc_xml( (string) $entry[ $field ] ) . "</{$field}>\n";
 				}
 			}
-			$xml .= $this->alternates->links_xml( $expanded['source_url'] );
+			$xml .= $this->alternates->links_xml( $expanded['source_url'], false, $expanded['post_id'] );
 			$xml .= "\t</url>\n";
 		}
 		return $xml . '</urlset>';

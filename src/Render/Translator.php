@@ -44,12 +44,14 @@ final class Translator {
 	 * @param SegmentExtractorInterface      $extractor        Segment extractor.
 	 * @param TranslationRepositoryInterface $translations     Translation repository.
 	 * @param UrlTranslator                  $url_translator    Internal URL translator.
+	 * @param VisualEditor|null              $visual_editor     Optional private editor.
 	 */
 	public function __construct(
 		private CurrentLanguage $current_language,
 		private SegmentExtractorInterface $extractor,
 		private TranslationRepositoryInterface $translations,
-		private UrlTranslator $url_translator
+		private UrlTranslator $url_translator,
+		private ?VisualEditor $visual_editor = null
 	) {}
 
 	/**
@@ -76,14 +78,18 @@ final class Translator {
 		$version   = wp_cache_get( TranslationRepository::CACHE_VERSION_KEY, TranslationRepository::CACHE_GROUP );
 		$version   = is_int( $version ) ? $version : 0;
 		$cache_key = 'render:' . hash( 'sha256', $this->current_language->get() . "\n" . $version . "\n" . implode( "\n", $hashes ) );
-		$stored    = wp_cache_get( $cache_key, TranslationRepository::CACHE_GROUP );
+		$editing   = null !== $this->visual_editor && $this->visual_editor->active();
+		$stored    = $editing ? false : wp_cache_get( $cache_key, TranslationRepository::CACHE_GROUP );
 		if ( ! is_array( $stored ) ) {
 			$stored = $this->translations->find_many( $hashes, $this->current_language->get() );
-			wp_cache_set( $cache_key, $stored, TranslationRepository::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+			if ( ! $editing ) {
+				wp_cache_set( $cache_key, $stored, TranslationRepository::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+			}
 		}
 		$this->missing = count( array_diff_key( $segments, $stored ) );
 
-		$this->walk( $document, $source_lang, $stored, false );
+		$ids = $editing ? $this->visual_editor->ids_by_hash( $hashes ) : array();
+		$this->walk( $document, $source_lang, $stored, false, $ids );
 		$this->set_document_language( $document );
 		$this->rewrite_links( $document );
 		$output = HtmlSegmentExtractor::save_document( $document );
@@ -105,11 +111,18 @@ final class Translator {
 	 * @param string                $source_lang Source language.
 	 * @param array<string, string> $stored      Stored translations.
 	 * @param bool                  $excluded    Ancestor exclusion state.
+	 * @param array<string, int>    $ids         Existing segment ids.
 	 */
-	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array $stored, bool $excluded ): void {
+	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array $stored, bool $excluded, array $ids ): void {
 		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
+			$tag = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			if ( ! $excluded && 'omtr-ph' === $tag && $node instanceof \DOMElement ) {
+				HtmlSegmentExtractor::translate_json_ld_placeholder( $node, $source_lang, $this->current_language->get(), $stored, $this->url_translator );
+			}
+			if ( ! $excluded && 'script' === $tag && 'application/ld+json' === strtolower( trim( (string) $node->getAttribute( 'type' ) ) ) ) {
+				$node->textContent = JsonLdProcessor::translate( (string) $node->textContent, $source_lang, $this->current_language->get(), $stored, $this->url_translator ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			}
 			$excluded = $excluded || $this->is_excluded_element( $node );
-			$tag      = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
 					if ( 'link' === $tag && 'title' === $attribute ) {
@@ -132,16 +145,18 @@ final class Translator {
 		}
 
 		if ( ! $excluded && XML_TEXT_NODE === $node->nodeType ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			$hash        = SegmentKey::hash( $source_lang, SegmentKey::normalize( (string) $node->nodeValue ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			$translation = $this->lookup( (string) $node->nodeValue, $source_lang, $stored ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			if ( null !== $translation ) {
-				$this->replace_text_node( $node, $translation );
+				$parent_tag = $node->parentNode instanceof \DOMElement || $node->parentNode instanceof \Dom\Element ? strtolower( $node->parentNode->tagName ) : ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+				$this->replace_text_node( $node, $translation, in_array( $parent_tag, array( 'title', 'option', 'svg' ), true ) ? 0 : ( $ids[ $hash ] ?? 0 ) );
 				return;
 			}
 		}
 
 		$children = iterator_to_array( $node->childNodes ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 		foreach ( $children as $child ) {
-			$this->walk( $child, $source_lang, $stored, $excluded );
+			$this->walk( $child, $source_lang, $stored, $excluded, $ids );
 		}
 	}
 
@@ -166,8 +181,9 @@ final class Translator {
 	 *
 	 * @param \DOMNode|\Dom\Node $text_node   Text node to replace.
 	 * @param string             $translation Sanitized translation.
+	 * @param int                $segment_id  Existing segment id for visual editing.
 	 */
-	private function replace_text_node( \DOMNode|\Dom\Node $text_node, string $translation ): void {
+	private function replace_text_node( \DOMNode|\Dom\Node $text_node, string $translation, int $segment_id = 0 ): void {
 		$parent = $text_node->parentNode; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 		$owner  = $text_node->ownerDocument; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 		if ( null === $parent || null === $owner ) {
@@ -192,8 +208,14 @@ final class Translator {
 		if ( null === $wrapper ) {
 			return;
 		}
+		$target = $parent;
+		if ( $segment_id > 0 ) {
+			$target = $owner->createElement( 'span' );
+			$target->setAttribute( 'data-omtr-segment', (string) $segment_id );
+			$parent->insertBefore( $target, $text_node );
+		}
 		foreach ( iterator_to_array( $wrapper->childNodes ) as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
-			$parent->insertBefore( $owner->importNode( $child, true ), $text_node );
+			$target->insertBefore( $owner->importNode( $child, true ), $segment_id > 0 ? null : $text_node );
 		}
 		$parent->removeChild( $text_node );
 	}

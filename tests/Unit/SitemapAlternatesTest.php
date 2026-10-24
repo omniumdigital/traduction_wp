@@ -118,6 +118,26 @@ final class SitemapAlternatesTest extends TestCase {
 		$this->assertStringNotContainsString( '<loc>https://safe.test/es/article</loc>', $xml );
 	}
 
+	/** A 100-entry sitemap resolves each post once and loads its slugs in one SQL query. */
+	public function test_native_sitemap_batches_one_hundred_post_slugs(): void {
+		$resolutions = 0;
+		Functions\when( 'url_to_postid' )->alias( static function ( string $url ) use ( &$resolutions ): int {
+			++$resolutions;
+			return (int) basename( $url );
+		} );
+		Functions\when( 'get_permalink' )->alias( static fn( int $id ): string => 'https://safe.test/' . $id );
+		Functions\when( 'get_post_ancestors' )->justReturn( array() );
+		$this->wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$this->wpdb->expects( $this->once() )->method( 'get_results' )->willReturn( array() );
+		$entries = array();
+		for ( $id = 1; $id <= 100; ++$id ) {
+			$entries[] = array( 'loc' => 'https://safe.test/' . $id );
+		}
+		$xml = ( new NativeSitemapRenderer( new \stdClass(), $this->alternates() ) )->get_sitemap_xml( $entries );
+		$this->assertSame( 100, $resolutions );
+		$this->assertSame( 300, substr_count( $xml, '<url>' ) );
+	}
+
 	/** Build the alternate entry service. */
 	private function alternates(): SitemapAlternates {
 		$settings = new Settings();

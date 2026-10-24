@@ -7,6 +7,7 @@
 
 namespace Omnium\Translate\Admin;
 
+use Omnium\Translate\Core\TranslationCachePurger;
 use Omnium\Translate\Glossary\GlossaryCsv;
 use Omnium\Translate\Glossary\GlossaryRepository;
 use Omnium\Translate\Queue\Estimator;
@@ -326,6 +327,10 @@ final class RestController {
 	 */
 	public function edit_segment( \WP_REST_Request $request ): \WP_REST_Response {
 		$this->segments->edit( (int) $request['id'], (string) $request['target_lang'], Sanitizer::inline_html( (string) $request['text'] ) );
+		$post_id = (int) ( $request['post_id'] ?? 0 );
+		if ( $post_id > 0 && null !== $this->content && null !== $this->content->resolve( $post_id ) ) {
+			TranslationCachePurger::purge( $post_id, (string) $request['target_lang'] );
+		}
 		return new \WP_REST_Response( array( 'status' => 'edited' ) );
 	}
 
@@ -480,7 +485,12 @@ final class RestController {
 	private function translation_args( bool $with_text ): array {
 		$args = array( 'target_lang' => $this->language_arg() );
 		if ( $with_text ) {
-			$args['text'] = array(
+			$args['post_id'] = array(
+				'type'              => 'integer',
+				'minimum'           => 1,
+				'sanitize_callback' => 'absint',
+			);
+			$args['text']    = array(
 				'type'              => 'string',
 				'required'          => true,
 				'sanitize_callback' => array( Sanitizer::class, 'inline_html' ),

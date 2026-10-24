@@ -574,3 +574,30 @@ msgstr "aucun"
 
 msgid "unlimited"
 msgstr "illimité"
+
+msgid "Translate this page"
+msgstr "Traduire cette page"
+
+msgid "Translation queued."
+msgstr "Traduction mise en file."
+
+msgid "Translation could not be queued."
+msgstr "La traduction n’a pas pu être mise en file."
+
+msgid "Enable visual translation editing"
+msgstr "Activer l’édition visuelle des traductions"
+
+msgid "Exit visual editor"
+msgstr "Quitter l’éditeur visuel"
+
+msgid "Edit translations"
+msgstr "Modifier les traductions"
+
+msgid "Save translation"
+msgstr "Enregistrer la traduction"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "If the site owner enables the language preference, choosing a language stores a strictly functional cookie (omtr_lang, 12 months maximum) containing only the language code, never any identifier."
+msgstr "Si le responsable du site active la préférence de langue, le choix d’une langue enregistre un cookie strictement fonctionnel (omtr_lang, 12 mois maximum) contenant uniquement le code de langue, jamais d’identifiant."

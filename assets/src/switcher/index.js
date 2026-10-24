@@ -13,3 +13,13 @@ document.querySelectorAll( '[data-omtr-switcher]' ).forEach( ( switcher ) => {
 	} );
 	sync();
 } );
+
+document.addEventListener('click', (event) => {
+	const link = event.target.closest('a[data-omtr-pref]');
+	if (!link) return;
+	const language = link.dataset.omtrPref;
+	if (!/^[a-z]{2,3}$/.test(language)) return;
+	// Cookie Store is unavailable in older browsers supported by WordPress.
+	// biome-ignore lint/suspicious/noDocumentCookie: Functional preference, explicitly enabled by the site owner.
+	document.cookie = `omtr_lang=${language}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+});

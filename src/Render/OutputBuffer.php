@@ -25,12 +25,14 @@ final class OutputBuffer {
 	 * @param RequestGuard         $guard            Front-request guard.
 	 * @param Translator           $translator       HTML translator.
 	 * @param OnTheFlyTrigger|null $on_the_fly  Guarded deferred trigger.
+	 * @param VisualEditor|null    $visual_editor Optional private editor.
 	 */
 	public function __construct(
 		private CurrentLanguage $current_language,
 		private RequestGuard $guard,
 		private Translator $translator,
-		private ?OnTheFlyTrigger $on_the_fly = null
+		private ?OnTheFlyTrigger $on_the_fly = null,
+		private ?VisualEditor $visual_editor = null
 	) {}
 
 	/**
@@ -50,7 +52,7 @@ final class OutputBuffer {
 	 */
 	public function process( string $html ): string {
 		$output = $this->translator->translate( $html );
-		if ( null !== $this->on_the_fly ) {
+		if ( null !== $this->on_the_fly && ( null === $this->visual_editor || ! $this->visual_editor->active() ) ) {
 			// Only a count leaves the render: the visitor's HTML is never used as a translation source.
 			$this->on_the_fly->capture( $this->translator->missing_count() );
 		}

@@ -30,6 +30,7 @@ final class Settings {
 		'hourly_quota'     => 0,
 		'noindex_partial'  => false,
 		'pref_cookie'      => false,
+		'visual_editor'    => false,
 		'site_tone'        => '',
 		'site_context'     => '',
 		'flags'            => array( 'en' => 'gb' ),

@@ -42,6 +42,34 @@ final class SlugRepository {
 	}
 
 	/**
+	 * Read translated slugs for many posts in one query.
+	 *
+	 * @param list<int>    $post_ids Post identifiers.
+	 * @param list<string> $languages Target languages.
+	 * @return array<int, array<string, string>>
+	 */
+	public function many( array $post_ids, array $languages ): array {
+		$post_ids  = array_values( array_unique( array_filter( array_map( 'intval', $post_ids ) ) ) );
+		$languages = array_values( array_unique( $languages ) );
+		if ( array() === $post_ids || array() === $languages ) {
+			return array();
+		}
+		$id_placeholders   = implode( ', ', array_fill( 0, count( $post_ids ), '%d' ) );
+		$lang_placeholders = implode( ', ', array_fill( 0, count( $languages ), '%s' ) );
+		$sql               = $this->wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Variadic values match locally generated placeholders.
+			"SELECT post_id, target_lang, slug FROM %i WHERE post_id IN ($id_placeholders) AND target_lang IN ($lang_placeholders)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Placeholder lists are generated locally.
+			Tables::name( Tables::SLUGS ),
+			...array_merge( $post_ids, $languages )
+		);
+		$rows              = $this->wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
+		$result            = array();
+		foreach ( $rows as $row ) {
+			$result[ (int) $row['post_id'] ][ (string) $row['target_lang'] ] = (string) $row['slug'];
+		}
+		return $result;
+	}
+
+	/**
 	 * Resolve a translated slug to its post id.
 	 *
 	 * @param string $slug        Translated slug.
