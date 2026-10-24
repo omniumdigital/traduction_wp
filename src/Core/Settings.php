@@ -73,8 +73,9 @@ final class Settings {
 			$switcher['colors'] = is_array( $switcher['colors'] ) ? array_intersect_key( $switcher['colors'], self::DEFAULTS['switcher']['colors'] ) : array();
 		}
 		$all['switcher'] = array_replace_recursive( self::DEFAULTS['switcher'], $switcher );
-		$all['flags']    = is_array( $all['flags'] ) ? array_intersect_key( $all['flags'], array_flip( array( 'de', 'en', 'es', 'fr', 'it', 'nl', 'pt' ) ) ) : self::DEFAULTS['flags'];
-		$all['flags']    = array_filter( $all['flags'], static fn( mixed $flag ): bool => is_string( $flag ) && in_array( $flag, array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' ), true ) );
+		$flags           = is_array( $all['flags'] ) ? array_intersect_key( $all['flags'], array_flip( array( 'de', 'en', 'es', 'fr', 'it', 'nl', 'pt' ) ) ) : array();
+		$flags           = array_filter( $flags, static fn( mixed $flag ): bool => is_string( $flag ) && in_array( $flag, array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' ), true ) );
+		$all['flags']    = array_merge( self::DEFAULTS['flags'], $flags );
 		return $all;
 	}
 

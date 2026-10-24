@@ -139,6 +139,7 @@ final class AdministrationSecurityTest extends TestCase {
 		$this->assertSame( array( 'en' ), $response->data['settings']['target_langs'] );
 		$this->assertSame( 12, $response->data['settings']['switcher']['radius'] );
 		$this->assertSame( 'dropdown', $response->data['settings']['switcher']['variant'] );
+		$this->assertSame( 'gb', $response->data['settings']['flags']['en'] );
 		$this->assertTrue( $response->data['settings']['updates_disabled'] );
 	}
 

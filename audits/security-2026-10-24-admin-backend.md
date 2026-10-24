@@ -8,7 +8,7 @@ Verdict : ✅ VALIDÉ sur le périmètre modifié.
 | --- | --- |
 | PHPCS (`src/`, bootstrap, désinstallation) | ✅ 0 erreur et 0 avertissement |
 | PHPStan niveau 6 | ✅ 0 erreur |
-| PHPUnit `@group security` | ✅ 152 tests, 463 assertions |
+| PHPUnit `@group security` | ✅ 152 tests, 464 assertions |
 | Composer audit | ✅ Aucune vulnérabilité |
 | npm audit `high` | ✅ 0 vulnérabilité |
 | Gitleaks | ✅ Scan des sources hors `vendor/` et `node_modules/` : aucune fuite. Le scan brut du répertoire de travail a trouvé 5 faux positifs `generic-api-key` dans le binaire tiers `vendor/phpstan/phpstan/phpstan.phar`. |
