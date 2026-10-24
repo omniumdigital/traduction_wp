@@ -101,6 +101,44 @@ HTML;
 		$this->assertStringNotContainsString( '&#233;', $output );
 	}
 
+	/**
+	 * @group security
+	 */
+	public function test_fallback_entity_decoder_preserves_markup_and_attribute_boundaries(): void {
+		$method = new \ReflectionMethod( HtmlSegmentExtractor::class, 'decode_spurious_entities' );
+		$input  = '<p>&#60;script&#62;alert(1)&#60;/script&#62; &#x3C;img src=x onerror=alert(1)&#x3E; &lt script&gt;</p>';
+		$input .= '<a title="safe&#34; onmouseover=alert(1)" href="javascript&#58;alert(1)">link</a>';
+		$input .= '<p>&#233; &eacute; &#x1F600; &lt; &amp; &quot; &#39;</p>';
+
+		$output = $method->invoke( null, $input );
+
+		$this->assertStringContainsString( '&#60;script&#62;', $output );
+		$this->assertStringContainsString( '&#x3C;img', $output );
+		$this->assertStringContainsString( '&lt script&gt;', $output );
+		$this->assertStringContainsString( 'safe&#34; onmouseover=', $output );
+		$this->assertStringContainsString( 'javascript&#58;alert(1)', $output );
+		$this->assertStringContainsString( 'é é 😀 &lt; &amp; &quot; &#39;', $output );
+		$this->assertStringNotContainsString( '<script>', $output );
+		$this->assertStringNotContainsString( '<img src=x', $output );
+	}
+
+	/**
+	 * @group security
+	 */
+	public function test_legacy_dom_serializer_keeps_unicode_and_escaped_markup(): void {
+		$document = new \DOMDocument( '1.0', 'UTF-8' );
+		$document->loadHTML( '<html><head><meta charset="UTF-8"></head><body><p></p></body></html>' );
+		$paragraph = $document->getElementsByTagName( 'p' )->item( 0 );
+		$this->assertNotNull( $paragraph );
+		$paragraph->appendChild( $document->createTextNode( 'Été <script>alert(1)</script> & suite' ) );
+
+		$output = HtmlSegmentExtractor::save_document( $document );
+
+		$this->assertIsString( $output );
+		$this->assertStringContainsString( 'Été &lt;script&gt;alert(1)&lt;/script&gt; &amp; suite', $output );
+		$this->assertStringNotContainsString( '<script>alert(1)</script>', $output );
+	}
+
 	public function test_modern_parser_rewrites_json_ld_with_stored_translations(): void {
 		if ( ! class_exists( 'Dom\\HTMLDocument' ) ) {
 			$this->markTestSkipped( 'HTML5 parser only.' );
