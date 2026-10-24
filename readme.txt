@@ -17,10 +17,16 @@ Supported integrations include Gutenberg, Elementor, Oxygen 6, and optional WooC
 
 Requirements: WordPress 6.9 or later, PHP 8.1 or later, and the Sodium PHP extension. WooCommerce 9.0–11.2 is optional.
 
+In the WordPress editor, use the “Translate this page” panel to queue a page for translation. An optional front-end visual editor lets authorized users correct translated segments on the page. On-the-fly translation of missing segments is protected by an hourly quota of 100 segments by default; the limit can be changed in settings.
+
+JSON-LD text fields are translated and internal URLs are rewritten while prices and product identifiers are preserved. After translations change, the plugin clears its own cache and purges WP Rocket and LiteSpeed page caches when available. Integrations can also listen for the omtr_translations_updated($post_id, $lang) action.
+
+The optional language preference cookie stores the selected language. When enabled, it redirects only an external arrival at the unprefixed source-language homepage. No cookie is set by default.
+
 == Installation ==
 
 1. Download omnium-translate.zip from the GitHub Release for the version you want.
-2. In WordPress, go to Plugins > Add New Plugin > Upload Plugin, upload the ZIP, and activate the plugin.
+2. In WordPress, go to Plugins > Add New Plugin > Upload Plugin, upload the ZIP, and activate Omnium Translate.
 3. Open Omnium Translate in the administration area and follow the setup wizard.
 4. Choose source and target languages, select an AI provider, add and test its API key, review the estimate, and start the translation.
 
@@ -49,11 +55,15 @@ Public rendered text, the source and target languages, and (when configured) glo
 
 = Does the plugin set cookies? =
 
-No cookie is set by default. The language is represented in the URL. An optional functional language preference cookie can be enabled in settings.
+No cookie is set by default. The language is represented in the URL. An optional functional language preference cookie can be enabled in settings. It redirects only an external arrival at the unprefixed source-language homepage.
 
 = How should I configure my page cache? =
 
-Language versions use URL path prefixes such as /en/ and /es/, while the source language has no prefix. Configure WP Rocket, LiteSpeed Cache, or another page cache to vary by the full URL so each language URL has its own cached page.
+Language versions use URL path prefixes such as /en/ and /es/, while the source language has no prefix. Configure WP Rocket, LiteSpeed Cache, or another page cache to vary by the full URL so each language URL has its own cached page. The plugin purges WP Rocket and LiteSpeed caches after translation updates when those plugins are available. Other integrations can use the omtr_translations_updated($post_id, $lang) action.
+
+= What should I check before production? =
+
+Test the setup with a real API key and review the translated pages and site workflows. Before the first client production deployment, have a second developer review the plugin or run a Patchstack or WPScan scan.
 
 = What happens when I uninstall the plugin? =
 
@@ -66,7 +76,6 @@ The plugin checks public GitHub Releases using Plugin Update Checker. Update che
 == Changelog ==
 
 = 1.0.0 =
-* Initial release: configure languages and an AI provider, then translate public site content in the background.
-* Add a language selector through shortcode, block, builder integrations, menus, or PHP.
-* Include glossary tools, translated slugs, and SEO language metadata.
-* Add optional WooCommerce catalog, fragment, and email-template integrations.
+* Translate pages from the editor and optionally correct translations in a visual front-end editor.
+* Add JSON-LD translation, page cache purging, an optional language preference cookie, and configurable on-the-fly hourly quota.
+* Include language selector integrations, glossary, translated slugs, SEO metadata, and optional WooCommerce support.

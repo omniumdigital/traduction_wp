@@ -36,6 +36,12 @@ define( 'OMTR_ENCRYPTION_KEY', 'remplacez-par-une-valeur-secrete-longue-et-aleat
 
 Conservez cette valeur de façon sûre et ne la publiez pas. Si elle n'est pas définie, le plugin dérive la clé de chiffrement des sels WordPress `AUTH_KEY` et `SECURE_AUTH_SALT`.
 
+## Traduire et corriger les pages
+
+Dans l'éditeur WordPress, le panneau **« Traduire cette page »** met la page dans la file de traduction. La traduction est réalisée en arrière-plan. Le mode d'édition visuel en front peut être activé dans les réglages : un utilisateur autorisé peut alors corriger les segments directement sur la page traduite.
+
+L'option de traduction à la volée ajoute à la file les segments manquants des pages publiques connues. Elle est limitée par un quota horaire, fixé à 100 segments par défaut et réglable dans l'administration.
+
 ## Ajouter le sélecteur de langue
 
 Le sélecteur ne s'affiche que si au moins deux langues sont configurées. Il utilise la langue et la page courantes pour construire les liens.
@@ -48,6 +54,12 @@ Le sélecteur ne s'affiche que si au moins deux langues sont configurées. Il ut
 - **Code PHP** : appelez `omtr_switcher()` dans un modèle de thème.
 
 Les styles et le script du sélecteur sont chargés lorsqu'un sélecteur est rendu. Les drapeaux SVG sont inclus dans le plugin.
+
+## SEO et caches
+
+Le plugin traduit les champs textuels JSON-LD et réécrit les URL internes, tout en préservant les prix et identifiants. Les versions linguistiques utilisent un préfixe d'URL (`/en/`, `/es/`, etc.) ; la langue source n'a pas de préfixe.
+
+Après la mise à jour de traductions, le plugin purge les caches de page WP Rocket et LiteSpeed lorsqu'ils sont actifs, ainsi que son cache de contenu. Les intégrations peuvent également écouter le hook `omtr_translations_updated($post_id, $lang)`. Configurez votre cache de page pour distinguer les URL complètes, préfixe de langue compris.
 
 ## WP-CLI
 
@@ -77,15 +89,15 @@ wp omtr glossary export --user=admin
 wp omtr glossary affected 1 --user=admin
 ```
 
-## Cache de page
-
-La langue est indiquée par le préfixe du chemin (`/en/`, `/es/`, etc.) ; la langue source n'a pas de préfixe. Pour servir la bonne version traduite, configurez WP Rocket, LiteSpeed Cache ou tout cache de page pour varier par URL complète et conserver distinctes les URL avec préfixes de langue. Le plugin dispose également d'un cache objet pour le rendu des traductions ; purgez le cache de page après un changement de configuration de cache.
-
 ## Confidentialité
 
 Le plugin envoie au fournisseur IA sélectionné des segments de contenu public du site, ainsi que les langues et, le cas échéant, le glossaire et le ton/contexte configurés. Le filtre PII écarte les segments détectés comme contenant des courriels, téléphones, IBAN ou numéros de carte. Le plugin n'envoie aucune donnée à Omnium. Les appels réseau de fonctionnement comprennent aussi la vérification des versions GitHub Releases et les requêtes anonymes du crawler vers le propre site.
 
-Aucun cookie n'est posé par défaut : la langue est portée par l'URL. Un cookie fonctionnel de préférence peut être activé dans les réglages. Les paliers gratuits des fournisseurs peuvent avoir des conditions de réutilisation des données différentes ; consultez-les avant de les utiliser.
+Aucun cookie n'est posé par défaut : la langue est portée par l'URL. Un cookie fonctionnel de préférence peut être activé dans les réglages ; il mémorise la langue choisie et ne redirige qu'une arrivée externe sur l'accueil source sans préfixe de langue. Les paliers gratuits des fournisseurs peuvent avoir des conditions de réutilisation des données différentes ; consultez-les avant de les utiliser.
+
+## Avant la mise en production
+
+Testez la configuration avec une vraie clé API et vérifiez le rendu des pages traduites, les formulaires et les parcours de votre site. Avant la première mise en production chez un client, faites relire le plugin par un second développeur ou lancez un scan Patchstack ou WPScan.
 
 ## Désinstallation et mises à jour
 
