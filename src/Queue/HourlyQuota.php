@@ -14,10 +14,12 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Limits the number of segments accepted by enqueue_segments() each UTC hour.
- * A zero setting means unlimited. Full-site/page scans use the monthly word cap
- * instead and do not consume this visitor-triggered quota.
+ * A zero setting falls back to a finite limit. Full-site/page scans use the
+ * monthly word cap instead and do not consume this visitor-triggered quota.
  */
 final class HourlyQuota {
+	/** Safe hourly limit when the saved setting is zero or absent. */
+	private const DEFAULT_LIMIT    = 100;
 	private const LOCK_STALE_AFTER = 30;
 
 	/**
@@ -28,11 +30,11 @@ final class HourlyQuota {
 	public function __construct( private Settings $settings ) {}
 
 	/**
-	 * Configured segment limit, zero when unlimited.
+	 * Configured segment limit, with a finite fallback for older settings.
 	 */
 	public function limit(): int {
 		$limit = $this->settings->get( 'hourly_quota' );
-		return is_numeric( $limit ) ? max( 0, (int) $limit ) : 0;
+		return is_numeric( $limit ) && (int) $limit > 0 ? (int) $limit : self::DEFAULT_LIMIT;
 	}
 
 	/**

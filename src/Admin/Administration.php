@@ -511,14 +511,20 @@ final class Administration {
 
 	/** Add the installer's disclosure to the WordPress policy editor. */
 	public function privacy_policy(): void {
-		$provider = $this->providers->get( (string) $this->settings->get( 'provider' ) );
-		if ( null === $provider ) {
-			return;
+		$selected = $this->providers->get( (string) $this->settings->get( 'provider' ) );
+		$items    = '';
+		foreach ( $this->providers->all() as $provider ) {
+			$region = 'eu' === $provider->region() ? __( 'processing in the EU', 'omnium-translate' ) : __( 'processing outside the EU', 'omnium-translate' );
+			$items .= '<li>' . esc_html( $provider->label() . ' (' . $region . ')' ) . '</li>';
 		}
-		$region = 'eu' === $provider->region() ? __( 'the EU', 'omnium-translate' ) : __( 'a country outside the EU', 'omnium-translate' );
-		$text   = sprintf( /* translators: 1: selected provider name, 2: processing region. */ __( 'Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent.', 'omnium-translate' ), esc_html( $provider->label() ), esc_html( $region ) );
+		$text = __( 'Omnium Translate sends the text of public pages, the glossary and the site tone to the AI provider selected by the site owner, only for translation. No visitor account, order, form or personal data is sent, and nothing is sent to Omnium Digital.', 'omnium-translate' );
+		if ( null !== $selected ) {
+			/* translators: %s: provider name. */
+			$text .= ' ' . sprintf( __( 'Provider currently selected: %s.', 'omnium-translate' ), esc_html( $selected->label() ) );
+		}
+		$text  .= ' ' . __( 'Available providers and processing location (update this policy if you change provider):', 'omnium-translate' );
 		$cookie = __( 'If the site owner enables the language preference, choosing a language stores a strictly functional cookie (omtr_lang, 12 months maximum) containing only the language code, never any identifier.', 'omnium-translate' );
-		wp_add_privacy_policy_content( 'Omnium Translate', wp_kses_post( '<p>' . $text . '</p><p>' . $cookie . '</p>' ) );
+		wp_add_privacy_policy_content( 'Omnium Translate', wp_kses_post( '<p>' . $text . '</p><ul>' . $items . '</ul><p>' . $cookie . '</p>' ) );
 	}
 
 	/** REST schema for a provider id.
@@ -639,7 +645,7 @@ final class Administration {
 			),
 			'hourly_quota'     => array(
 				'type'              => 'integer',
-				'minimum'           => 0,
+				'minimum'           => 1,
 				'sanitize_callback' => 'absint',
 			),
 			'noindex_partial'  => $bool,

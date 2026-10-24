@@ -33,7 +33,7 @@ final class OnTheFlyTrigger {
 	/**
 	 * Deferred target, kept in memory until shutdown.
 	 *
-	 * @var array{url: string, post_id: int}|null
+	 * @var array{url: string, post_id: int, segments: int}|null
 	 */
 	private ?array $pending = null;
 
@@ -68,7 +68,7 @@ final class OnTheFlyTrigger {
 		if ( $missing_segments <= 0 || ! (bool) $this->settings->get( 'on_the_fly' ) ) {
 			return;
 		}
-		if ( $this->state->is_paused() || $this->word_cap->is_exhausted() || ! $this->hourly_quota->allows( 1 ) ) {
+		if ( $this->state->is_paused() || $this->word_cap->is_exhausted() || ! $this->hourly_quota->allows( $missing_segments ) ) {
 			return;
 		}
 		if ( ! $this->guard->is_crawlable_or_ai_eligible() ) {
@@ -79,7 +79,7 @@ final class OnTheFlyTrigger {
 		if ( null === $target ) {
 			return;
 		}
-		$this->pending = $target;
+		$this->pending = $target + array( 'segments' => $missing_segments );
 	}
 
 	/**
@@ -96,6 +96,9 @@ final class OnTheFlyTrigger {
 		// language prefixes cannot be used to bypass the window.
 		$key = 'omtr_otf_' . hash( 'sha256', $target['url'] );
 		if ( false !== get_transient( $key ) ) {
+			return;
+		}
+		if ( ! $this->hourly_quota->reserve( $target['segments'] ) ) {
 			return;
 		}
 		set_transient( $key, 1, self::WINDOW );

@@ -47,6 +47,21 @@ final class PromptBuilderTest extends TestCase {
 		$this->assertStringContainsString( 'A bakery website', $prompt );
 	}
 
+	/**
+	 * Owner notes never carry URLs or personal data to the provider.
+	 *
+	 * @group security
+	 */
+	public function test_site_notes_drop_urls_and_personal_data(): void {
+		$glossary = new Glossary( array(), array(), 'Friendly, see https://example.test/wp-admin/', 'Contact jean.dupont@example.test for details' );
+		$prompt   = $this->builder->system_prompt( 'fr', 'en', $glossary );
+
+		$this->assertStringContainsString( 'Site tone: Friendly, see', $prompt );
+		$this->assertStringNotContainsString( 'wp-admin', $prompt );
+		$this->assertStringNotContainsString( 'jean.dupont', $prompt );
+		$this->assertStringNotContainsString( 'Site context:', $prompt );
+	}
+
 	public function test_system_prompt_contains_glossary_rules(): void {
 		$glossary = new Glossary(
 			array( 'baguette' => 'French baguette' ),

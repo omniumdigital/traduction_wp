@@ -23,11 +23,14 @@ final class HourlyQuotaTest extends TestCase {
 		$this->options->install();
 	}
 
-	public function test_zero_limit_is_unlimited(): void {
+	/** @group security */
+	public function test_zero_limit_uses_finite_fallback(): void {
+		$this->options->data[ Options::SETTINGS ] = array( 'hourly_quota' => 0 );
 		$quota = new HourlyQuota( new Settings() );
-		$this->assertTrue( $quota->allows( 100000 ) );
+		$this->assertSame( 100, $quota->limit() );
+		$this->assertFalse( $quota->allows( 101 ) );
 		$quota->charge( 10 );
-		$this->assertSame( 0, $quota->used() );
+		$this->assertSame( 10, $quota->used() );
 	}
 
 	public function test_charges_and_resets_each_hour(): void {

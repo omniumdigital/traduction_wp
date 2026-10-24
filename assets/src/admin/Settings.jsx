@@ -101,7 +101,7 @@ export function Settings({ request, data: initialData }) {
 					<TextControl
 						label={__("Hourly quota", "omnium-translate")}
 						type="number"
-						value={settings.hourly_quota || 0}
+						value={settings.hourly_quota || 100}
 						onChange={(hourly_quota) => save({ hourly_quota: Number(hourly_quota) })}
 					/>
 					<TextControl
