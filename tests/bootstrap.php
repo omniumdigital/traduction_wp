@@ -50,8 +50,12 @@ if ( ! defined( 'OMTR_URL' ) ) {
 if ( ! defined( 'OMTR_DIR' ) ) {
 	define( 'OMTR_DIR', dirname( __DIR__ ) . '/' );
 }
+if ( ! defined( 'OMTR_FILE' ) ) {
+	define( 'OMTR_FILE', dirname( __DIR__ ) . '/omnium-translate.php' );
+}
 
 require_once __DIR__ . '/stubs/elementor-runtime.php';
+require_once __DIR__ . '/stubs/oxygen-runtime.php';
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 

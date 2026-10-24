@@ -8,6 +8,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 - Socle : bootstrap, container, modules, migrations des tables, chiffrement des clés API, capability `omtr_manage`, CI, environnements wp-env.
 - Outillage JS : esbuild + Biome à la place de @wordpress/scripts (npm audit à 0).
 - Sélecteur de langue côté serveur : shortcode `[omtr_switcher]`, fonction `omtr_switcher()`, bloc Gutenberg, widget Elementor, élément de menu WordPress, variantes dropdown/inline/flottante, navigation clavier et ressources locales.
+- Intégration Oxygen 6 : élément Element Studio avec variantes de disposition et modes d’affichage du sélecteur.
 
 ### Modifié
 - WordPress 6.9 minimum (testé jusqu'à 7.1), Action Scheduler 4.2.
