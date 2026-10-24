@@ -114,13 +114,16 @@ final class PromptBuilder {
 	}
 
 	/**
-	 * Free-text tone or context typed by the site owner: URLs are removed and a note
-	 * containing personal data is dropped, so only editorial guidance reaches the provider.
+	 * Free-text tone or context typed by the site owner: remove absolute URLs and
+	 * drop notes with relative admin paths or personal data detected by PiiFilter.
 	 *
 	 * @param string $note Owner-provided note.
 	 */
 	private function site_note( string $note ): string {
 		$note = trim( (string) preg_replace( '#\b(?:https?://|www\.)\S+#i', '', $note ) );
+		if ( preg_match( '#(?:^|[\s(])/(?:wp-admin(?:/|\b)|wp-login\.php\b)#i', $note ) ) {
+			return '';
+		}
 		return ( new PiiFilter() )->contains_pii( $note ) ? '' : $note;
 	}
 }
