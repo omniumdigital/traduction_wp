@@ -503,7 +503,8 @@ final class Administration {
 		}
 		$region = 'eu' === $provider->region() ? __( 'the EU', 'omnium-translate' ) : __( 'a country outside the EU', 'omnium-translate' );
 		$text   = sprintf( /* translators: 1: selected provider name, 2: processing region. */ __( 'Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent.', 'omnium-translate' ), esc_html( $provider->label() ), esc_html( $region ) );
-		wp_add_privacy_policy_content( 'Omnium Translate', wp_kses_post( '<p>' . $text . '</p>' ) );
+		$cookie = __( 'If the site owner enables the language preference, choosing a language stores a strictly functional cookie (omtr_lang, 12 months maximum) containing only the language code, never any identifier.', 'omnium-translate' );
+		wp_add_privacy_policy_content( 'Omnium Translate', wp_kses_post( '<p>' . $text . '</p><p>' . $cookie . '</p>' ) );
 	}
 
 	/** REST schema for a provider id.

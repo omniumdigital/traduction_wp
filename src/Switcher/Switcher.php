@@ -127,13 +127,14 @@ final class Switcher {
 		foreach ( $languages as $language ) {
 			$active = $language === $current;
 			$items .= sprintf(
-				'<li class="omtr-switcher__item"><a class="omtr-switcher__link%s" href="%s" lang="%s" hreflang="%s"%s aria-label="%s">%s%s</a></li>',
+				'<li class="omtr-switcher__item"><a class="omtr-switcher__link%s" href="%s" lang="%s" hreflang="%s"%s aria-label="%s"%s>%s%s</a></li>',
 				$active ? ' is-active' : '',
 				esc_url( $this->url_translator->translate( $source_url, $language ) ),
 				esc_attr( $language ),
 				esc_attr( $language ),
 				$active ? ' aria-current="page"' : '',
 				esc_attr( $this->language_name( $language ) ),
+				(bool) $this->settings->get( 'pref_cookie' ) ? ' data-omtr-pref="' . esc_attr( $language ) . '"' : '',
 				$this->language_content( $language, $display ),
 				$active ? '<span class="omtr-switcher__check" aria-hidden="true">✓</span>' : ''
 			);

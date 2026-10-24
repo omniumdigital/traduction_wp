@@ -26,6 +26,7 @@ final class SwitcherModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
+		$container->set( LanguagePreference::class, static fn( Container $c ) => new LanguagePreference( $c->get( Settings::class ), $c->get( CurrentLanguage::class ), $c->get( UrlTranslator::class ) ) );
 		$container->set( SwitcherAssets::class, static fn() => new SwitcherAssets() );
 		$container->set(
 			Switcher::class,
@@ -48,6 +49,7 @@ final class SwitcherModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function boot( Container $container ): void {
+		add_action( 'template_redirect', array( $container->get( LanguagePreference::class ), 'redirect' ), 0 );
 		add_shortcode( 'omtr_switcher', array( $container->get( Switcher::class ), 'shortcode' ) );
 		add_action( 'wp_footer', array( $container->get( SwitcherAssets::class ), 'print_late_styles' ), 1 );
 		add_action( 'admin_head-nav-menus.php', array( $container->get( MenuIntegration::class ), 'register_meta_box' ) );
