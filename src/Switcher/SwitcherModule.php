@@ -39,6 +39,7 @@ final class SwitcherModule implements ModuleInterface {
 		$container->set( MenuIntegration::class, static fn( Container $c ) => new MenuIntegration( $c->get( Switcher::class ) ) );
 		$container->set( GutenbergBlock::class, static fn( Container $c ) => new GutenbergBlock( $c->get( Switcher::class ) ) );
 		$container->set( ElementorIntegration::class, static fn( Container $c ) => new ElementorIntegration( $c->get( Switcher::class ) ) );
+		$container->set( OxygenIntegration::class, static fn() => new OxygenIntegration() );
 	}
 
 	/**
@@ -53,5 +54,8 @@ final class SwitcherModule implements ModuleInterface {
 		add_filter( 'walker_nav_menu_start_el', array( $container->get( MenuIntegration::class ), 'filter_item_output' ), 10, 4 );
 		add_action( 'init', array( $container->get( GutenbergBlock::class ), 'register' ) );
 		add_action( 'elementor/widgets/register', array( $container->get( ElementorIntegration::class ), 'register_widget' ) );
+		$oxygen = $container->get( OxygenIntegration::class );
+		$oxygen->register_elements();
+		add_action( 'breakdance_loaded', array( $oxygen, 'register_elements' ), 9 );
 	}
 }
