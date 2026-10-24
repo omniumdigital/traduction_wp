@@ -167,3 +167,249 @@ msgstr "Réglages du sélecteur"
 
 msgid "Language links are rendered on the published page."
 msgstr "Les liens de langue sont rendus sur la page publiée."
+
+msgid "AI provider"
+msgstr "Fournisseur IA"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Add the language selector to the main menu"
+msgstr "Ajouter le sélecteur de langue au menu principal"
+
+msgid "All languages"
+msgstr "Toutes les langues"
+
+msgid "Always translate"
+msgstr "Toujours traduire"
+
+msgid "Automatic dark mode"
+msgstr "Mode sombre automatique"
+
+msgid "Back"
+msgstr "Retour"
+
+msgid "Choose the source language and the languages you want to publish."
+msgstr "Choisissez la langue source et les langues à publier."
+
+msgid "Configuration"
+msgstr "Configuration"
+
+msgid "Confirm"
+msgstr "Confirmer"
+
+msgid "Connect an AI provider"
+msgstr "Connecter un fournisseur IA"
+
+msgid "Context"
+msgstr "Contexte"
+
+msgid "Continue"
+msgstr "Continuer"
+
+msgid "Contrast ratio: %s:1"
+msgstr "Rapport de contraste : %s:1"
+
+msgid "Corner radius"
+msgstr "Rayon des angles"
+
+msgid "Cost unavailable"
+msgstr "Coût indisponible"
+
+msgid "Create an API key"
+msgstr "Créer une clé API"
+
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Delete all data on uninstall"
+msgstr "Supprimer toutes les données à la désinstallation"
+
+msgid "Display"
+msgstr "Affichage"
+
+msgid "Export configuration"
+msgstr "Exporter la configuration"
+
+msgid "Filter segments"
+msgstr "Filtrer les segments"
+
+msgid "Flag and name"
+msgstr "Drapeau et nom"
+
+msgid "Flag only"
+msgstr "Drapeau uniquement"
+
+msgid "Flag size"
+msgstr "Taille du drapeau"
+
+msgid "Floating"
+msgstr "Flottant"
+
+msgid "Glossary"
+msgstr "Glossaire"
+
+msgid "Hourly quota"
+msgstr "Quota horaire"
+
+msgid "Import configuration"
+msgstr "Importer la configuration"
+
+msgid "Inline"
+msgstr "En ligne"
+
+msgid "Language"
+msgstr "Langue"
+
+msgid "Language code"
+msgstr "Code langue"
+
+msgid "Language selector"
+msgstr "Sélecteur de langue"
+
+msgid "Languages and translation"
+msgstr "Langues et traduction"
+
+msgid "Launch"
+msgstr "Lancement"
+
+msgid "Loading…"
+msgstr "Chargement…"
+
+msgid "Lock"
+msgstr "Verrouiller"
+
+msgid "Message"
+msgstr "Message"
+
+msgid "Model"
+msgstr "Modèle"
+
+msgid "Monthly word cap"
+msgstr "Plafond mensuel de mots"
+
+msgid "Name only"
+msgstr "Nom uniquement"
+
+msgid "Never translate"
+msgstr "Ne jamais traduire"
+
+msgid "No monthly cap"
+msgstr "Aucun plafond mensuel"
+
+msgid "Outside the EU"
+msgstr "Hors UE"
+
+msgid "Pause"
+msgstr "Mettre en pause"
+
+msgid "Provider"
+msgstr "Fournisseur"
+
+msgid "Queue the translation of all these pages?"
+msgstr "Mettre en file la traduction de toutes ces pages ?"
+
+msgid "Recent activity"
+msgstr "Activité récente"
+
+msgid "Resume"
+msgstr "Reprendre"
+
+msgid "Review and launch"
+msgstr "Vérifier et lancer"
+
+msgid "Rule"
+msgstr "Règle"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Save key"
+msgstr "Enregistrer la clé"
+
+msgid "Select a language"
+msgstr "Sélectionnez une langue"
+
+msgid "Set up your translations"
+msgstr "Configurer vos traductions"
+
+msgid "Settings"
+msgstr "Réglages"
+
+msgid "Site tone and context"
+msgstr "Ton et contexte du site"
+
+msgid "Source language"
+msgstr "Langue source"
+
+msgid "Target languages"
+msgstr "Langues cibles"
+
+msgid "Term"
+msgstr "Terme"
+
+msgid "Test the key"
+msgstr "Tester la clé"
+
+msgid "The key is never shown in full."
+msgstr "La clé n'est jamais affichée en entier."
+
+msgid "The request could not be completed."
+msgstr "La requête n'a pas pu être terminée."
+
+msgid "Tone"
+msgstr "Ton"
+
+msgid "Translate automatically when content changes"
+msgstr "Traduire automatiquement lorsque le contenu change"
+
+msgid "Translate new and changed content"
+msgstr "Traduire les contenus nouveaux et modifiés"
+
+msgid "Translate the whole site"
+msgstr "Traduire tout le site"
+
+msgid "Translate unknown segments on the fly"
+msgstr "Traduire les segments inconnus à la volée"
+
+msgid "Translation"
+msgstr "Traduction"
+
+msgid "Translation queue"
+msgstr "File de traduction"
+
+msgid "Translations"
+msgstr "Traductions"
+
+msgid "Unlock"
+msgstr "Déverrouiller"
+
+msgid "Use at least 4.5:1 for normal text."
+msgstr "Utilisez au moins 4,5:1 pour le texte normal."
+
+msgid "Variant"
+msgstr "Variante"
+
+msgid "Words this month"
+msgstr "Mots ce mois-ci"
+
+msgid "coverage"
+msgstr "couverture"
+
+msgid "of %d"
+msgstr "sur %d"
+
+msgid "pages"
+msgstr "pages"
+
+msgid "pending"
+msgstr "en attente"
+
+msgid "segments"
+msgstr "segments"
+
+msgid "words"
+msgstr "mots"
