@@ -19,7 +19,7 @@ const T = {
 	headingProvider: FR ? "Connecter un fournisseur IA" : "Connect an AI provider",
 	keyLabel: FR ? "Clé API" : "API key",
 	testKey: FR ? "Tester la clé" : "Test the key",
-	keyOk: FR ? "La clé fonctionne." : "Key works.",
+	keyOk: FR ? "La clé API est valide." : "API key is valid.",
 	headingLaunch: FR ? "Vérifier et lancer" : "Review and launch",
 	launch: FR ? "Traduire le site" : "Translate the site",
 	tabs: FR
@@ -28,7 +28,7 @@ const T = {
 };
 const SECRET = "local-mock-" + "x".repeat(20);
 
-(async () => {
+const run = async () => {
 	const browser = await chromium.launch({ headless: true });
 	const page = await browser.newPage();
 	const errors = [];
@@ -58,57 +58,80 @@ const SECRET = "local-mock-" + "x".repeat(20);
 			return "";
 		}, SECRET);
 
-	const start = Date.now();
-	await page.goto(BASE + "/wp-login.php", { waitUntil: "domcontentloaded" });
-	await page.locator("#user_login").fill("admin");
-	await page.locator("#user_pass").fill("password");
-	await page.locator("#wp-submit").click();
-	await page.waitForLoadState("networkidle");
+	try {
+		const start = Date.now();
+		console.log("STEP=login");
+		await page.goto(BASE + "/wp-login.php", { waitUntil: "domcontentloaded" });
+		await page.locator("#user_login").fill("admin");
+		await page.locator("#user_pass").fill("password");
+		await page.locator("#wp-submit").click();
+		await page.waitForLoadState("load");
 
-	// Assistant — écran 1 : langues.
-	await page.goto(BASE + "/wp-admin/admin.php?page=omnium-translate", { waitUntil: "networkidle" });
-	await page.getByRole("heading", { name: T.headingWizard }).waitFor({ timeout: 20000 });
-	await page.getByLabel(T.sourceLabel).selectOption("fr");
-	await page.getByRole("checkbox", { name: "English" }).check();
-	await page.getByRole("checkbox", { name: "Español" }).check();
-	await page.getByRole("button", { name: T.continue, exact: true }).click();
+		// Assistant — écran 1 : langues.
+		console.log("STEP=wizard-1");
+		await page.goto(BASE + "/wp-admin/admin.php?page=omnium-translate", { waitUntil: "load" });
+		await page.getByRole("heading", { name: T.headingWizard }).waitFor({ timeout: 20000 });
+		await page.getByLabel(T.sourceLabel).selectOption("fr");
+		await page.getByRole("checkbox", { name: "English" }).check();
+		await page.getByRole("checkbox", { name: "Español" }).check();
+		await page.getByRole("button", { name: T.continue, exact: true }).click();
 
-	// Écran 2 : fournisseur + clé factice + test obligatoire.
-	await page.getByRole("heading", { name: T.headingProvider }).waitFor();
-	await page.getByRole("button", { name: /Anthropic Claude/ }).click();
-	await page.getByLabel(T.keyLabel).fill(SECRET);
-	await page.getByRole("button", { name: T.testKey }).click();
-	await page.getByText(T.keyOk, { exact: false }).waitFor({ timeout: 20000 });
-	const domAfterSave = await domSecret();
-	await page.getByRole("button", { name: T.continue, exact: true }).click();
+		// Écran 2 : fournisseur + clé factice + test obligatoire.
+		console.log("STEP=wizard-2");
+		await page.getByRole("heading", { name: T.headingProvider }).waitFor();
+		await page.getByRole("button", { name: /Anthropic Claude/ }).click();
+		await page.getByLabel(T.keyLabel).fill(SECRET);
+		await page.getByRole("button", { name: T.testKey }).click();
+		await page.getByText(T.keyOk, { exact: false }).waitFor({ timeout: 20000 });
+		const domAfterSave = await domSecret();
+		await page.getByRole("button", { name: T.continue, exact: true }).click();
 
-	// Écran 3 : estimation puis lancement (menu coché par défaut).
-	await page.getByRole("heading", { name: T.headingLaunch }).waitFor();
-	const launch = page.getByRole("button", { name: T.launch });
-	await launch.waitFor({ timeout: 60000 });
-	await launch.click();
+		// Écran 3 : estimation puis lancement (menu coché par défaut).
+		console.log("STEP=wizard-3");
+		await page.getByRole("heading", { name: T.headingLaunch }).waitFor();
+		const launch = page.getByRole("button", { name: T.launch });
+		await launch.waitFor({ timeout: 60000 });
+		await launch.click();
 
-	// Onglets.
-	await page.getByRole("tab", { name: T.tabs[0] }).waitFor({ timeout: 60000 });
-	const seconds = ((Date.now() - start) / 1000).toFixed(1);
-	const domAfterWizard = await domSecret();
-	for (const name of T.tabs) {
-		await page.getByRole("tab", { name }).click();
-		await page.locator('[role="tabpanel"]').waitFor();
-		await page.waitForTimeout(700); // laisse les requêtes REST de l'onglet aboutir
-		const tabErrors = errors.length;
-		console.log(`TAB=${name}:errors=${tabErrors}`);
+		// Onglets.
+		console.log("STEP=tabs");
+		await page.getByRole("tab", { name: T.tabs[0] }).waitFor({ timeout: 60000 });
+		const seconds = ((Date.now() - start) / 1000).toFixed(1);
+		const domAfterWizard = await domSecret();
+		for (const name of T.tabs) {
+			await page.getByRole("tab", { name }).click();
+			await page.locator('[role="tabpanel"]').waitFor();
+			await page.waitForTimeout(700); // laisse les requêtes REST de l'onglet aboutir
+			console.log(`TAB=${name}:errors=${errors.length}`);
+		}
+
+		if (TIMED) console.log(`INSTALL_WIZARD_BROWSER_SECONDS=${seconds}`);
+		console.log(`KEY_IN_DOM_AFTER_SAVE=${domAfterSave || "false"}`);
+		console.log(`KEY_IN_DOM_AFTER_WIZARD=${domAfterWizard || "false"}`);
+		console.log(`KEY_IN_API_RESPONSES=${leaks.length}${leaks.length ? ":" + leaks.join(",") : ""}`);
+		console.log(`CONSOLE_ERRORS=${errors.length}`);
+		for (const error of errors.slice(0, 10)) console.log("CONSOLE_ERROR=" + error);
+		return errors.length || leaks.length || domAfterSave || domAfterWizard ? 1 : 0;
+	} catch (error) {
+		console.error("PLAYWRIGHT_FAILURE=" + error.message.split("\n")[0]);
+		try {
+			const content = await page.content();
+			console.error("PAGE_TEXT=" + (await page.evaluate(() => document.body.innerText).catch(() => "")).slice(0, 500).replace(/\n/g, " | "));
+			if (content.length < 200) console.error("PAGE_HTML=" + content.slice(0, 300));
+			console.error("CONSOLE_SO_FAR=" + errors.slice(-5).join(" || "));
+		} catch {}
+		return 1;
+	} finally {
+		await browser.close();
 	}
+};
 
-	if (TIMED) console.log(`INSTALL_WIZARD_BROWSER_SECONDS=${seconds}`);
-	console.log(`KEY_IN_DOM_AFTER_SAVE=${domAfterSave || "false"}`);
-	console.log(`KEY_IN_DOM_AFTER_WIZARD=${domAfterWizard || "false"}`);
-	console.log(`KEY_IN_API_RESPONSES=${leaks.length}${leaks.length ? ":" + leaks.join(",") : ""}`);
-	console.log(`CONSOLE_ERRORS=${errors.length}`);
-	for (const error of errors.slice(0, 10)) console.log("CONSOLE_ERROR=" + error);
-	await browser.close();
-	if (errors.length || leaks.length || domAfterSave || domAfterWizard) process.exitCode = 1;
-})().catch((error) => {
-	console.error("PLAYWRIGHT_FAILURE=" + error.message);
-	process.exitCode = 1;
+const watchdog = setTimeout(() => {
+	console.error("PLAYWRIGHT_FAILURE=watchdog 4 min");
+	process.exit(2);
+}, 240000);
+
+run().then((code) => {
+	clearTimeout(watchdog);
+	process.exitCode = code;
 });

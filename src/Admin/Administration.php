@@ -27,6 +27,8 @@ defined( 'ABSPATH' ) || exit;
 /** Handles the milestone-five administration contract. */
 final class Administration {
 	private const NAMESPACE = 'omtr/v1';
+	/** Core REST transport parameters: never settings, always allowed. */
+	private const CORE_REST_PARAMS = array( '_embed' => true, '_fields' => true, '_method' => true, '_envelope' => true, '_locale' => true, '_wpnonce' => true );
 	private const LANGUAGES = array(
 		'de' => array( 'Deutsch', array( 'de', 'at', 'ch' ) ),
 		'en' => array( 'English', array( 'gb', 'us', 'ca', 'au', 'ie' ) ),
@@ -208,7 +210,12 @@ final class Administration {
 	 * @param \WP_REST_Request $request REST request.
 	 */
 	public function put_settings( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$values = $request->get_params();
+		/*
+		 * apiFetch appends _locale=user (and may add _fields/_method) to every
+		 * browser request as query parameters. They are REST transport values:
+		 * strip them before the strict unknown-parameter validation below.
+		 */
+		$values = array_diff_key( $request->get_params(), self::CORE_REST_PARAMS );
 		$result = $this->validate_settings( $values );
 		if ( is_wp_error( $result ) ) {
 			return $result;

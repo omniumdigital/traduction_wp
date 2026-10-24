@@ -17,6 +17,7 @@ use Omnium\Translate\Core\Deactivator;
 use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Tables;
 use Omnium\Translate\Security\Capabilities;
+use Omnium\Translate\Switcher\MenuIntegration;
 
 if ( function_exists( 'as_unschedule_all_actions' ) ) {
 	as_unschedule_all_actions( '', array(), Deactivator::AS_GROUP );
@@ -26,6 +27,21 @@ Capabilities::revoke();
 
 // The encrypted API key is always removed.
 delete_option( Options::API_KEYS );
+
+// The wizard and the classic menu screen can insert a marker item that would
+// render as a dead "#omtr-switcher" link without the plugin: always remove it.
+foreach ( get_posts(
+	array(
+		'post_type'      => 'nav_menu_item',
+		'post_status'    => 'any',
+		'numberposts'    => -1,
+		'fields'         => 'ids',
+		'meta_key'       => '_menu_item_url',
+		'meta_value'     => MenuIntegration::ITEM_URL,
+	)
+) as $omtr_menu_item_id ) {
+	wp_delete_post( (int) $omtr_menu_item_id, true );
+}
 
 if ( ! get_option( Options::UNINSTALL_PURGE ) ) {
 	return;
