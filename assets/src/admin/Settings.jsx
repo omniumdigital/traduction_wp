@@ -80,7 +80,9 @@ export function Settings({ request, data: initialData }) {
 						label={__("Provider", "omnium-translate")}
 						value={settings.provider || ""}
 						options={providers.map((item) => ({
-							label: `${item.label} (${item.region === "eu" ? __("EU", "omnium-translate") : __("Outside the EU", "omnium-translate")})`,
+							label: `${item.label} (${
+								item.region === "eu" ? __("EU", "omnium-translate") : __("Outside the EU", "omnium-translate")
+							})`,
 							value: item.id,
 						}))}
 						onChange={(provider) => save({ provider })}
@@ -212,7 +214,9 @@ export function Settings({ request, data: initialData }) {
 						<Button
 							onClick={() =>
 								window.open(
-									`${window.location.origin}${window.omtrAdmin?.restNamespace ? `/wp-json/${window.omtrAdmin.restNamespace}` : ""}/config/export`,
+									`${window.location.origin}${
+										window.omtrAdmin?.restNamespace ? `/wp-json/${window.omtrAdmin.restNamespace}` : ""
+									}/config/export`,
 									"_blank",
 								)
 							}

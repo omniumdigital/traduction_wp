@@ -60,6 +60,9 @@ msgstr "UE"
 msgid "English"
 msgstr "Anglais"
 
+msgid "French"
+msgstr "Français"
+
 msgid "Export CSV"
 msgstr "Exporter en CSV"
 

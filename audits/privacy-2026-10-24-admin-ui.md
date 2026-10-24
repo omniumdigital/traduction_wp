@@ -1,21 +1,21 @@
 # Audit confidentialité — interface admin — 2026-10-24
 
-Verdict : ✅ VALIDÉ (périmètre `assets/src/admin`)
+Verdict : ✅ VALIDÉ
 
 ## Flux sortants
 
 | Destination | Fichier:ligne | Données | Conforme |
 | --- | --- | --- | --- |
-| API REST WordPress du site | `assets/src/admin/index.jsx` | Réglages, segments, glossaire et actions d’administration | ✅ |
-| URL de création de clé du fournisseur | `assets/src/admin/index.jsx` (lien reçu par `/providers`) | Navigation explicite de l’administrateur uniquement | ✅ |
+| API REST WordPress du site | `assets/src/admin/api.js` | Paramètres admin, fichier CSV choisi par l’administrateur | ✅ |
+| Aucune ressource tierce | `assets/src/admin/SwitcherPreview.jsx` | Drapeaux uniquement via `window.omtrAdmin.flagsUrl` | ✅ |
 
-Aucun appel vers Omnium, aucune ressource tierce chargée par le front public et aucune télémétrie dans l’interface.
+L’aperçu n’utilise pas de CDN : lorsque `flagsUrl` est absent, il affiche le nom sans
+charger de drapeau distant. L’export CSV est téléchargé depuis la réponse REST locale.
 
 ## Checklist
 
-- La clé n’est jamais incluse dans l’export/import de configuration; le champ est de type `password` et est vidé après enregistrement.
-- Les données affichées dans le journal sont celles filtrées par l’API; aucune collecte de visiteur, cookie ou stockage local n’est ajouté.
-- L’avertissement de palier gratuit et la région UE/hors UE sont visibles dans le choix du fournisseur.
-- La traduction complète demande une estimation puis une confirmation explicite.
-- Le sélecteur utilise le markup de prévisualisation et les variables `--omtr-*`; aucun CDN, drapeau distant ou police externe.
-- La commande `wp i18n make-json` est documentée dans `docs/admin-ui-i18n.md`; `wp-env` n’était pas initialisé pendant l’audit.
+- Étape 2 : OK, ce changement ne modifie ni crawler, ni prompt, ni données envoyées à l’IA.
+- Étape 3 : OK, aucun stockage ou journal supplémentaire.
+- Étape 4 : OK, les ressources d’aperçu sont locales et aucun cookie/storage n’est ajouté.
+- Étape 5 : OK, l’interface conserve les avertissements fournisseur existants.
+- Export/import : OK, l’import est limité à 1 Mo côté client et l’export appelle la route du contrat.

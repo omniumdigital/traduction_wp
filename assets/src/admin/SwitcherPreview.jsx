@@ -18,7 +18,9 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 	) : null;
 	return (
 		<div
-			className={`omtr-switcher omtr-switcher--${switcher.variant || "dropdown"} omtr-switcher--${switcher.display || "flag-name"}`}
+			className={`omtr-switcher omtr-switcher--${switcher.variant || "dropdown"} omtr-switcher--${
+				switcher.display || "flag-name"
+			}`}
 			style={style}
 		>
 			{switcher.variant === "inline" ? (
@@ -26,7 +28,7 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 					<li className="omtr-switcher__item">
 						<a className="omtr-switcher__link is-active" href="#preview" lang="en" aria-current="page">
 							{flag}
-							<span className="omtr-switcher__label">English</span>
+							<span className="omtr-switcher__label">{__("English", "omnium-translate")}</span>
 							<span className="omtr-switcher__check" aria-hidden="true">
 								✓
 							</span>
@@ -34,7 +36,7 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 					</li>
 					<li className="omtr-switcher__item">
 						<a className="omtr-switcher__link" href="#preview" lang="fr">
-							Français
+							{__("French", "omnium-translate")}
 						</a>
 					</li>
 				</ul>
@@ -42,14 +44,14 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 				<details className="omtr-switcher__dropdown" open>
 					<summary className="omtr-switcher__trigger" aria-haspopup="true">
 						{flag}
-						<span className="omtr-switcher__label">English</span>
+						<span className="omtr-switcher__label">{__("English", "omnium-translate")}</span>
 						<span className="omtr-switcher__chevron" aria-hidden="true" />
 					</summary>
 					<ul className="omtr-switcher__list">
 						<li className="omtr-switcher__item">
 							<a className="omtr-switcher__link is-active" href="#preview" lang="en" aria-current="page">
 								{flag}
-								<span className="omtr-switcher__label">English</span>
+								<span className="omtr-switcher__label">{__("English", "omnium-translate")}</span>
 								<span className="omtr-switcher__check" aria-hidden="true">
 									✓
 								</span>
@@ -57,13 +59,12 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 						</li>
 						<li className="omtr-switcher__item">
 							<a className="omtr-switcher__link" href="#preview" lang="fr">
-								Français
+								{__("French", "omnium-translate")}
 							</a>
 						</li>
 					</ul>
 				</details>
 			)}
-			{!flagsUrl && <small className="omtr-switcher-preview__fallback">{__("English", "omnium-translate")}</small>}
 		</div>
 	);
 }

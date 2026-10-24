@@ -9,5 +9,8 @@ export function contrastRatio(foreground, background) {
 	const luminance = (color) => 0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2];
 	const foregroundLuminance = luminance(channel(foreground));
 	const backgroundLuminance = luminance(channel(background));
-	return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+	return (
+		(Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+		(Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+	);
 }
