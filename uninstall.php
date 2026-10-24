@@ -30,16 +30,19 @@ delete_option( Options::API_KEYS );
 
 // The wizard and the classic menu screen can insert a marker item that would
 // render as a dead "#omtr-switcher" link without the plugin: always remove it.
+// One-time uninstall cleanup; no index needed for a query that runs once.
+// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 foreach ( get_posts(
 	array(
-		'post_type'      => 'nav_menu_item',
-		'post_status'    => 'any',
-		'numberposts'    => -1,
-		'fields'         => 'ids',
-		'meta_key'       => '_menu_item_url',
-		'meta_value'     => MenuIntegration::ITEM_URL,
+		'post_type'   => 'nav_menu_item',
+		'post_status' => 'any',
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_key'    => '_menu_item_url',
+		'meta_value'  => MenuIntegration::ITEM_URL,
 	)
 ) as $omtr_menu_item_id ) {
+	// phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 	wp_delete_post( (int) $omtr_menu_item_id, true );
 }
 

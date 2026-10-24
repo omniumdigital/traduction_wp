@@ -28,8 +28,15 @@ defined( 'ABSPATH' ) || exit;
 final class Administration {
 	private const NAMESPACE = 'omtr/v1';
 	/** Core REST transport parameters: never settings, always allowed. */
-	private const CORE_REST_PARAMS = array( '_embed' => true, '_fields' => true, '_method' => true, '_envelope' => true, '_locale' => true, '_wpnonce' => true );
-	private const LANGUAGES = array(
+	private const CORE_REST_PARAMS = array(
+		'_embed'    => true,
+		'_fields'   => true,
+		'_method'   => true,
+		'_envelope' => true,
+		'_locale'   => true,
+		'_wpnonce'  => true,
+	);
+	private const LANGUAGES        = array(
 		'de' => array( 'Deutsch', array( 'de', 'at', 'ch' ) ),
 		'en' => array( 'English', array( 'gb', 'us', 'ca', 'au', 'ie' ) ),
 		'es' => array( 'Español', array( 'es', 'mx', 'ar' ) ),
@@ -38,7 +45,7 @@ final class Administration {
 		'nl' => array( 'Nederlands', array( 'nl', 'be' ) ),
 		'pt' => array( 'Português', array( 'pt', 'br' ) ),
 	);
-	private const FLAGS     = array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' );
+	private const FLAGS            = array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' );
 
 	/**
 	 * Construct the administration service.
