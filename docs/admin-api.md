@@ -38,10 +38,14 @@ Tant que `wizardDone` est faux, l'interface affiche l'assistant au lieu des ongl
 | POST | `/glossary/import` | import CSV (fichier `file`, ≤ 1 Mo) |
 | GET | `/glossary/export` | export CSV |
 | GET | `/segments` | éditeur de segments (filtres existants) |
-| PUT | `/segments/{id}` | édition manuelle (`target_lang`, `text`) |
+| PUT | `/segments/{id}` | édition manuelle (`target_lang`, `text`, `post_id` facultatif pour purger le cache de la page connue) |
 | POST/DELETE | `/segments/{id}/lock` | verrouiller / déverrouiller |
 | POST | `/translate` | `{post_id}` → met une page en file |
 | POST | `/crawl` | crawler interne (nouvelles ou modifiées) |
+
+Après l'enregistrement d'un lot pour un contenu connu, ou l'édition manuelle avec `post_id`, le plugin vide le cache du post puis déclenche `omtr_translations_updated($post_id, $lang)`. Ce hook permet aux caches de page tiers de purger les variantes par langue. LiteSpeed Cache et WP Rocket sont appelés directement lorsqu'ils sont présents.
+
+`visual_editor` active le bouton de la barre d'administration sur les pages en langue cible. Seuls les utilisateurs avec `omtr_manage` peuvent charger `?omtr_edit=1` ; la réponse n'est pas mise en cache. `pref_cookie` permet au sélecteur de mémoriser un code langue fonctionnel pendant au plus un an et de rediriger uniquement une arrivée externe sur l'accueil source sans préfixe.
 
 ## Nouvelles routes
 
@@ -62,6 +66,7 @@ Tant que `wizardDone` est faux, l'interface affiche l'assistant au lieu des ongl
     "hourly_quota": 0,
     "noindex_partial": false,
     "pref_cookie": false,
+    "visual_editor": false,
     "site_tone": "",
     "site_context": "",
     "flags": {"en": "gb"},

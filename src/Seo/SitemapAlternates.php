@@ -45,7 +45,8 @@ final class SitemapAlternates {
 		}
 
 		$source_url = $this->source_url( $entry['loc'] );
-		$links      = $this->links_xml( $source_url, true );
+		$post_id    = isset( $entry['id'] ) ? (int) $entry['id'] : $this->url_translator->post_id_for_url( $source_url );
+		$links      = $this->links_xml( $source_url, true, $post_id );
 		$source     = preg_replace( '#</url>\s*$#', $links . "\t</url>\n", $output );
 		$result     = is_string( $source ) ? $source : $output;
 
@@ -53,7 +54,7 @@ final class SitemapAlternates {
 			if ( $language === $this->settings->source_lang() ) {
 				continue;
 			}
-			$result .= $this->url_xml( $this->url_translator->translate( $source_url, $language ), $source_url );
+			$result .= $this->url_xml( $post_id > 0 ? $this->url_translator->translate_post( $post_id, $language ) : $this->url_translator->translate( $source_url, $language ), $source_url, $post_id );
 		}
 		return $result;
 	}
@@ -62,29 +63,48 @@ final class SitemapAlternates {
 	 * Expand a native WordPress sitemap URL list.
 	 *
 	 * @param list<array<string, mixed>> $url_list Source URL entries.
-	 * @return list<array{entry: array<string, mixed>, source_url: string}>
+	 * @return list<array{entry: array<string, mixed>, source_url: string, post_id: int}>
 	 */
 	public function expand( array $url_list ): array {
-		$expanded = array();
+		$prepared = array();
+		$ids      = array();
 		foreach ( $url_list as $entry ) {
 			if ( ! isset( $entry['loc'] ) || ! is_string( $entry['loc'] ) || '' === $entry['loc'] ) {
 				continue;
 			}
-			$source_url   = $this->source_url( $entry['loc'] );
+			$source_url = $this->source_url( $entry['loc'] );
+			$post_id    = isset( $entry['id'] ) ? (int) $entry['id'] : $this->url_translator->post_id_for_url( $source_url );
+			$prepared[] = array(
+				'entry'      => $entry,
+				'source_url' => $source_url,
+				'post_id'    => $post_id,
+			);
+			if ( $post_id > 0 ) {
+				$ids[] = $post_id;
+			}
+		}
+		$this->url_translator->preload_posts( $ids, $this->languages() );
+		$expanded = array();
+		foreach ( $prepared as $item ) {
+			$entry        = $item['entry'];
+			$source_url   = $item['source_url'];
+			$post_id      = $item['post_id'];
 			$entry['loc'] = $source_url;
 			$expanded[]   = array(
 				'entry'      => $entry,
 				'source_url' => $source_url,
+				'post_id'    => $post_id,
 			);
 			foreach ( $this->languages() as $language ) {
 				if ( $language === $this->settings->source_lang() ) {
 					continue;
 				}
 				$localized        = $entry;
-				$localized['loc'] = $this->url_translator->translate( $source_url, $language );
+				$localized['loc'] = $post_id > 0 ? $this->url_translator->translate_post( $post_id, $language ) : $this->url_translator->translate( $source_url, $language );
 				$expanded[]       = array(
 					'entry'      => $localized,
 					'source_url' => $source_url,
+					'post_id'    => $post_id,
 				);
 			}
 		}
@@ -96,8 +116,9 @@ final class SitemapAlternates {
 	 *
 	 * @param string $source_url        Unprefixed source URL.
 	 * @param bool   $declare_namespace Whether the link must declare the xhtml namespace locally.
+	 * @param int    $post_id           Known post identifier.
 	 */
-	public function links_xml( string $source_url, bool $declare_namespace = false ): string {
+	public function links_xml( string $source_url, bool $declare_namespace = false, int $post_id = 0 ): string {
 		$xml       = '';
 		$namespace = $declare_namespace ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : '';
 		foreach ( $this->languages() as $language ) {
@@ -105,7 +126,7 @@ final class SitemapAlternates {
 				"\t\t<xhtml:link%s rel=\"alternate\" hreflang=\"%s\" href=\"%s\" />\n",
 				$namespace,
 				esc_xml( $language ),
-				$this->escape_url( $this->url_translator->translate( $source_url, $language ) )
+				$this->escape_url( $post_id > 0 ? $this->url_translator->translate_post( $post_id, $language ) : $this->url_translator->translate( $source_url, $language ) )
 			);
 			$namespace = '';
 		}
@@ -122,9 +143,10 @@ final class SitemapAlternates {
 	 *
 	 * @param string $url        Localized URL.
 	 * @param string $source_url Unprefixed source URL.
+	 * @param int    $post_id    Known post identifier.
 	 */
-	private function url_xml( string $url, string $source_url ): string {
-		return "\t<url>\n\t\t<loc>" . $this->escape_url( $url ) . "</loc>\n" . $this->links_xml( $source_url, true ) . "\t</url>\n";
+	private function url_xml( string $url, string $source_url, int $post_id ): string {
+		return "\t<url>\n\t\t<loc>" . $this->escape_url( $url ) . "</loc>\n" . $this->links_xml( $source_url, true, $post_id ) . "\t</url>\n";
 	}
 
 	/**

@@ -83,6 +83,42 @@ HTML;
 		$this->assertStringNotContainsString( '<?xml', $output );
 	}
 
+	public function test_translated_accented_text_is_not_entity_encoded(): void {
+		if ( class_exists( 'Dom\\HTMLDocument' ) ) {
+			$this->markTestSkipped( 'DOMDocument fallback only: the legacy HTML4 serializer entity-encodes inserted text.' );
+		}
+		$html       = '<!doctype html><html lang="fr"><body><p>Bonjour & bienvenue</p></body></html>';
+		$hash       = SegmentKey::hash( 'fr', 'Bonjour & bienvenue' );
+		$current    = new CurrentLanguage( 'fr' );
+		$repository = $this->createMock( TranslationRepositoryInterface::class );
+		$repository->expects( $this->once() )->method( 'find_many' )->willReturn( array( $hash => 'Présentation étudiée & validée' ) );
+		$current->set( 'en' );
+
+		$output = $this->translator( $current, $repository )->translate( $html );
+
+		$this->assertStringContainsString( '<p>Présentation étudiée &amp; validée</p>', $output );
+		$this->assertStringNotContainsString( '&eacute;', $output );
+		$this->assertStringNotContainsString( '&#233;', $output );
+	}
+
+	public function test_modern_parser_rewrites_json_ld_with_stored_translations(): void {
+		if ( ! class_exists( 'Dom\\HTMLDocument' ) ) {
+			$this->markTestSkipped( 'HTML5 parser only.' );
+		}
+		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data, int $flags = 0 ): string|false => json_encode( $data, $flags ) );
+		Functions\when( 'url_to_postid' )->justReturn( 0 );
+		$hash = SegmentKey::hash( 'fr', 'Produit' );
+		$current = new CurrentLanguage( 'fr' );
+		$current->set( 'en' );
+		$repository = $this->createMock( TranslationRepositoryInterface::class );
+		$repository->expects( $this->once() )->method( 'find_many' )->willReturn( array( $hash => 'Product' ) );
+		$html = '<html><head><script type="application/ld+json">{"@type":"Product","name":"Produit","url":"https://example.test/produit","inLanguage":"fr"}</script></head></html>';
+		$output = $this->translator( $current, $repository )->translate( $html );
+		$this->assertStringContainsString( '"name":"Product"', $output );
+		$this->assertStringContainsString( '"url":"https://example.test/en/produit"', $output );
+		$this->assertStringContainsString( '"inLanguage":"en"', $output );
+	}
+
 	public function test_dynamic_html_with_same_segments_reuses_stable_cache_key(): void {
 		$cache_keys = array();
 		Functions\when( 'wp_cache_get' )->alias(

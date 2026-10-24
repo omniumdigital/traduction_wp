@@ -45,6 +45,41 @@ final class TranslationActions {
 		return $actions;
 	}
 
+	/** Register the classic editor action. */
+	public function register_meta_box(): void {
+		if ( ! Capabilities::current_user_can_manage() ) {
+			return;
+		}
+		foreach ( get_post_types( array( 'public' => true ) ) as $post_type ) {
+			add_meta_box( 'omtr-translate', __( 'Translate this page', 'omnium-translate' ), array( $this, 'meta_box' ), $post_type, 'side' );
+		}
+	}
+
+	/** Render a nonce-protected classic editor form.
+	 *
+	 * @param \WP_Post $post Current post.
+	 */
+	public function meta_box( \WP_Post $post ): void {
+		if ( ! Capabilities::current_user_can_manage() || null === $this->content->resolve( (int) $post->ID ) ) {
+			return;
+		}
+		echo '<form method="get" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="omtr_translate_post">';
+		echo '<input type="hidden" name="post_id" value="' . esc_attr( (string) $post->ID ) . '">';
+		wp_nonce_field( 'omtr_translate_' . (int) $post->ID );
+		echo '<button type="submit" class="button button-primary">' . esc_html__( 'Translate this page', 'omnium-translate' ) . '</button></form>';
+	}
+
+	/** Load the block editor panel only for translators. */
+	public function enqueue_block_editor(): void {
+		if ( ! Capabilities::current_user_can_manage() || ! file_exists( OMTR_DIR . 'assets/build/editor.asset.php' ) ) {
+			return;
+		}
+		$asset = require OMTR_DIR . 'assets/build/editor.asset.php';
+		wp_enqueue_script( 'omtr-editor', OMTR_URL . 'assets/build/editor.js', $asset['dependencies'], $asset['version'], true );
+		wp_set_script_translations( 'omtr-editor', 'omnium-translate', OMTR_DIR . 'languages' );
+	}
+
 	/**
 	 * Add a front-end admin bar button.
 	 *

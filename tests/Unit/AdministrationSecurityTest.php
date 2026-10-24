@@ -123,6 +123,32 @@ final class AdministrationSecurityTest extends TestCase {
 		$this->assertInstanceOf( \WP_Error::class, $this->api()->put_settings( $request ) );
 	}
 
+	/** Core REST transport params (apiFetch _locale=user) never break validation. */
+	public function test_put_settings_ignores_core_rest_params(): void {
+		$api      = $this->api();
+		$response = $api->put_settings(
+			new \WP_REST_Request(
+				array(
+					'source_lang'  => 'fr',
+					'target_langs' => array( 'en' ),
+					'_locale'      => 'user',
+					'_fields'      => 'settings',
+					'_method'      => 'PUT',
+					'_wpnonce'     => 'nonce',
+				)
+			)
+		);
+		$this->assertNotInstanceOf( \WP_Error::class, $response );
+		$this->assertSame( 'fr', $response->data['settings']['source_lang'] );
+		$this->assertSame( array( 'en' ), $response->data['settings']['target_langs'] );
+	}
+
+	/** Unknown foreign parameters stay rejected (strict schema). */
+	public function test_put_settings_still_rejects_unknown_params(): void {
+		$request = new \WP_REST_Request( array( 'target_langs' => array( 'en' ), 'injected' => 'x' ) );
+		$this->assertInstanceOf( \WP_Error::class, $this->api()->put_settings( $request ) );
+	}
+
 	/** Partial updates preserve other settings and dedicated options. */
 	public function test_partial_settings_update(): void {
 		$api      = $this->api();

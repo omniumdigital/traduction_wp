@@ -27,7 +27,16 @@ defined( 'ABSPATH' ) || exit;
 /** Handles the milestone-five administration contract. */
 final class Administration {
 	private const NAMESPACE = 'omtr/v1';
-	private const LANGUAGES = array(
+	/** Core REST transport parameters: never settings, always allowed. */
+	private const CORE_REST_PARAMS = array(
+		'_embed'    => true,
+		'_fields'   => true,
+		'_method'   => true,
+		'_envelope' => true,
+		'_locale'   => true,
+		'_wpnonce'  => true,
+	);
+	private const LANGUAGES        = array(
 		'de' => array( 'Deutsch', array( 'de', 'at', 'ch' ) ),
 		'en' => array( 'English', array( 'gb', 'us', 'ca', 'au', 'ie' ) ),
 		'es' => array( 'Español', array( 'es', 'mx', 'ar' ) ),
@@ -36,7 +45,7 @@ final class Administration {
 		'nl' => array( 'Nederlands', array( 'nl', 'be' ) ),
 		'pt' => array( 'Português', array( 'pt', 'br' ) ),
 	);
-	private const FLAGS     = array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' );
+	private const FLAGS            = array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' );
 
 	/**
 	 * Construct the administration service.
@@ -208,7 +217,12 @@ final class Administration {
 	 * @param \WP_REST_Request $request REST request.
 	 */
 	public function put_settings( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$values = $request->get_params();
+		/*
+		 * apiFetch appends _locale=user (and may add _fields/_method) to every
+		 * browser request as query parameters. They are REST transport values:
+		 * strip them before the strict unknown-parameter validation below.
+		 */
+		$values = array_diff_key( $request->get_params(), self::CORE_REST_PARAMS );
 		$result = $this->validate_settings( $values );
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -495,15 +509,22 @@ final class Administration {
 		);
 	}
 
-	/** Add an installer's disclosure to the WordPress policy editor. */
+	/** Add the installer's disclosure to the WordPress policy editor. */
 	public function privacy_policy(): void {
-		$provider = $this->providers->get( (string) $this->settings->get( 'provider' ) );
-		if ( null === $provider ) {
-			return;
+		$selected = $this->providers->get( (string) $this->settings->get( 'provider' ) );
+		$items    = '';
+		foreach ( $this->providers->all() as $provider ) {
+			$region = 'eu' === $provider->region() ? __( 'processing in the EU', 'omnium-translate' ) : __( 'processing outside the EU', 'omnium-translate' );
+			$items .= '<li>' . esc_html( $provider->label() . ' (' . $region . ')' ) . '</li>';
 		}
-		$region = 'eu' === $provider->region() ? __( 'the EU', 'omnium-translate' ) : __( 'a country outside the EU', 'omnium-translate' );
-		$text   = sprintf( /* translators: 1: selected provider name, 2: processing region. */ __( 'Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent.', 'omnium-translate' ), esc_html( $provider->label() ), esc_html( $region ) );
-		wp_add_privacy_policy_content( 'Omnium Translate', wp_kses_post( '<p>' . $text . '</p>' ) );
+		$text = __( 'Omnium Translate sends the text of public pages, the glossary and the site tone to the AI provider selected by the site owner, only for translation. No visitor account, order, form or personal data is sent, and nothing is sent to Omnium Digital.', 'omnium-translate' );
+		if ( null !== $selected ) {
+			/* translators: %s: provider name. */
+			$text .= ' ' . sprintf( __( 'Provider currently selected: %s.', 'omnium-translate' ), esc_html( $selected->label() ) );
+		}
+		$text  .= ' ' . __( 'Available providers and processing location (update this policy if you change provider):', 'omnium-translate' );
+		$cookie = __( 'If the site owner enables the language preference, choosing a language stores a strictly functional cookie (omtr_lang, 12 months maximum) containing only the language code, never any identifier.', 'omnium-translate' );
+		wp_add_privacy_policy_content( 'Omnium Translate', wp_kses_post( '<p>' . $text . '</p><ul>' . $items . '</ul><p>' . $cookie . '</p>' ) );
 	}
 
 	/** REST schema for a provider id.
@@ -624,11 +645,12 @@ final class Administration {
 			),
 			'hourly_quota'     => array(
 				'type'              => 'integer',
-				'minimum'           => 0,
+				'minimum'           => 1,
 				'sanitize_callback' => 'absint',
 			),
 			'noindex_partial'  => $bool,
 			'pref_cookie'      => $bool,
+			'visual_editor'    => $bool,
 			'site_tone'        => array(
 				'type'              => 'string',
 				'maxLength'         => 200,

@@ -16,7 +16,7 @@ parameters:
         -
             # assets/build/*.asset.php only exists after `npm run build`.
             identifier: require.fileNotFound
-            path: src/Admin/Administration.php
+            path: src/*
             reportUnmatched: false
     dynamicConstantNames:
         - OMTR_ENCRYPTION_KEY

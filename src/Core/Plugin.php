@@ -60,6 +60,13 @@ final class Plugin {
 	}
 
 	/**
+	 * Load the plugin's translations. Hooked on `init` (see boot()).
+	 */
+	public function load_textdomain(): void {
+		load_plugin_textdomain( 'omnium-translate', false, dirname( plugin_basename( OMTR_FILE ) ) . '/languages' );
+	}
+
+	/**
 	 * Ordered list of modules. Order matters: dependencies first.
 	 *
 	 * @return list<ModuleInterface>
@@ -90,7 +97,10 @@ final class Plugin {
 		}
 		$this->booted = true;
 
-		load_plugin_textdomain( 'omnium-translate', false, dirname( plugin_basename( OMTR_FILE ) ) . '/languages' );
+		// WordPress 6.7+ expects textdomains to load on `init` or later; loading
+		// them here (on `plugins_loaded`) triggers a `_load_textdomain_just_in_time`
+		// notice for every translatable string used before `init` fires.
+		add_action( 'init', array( $this, 'load_textdomain' ), 1 );
 
 		Migrations::maybe_migrate();
 

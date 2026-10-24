@@ -118,7 +118,11 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	public static function save_document( \DOMDocument|\Dom\HTMLDocument $document ): string|false {
 		if ( $document instanceof \DOMDocument ) {
 			$output = $document->saveHTML();
-			if ( false === $output || null === self::$fallback_state || ! isset( self::$fallback_state[ $document ] ) ) {
+			if ( false === $output ) {
+				return false;
+			}
+			$output = self::decode_spurious_entities( $output );
+			if ( null === self::$fallback_state || ! isset( self::$fallback_state[ $document ] ) ) {
 				return $output;
 			}
 			$state = self::$fallback_state[ $document ];
@@ -126,6 +130,56 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 			return self::restore_fallback_html( $output, $state['blocks'], $state['token'] );
 		}
 		return $document->saveHtml();
+	}
+
+	/**
+	 * Undo the legacy DOMDocument HTML4 serializer's quirk of entity-encoding
+	 * every non-ASCII character in text nodes created or imported after the
+	 * initial parse (e.g. inserted translations), while leaving the five
+	 * structurally significant XML entities untouched.
+	 *
+	 * @param string $html Serialized HTML.
+	 */
+	private static function decode_spurious_entities( string $html ): string {
+		static $placeholders = array(
+			'&amp;'  => "\x01amp\x01",
+			'&lt;'   => "\x01lt\x01",
+			'&gt;'   => "\x01gt\x01",
+			'&quot;' => "\x01quot\x01",
+			'&#039;' => "\x01apos\x01",
+		);
+		$protected           = strtr( $html, $placeholders );
+		$decoded             = html_entity_decode( $protected, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		return strtr( $decoded, array_flip( $placeholders ) );
+	}
+
+	/**
+	 * Translate a protected JSON-LD script in the HTML4 parser fallback.
+	 *
+	 * @param \DOMElement                            $placeholder Placeholder for a protected block.
+	 * @param string                                 $source_lang Source language.
+	 * @param string                                 $target_lang Target language.
+	 * @param array<string, string>                  $stored      Stored translations.
+	 * @param \Omnium\Translate\Router\UrlTranslator $urls Internal URL translator.
+	 */
+	public static function translate_json_ld_placeholder( \DOMElement $placeholder, string $source_lang, string $target_lang, array $stored, \Omnium\Translate\Router\UrlTranslator $urls ): void {
+		$document = $placeholder->ownerDocument; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+		if ( null === $document || null === self::$fallback_state || ! isset( self::$fallback_state[ $document ] ) ) {
+			return;
+		}
+		$state  = self::$fallback_state[ $document ];
+		$marker = $placeholder->getAttribute( 'data-omtr-placeholder' );
+		$prefix = $state['token'] . '-';
+		if ( ! str_starts_with( $marker, $prefix ) || ! ctype_digit( substr( $marker, strlen( $prefix ) ) ) ) {
+			return;
+		}
+		$index = (int) substr( $marker, strlen( $prefix ) );
+		$block = $state['blocks'][ $index ] ?? '';
+		if ( ! preg_match( '~^(<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>)(.*?)(</script\s*>)$~is', $block, $matches ) ) {
+			return;
+		}
+		$state['blocks'][ $index ]         = $matches[1] . JsonLdProcessor::translate( $matches[2], $source_lang, $target_lang, $stored, $urls ) . $matches[3];
+		self::$fallback_state[ $document ] = $state;
 	}
 
 	/**
@@ -198,8 +252,27 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	 */
 	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array &$segments, bool $excluded ): void {
 		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
+			$tag = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			if ( ! $excluded && 'omtr-ph' === $tag && $node instanceof \DOMElement && null !== self::$fallback_state ) {
+				$document = $node->ownerDocument; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+				if ( null !== $document && isset( self::$fallback_state[ $document ] ) ) {
+					$state  = self::$fallback_state[ $document ];
+					$marker = $node->getAttribute( 'data-omtr-placeholder' );
+					$prefix = $state['token'] . '-';
+					if ( str_starts_with( $marker, $prefix ) ) {
+						$index = (int) substr( $marker, strlen( $prefix ) );
+						$block = $state['blocks'][ $index ] ?? '';
+						if ( preg_match( '~^<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>(.*?)</script\s*>$~is', $block, $matches ) ) {
+							$segments = array_merge( $segments, JsonLdProcessor::segments( $matches[1], $source_lang, $this->pii_filter ) );
+						}
+					}
+				}
+			}
+
+			if ( ! $excluded && 'script' === $tag && 'application/ld+json' === strtolower( trim( (string) $node->getAttribute( 'type' ) ) ) ) {
+				$segments = array_merge( $segments, JsonLdProcessor::segments( (string) $node->textContent, $source_lang, $this->pii_filter ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			}
 			$excluded = $excluded || $this->is_excluded_element( $node );
-			$tag      = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			if ( ! $excluded ) {
 				foreach ( self::ATTRIBUTES as $attribute ) {
 					if ( 'link' === $tag && 'title' === $attribute ) {
