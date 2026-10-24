@@ -94,5 +94,7 @@ final class AdminModule implements ModuleInterface {
 		add_filter( 'page_row_actions', array( $actions, 'row_action' ), 10, 2 );
 		add_action( 'admin_bar_menu', array( $actions, 'admin_bar' ), 100 );
 		add_action( 'admin_post_omtr_translate_post', array( $actions, 'handle' ) );
+		add_action( 'add_meta_boxes', array( $actions, 'register_meta_box' ) );
+		add_action( 'enqueue_block_editor_assets', array( $actions, 'enqueue_block_editor' ) );
 	}
 }
