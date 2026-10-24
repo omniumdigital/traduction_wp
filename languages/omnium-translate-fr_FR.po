@@ -39,6 +39,75 @@ msgstr "La règle doit être translate ou keep."
 msgid "Translate rules require a translation."
 msgstr "Les règles translate nécessitent une traduction."
 
+msgid "%d pages and %d words will be queued."
+msgstr "%d pages et %d mots seront mis en file."
+
+msgid "API key"
+msgstr "Clé API"
+
+msgid "CSV files must not exceed 1 MB."
+msgstr "Les fichiers CSV ne doivent pas dépasser 1 Mo."
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Disable update checks"
+msgstr "Désactiver la vérification des mises à jour"
+
+msgid "EU"
+msgstr "UE"
+
+msgid "English"
+msgstr "Anglais"
+
+msgid "Export CSV"
+msgstr "Exporter en CSV"
+
+msgid "Free tier: provider may reuse submitted data."
+msgstr "Palier gratuit : le fournisseur peut réutiliser les données transmises."
+
+msgid "Glossary imported."
+msgstr "Glossaire importé."
+
+msgid "Import CSV"
+msgstr "Importer un CSV"
+
+msgid "Key test failed."
+msgstr "Le test de la clé a échoué."
+
+msgid "Language flags"
+msgstr "Drapeaux des langues"
+
+msgid "Languages"
+msgstr "Langues"
+
+msgid "Level"
+msgstr "Niveau"
+
+msgid "Prevent indexing languages with incomplete translations"
+msgstr "Empêcher l’indexation des langues dont la traduction est incomplète"
+
+msgid "Provider and limits"
+msgstr "Fournisseur et limites"
+
+msgid "SEO"
+msgstr "SEO"
+
+msgid "Setup progress"
+msgstr "Progression de la configuration"
+
+msgid "Stored key: %s"
+msgstr "Clé enregistrée : %s"
+
+msgid "Target languages (comma separated)"
+msgstr "Langues cibles (séparées par des virgules)"
+
+msgid "Translate the site"
+msgstr "Traduire le site"
+
+msgid "Your key is encrypted and will never be displayed in full."
+msgstr "Votre clé est chiffrée et ne sera jamais affichée en entier."
+
 msgid "Usage: wp omtr glossary add <term> <target_lang> <translation> <rule>."
 msgstr "Utilisation : wp omtr glossary add <term> <target_lang> <translation> <rule>."
 
