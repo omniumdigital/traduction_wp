@@ -497,7 +497,7 @@ final class Administration {
 		if ( null === $provider ) {
 			return;
 		}
-		$region = 'eu' === $provider->region() ? __( 'EU', 'omnium-translate' ) : __( 'outside the EU', 'omnium-translate' );
+		$region = 'eu' === $provider->region() ? __( 'the EU', 'omnium-translate' ) : __( 'a country outside the EU', 'omnium-translate' );
 		$text   = sprintf( /* translators: 1: selected provider name, 2: processing region. */ __( 'Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent.', 'omnium-translate' ), esc_html( $provider->label() ), esc_html( $region ) );
 		wp_add_privacy_policy_content( 'Omnium Translate', wp_kses_post( '<p>' . $text . '</p>' ) );
 	}

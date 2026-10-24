@@ -186,10 +186,10 @@ msgstr "Les données d’administration sont invalides."
 msgid "The provider operation failed."
 msgstr "L’opération du fournisseur a échoué."
 
-msgid "EU"
+msgid "the EU"
 msgstr "l’UE"
 
-msgid "outside the EU"
+msgid "a country outside the EU"
 msgstr "un pays hors de l’UE"
 
 msgid "Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent."
