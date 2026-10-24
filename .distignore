@@ -25,3 +25,10 @@
 /docs
 /opencode.json
 /.wp-env.override.json
+composer.json
+composer.lock
+package.json
+package-lock.json
+phpcs.xml.dist
+phpstan.neon.dist
+phpunit.xml.dist
