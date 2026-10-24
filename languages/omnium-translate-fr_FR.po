@@ -484,3 +484,93 @@ msgstr "un pays hors de l’UE"
 
 msgid "Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent."
 msgstr "Omnium Translate envoie le texte des pages publiques à %1$s pour traduction. Le traitement a lieu dans %2$s. Aucune donnée de compte visiteur, de commande ou de formulaire n’est envoyée."
+
+msgid "The translation will run in the background. You can pause the queue from the dashboard."
+msgstr "La traduction s’exécutera en arrière-plan. Vous pouvez mettre la file en pause depuis le tableau de bord."
+
+msgid "This free tier may reuse submitted content. Check the provider terms before enabling it."
+msgstr "Ce palier gratuit peut réutiliser le contenu envoyé. Vérifiez les conditions du fournisseur avant de l’activer."
+
+msgid "A translation run is already in progress."
+msgstr "Une traduction est déjà en cours."
+
+msgid "API key deleted."
+msgstr "Clé API supprimée."
+
+msgid "API key stored securely."
+msgstr "Clé API enregistrée de façon sécurisée."
+
+msgid "Connection to Anthropic failed."
+msgstr "La connexion à Anthropic a échoué."
+
+msgid "Connection to Google failed."
+msgstr "La connexion à Google a échoué."
+
+msgid "Connection to Mistral failed."
+msgstr "La connexion à Mistral a échoué."
+
+msgid "Connection to OpenAI failed."
+msgstr "La connexion à OpenAI a échoué."
+
+msgid "Key test failed (HTTP %d)."
+msgstr "Le test de la clé a échoué (HTTP %d)."
+
+msgid "Key works."
+msgstr "La clé fonctionne."
+
+msgid "Omnium Translate"
+msgstr "Omnium Translate"
+
+msgid "Omnium Translate requires PHP 8.1+, the sodium extension and a complete installation (vendor folder)."
+msgstr "Omnium Translate nécessite PHP 8.1+, l’extension sodium et une installation complète (dossier vendor)."
+
+msgid "Omnium Translate status"
+msgstr "État d’Omnium Translate"
+
+msgid "Only published, non-protected content can be translated."
+msgstr "Seuls les contenus publiés et non protégés peuvent être traduits."
+
+msgid "Post %d has no public URL."
+msgstr "Le contenu %d n’a pas d’URL publique."
+
+msgid "Provide a post id or a URL."
+msgstr "Indiquez un identifiant de contenu ou une URL."
+
+msgid "Provide exactly one registered provider id."
+msgstr "Indiquez un seul identifiant de fournisseur enregistré."
+
+msgid "The API key cannot be empty."
+msgstr "La clé API ne peut pas être vide."
+
+msgid "The URL is not part of this site or uses a non-public path."
+msgstr "L’URL n’appartient pas à ce site ou utilise un chemin non public."
+
+msgid "The URL was refused."
+msgstr "L’URL a été refusée."
+
+msgid "The monthly word cap is reached."
+msgstr "Le plafond mensuel de mots est atteint."
+
+msgid "The status command does not accept a provider argument."
+msgstr "La commande status n’accepte pas d’argument fournisseur."
+
+msgid "Translation queued: run \"wp omtr status\" and the Action Scheduler queue."
+msgstr "Traduction mise en file : lancez « wp omtr status » et la file Action Scheduler."
+
+msgid "Unknown provider."
+msgstr "Fournisseur inconnu."
+
+msgid "You are not allowed to perform this action."
+msgstr "Vous n’êtes pas autorisé à effectuer cette action."
+
+msgid "free"
+msgstr "gratuit"
+
+msgid "held (a run is in progress)"
+msgstr "verrouillé (une traduction est en cours)"
+
+msgid "none"
+msgstr "aucun"
+
+msgid "unlimited"
+msgstr "illimité"
