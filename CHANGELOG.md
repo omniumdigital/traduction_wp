@@ -4,30 +4,27 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.0.0] - 2026-10-24
+
+Première version publique.
+
 ### Ajouté
-- Déclenchement de la traduction depuis l’éditeur de blocs (panneau « Traduire cette page ») et une méta-box équivalente dans l’éditeur classique.
-- Édition visuelle privée des traductions en front (option `visual_editor`, désactivée par défaut) : bouton dans la barre d’admin, segments cliquables, enregistrement via l’API REST, réponse jamais mise en cache.
-- Cookie de préférence de langue facultatif (option `pref_cookie`) : `omtr_lang` fonctionnel posé au clic, redirection 302 uniquement pour une arrivée externe sur l’accueil source sans préfixe ; mention ajoutée à la politique de confidentialité.
-- Purge des caches de page après mise à jour des traductions (`clean_post_cache`, LiteSpeed, WP Rocket, hook `omtr_translations_updated`).
-- Backend de l’administration : assistant, réglages, fournisseurs, tableau de bord, traduction complète et import/export JSON sécurisé.
-- Personnalisation du sélecteur et drapeaux alternatifs locaux sous licence MIT ; notice de confidentialité liée au fournisseur choisi.
-- Socle : bootstrap, container, modules, migrations des tables, chiffrement des clés API, capability `omtr_manage`, CI, environnements wp-env.
-- Outillage JS : esbuild + Biome à la place de @wordpress/scripts (npm audit à 0).
-- Interface React d’administration : assistant trois écrans, tableau de bord, éditeur de traductions, glossaire, réglages, aperçu du sélecteur avec contrôle de contraste, estimation avant traduction complète et import/export de configuration.
-- Interface admin découpée en modules, chaînes extractibles avec `@wordpress/i18n`, réglage SEO `noindex_partial`, choix des drapeaux, import/export CSV du glossaire et aperçu fidèle du sélecteur.
-- Sélecteur de langue côté serveur : shortcode `[omtr_switcher]`, fonction `omtr_switcher()`, bloc Gutenberg, widget Elementor, élément de menu WordPress, variantes dropdown/inline/flottante, navigation clavier et ressources locales.
-- Intégration Oxygen 6 : élément Element Studio avec variantes de disposition et modes d’affichage du sélecteur.
+- Traduction automatique du HTML rendu (Gutenberg, Elementor, Oxygen 6), indépendante du constructeur de pages, avec réutilisation des segments déjà traduits : un site inchangé ne déclenche aucun nouvel appel IA.
+- Quatre fournisseurs IA avec la clé du client : Anthropic (Claude), OpenAI, Mistral (point d'accès UE) et Google Gemini ; test de clé, choix du modèle, estimation des segments, mots et coût avant lancement.
+- File de traduction en arrière-plan (Action Scheduler) : lots, reprises avec délais progressifs, pause et reprise, verrou d'exécution, plafond mensuel de mots et quota horaire pour la traduction à la volée (100 segments par défaut).
+- Déclencheurs : bouton « Traduire cette page » dans l'éditeur de blocs et l'éditeur classique, action rapide dans les listes, barre d'admin, crawler des pages nouvelles ou modifiées, traduction de tout le site, traduction automatique à la publication et à la volée (options).
+- Glossaire (« ne jamais traduire », « toujours traduire par »), ton et contexte du site, import et export CSV.
+- Éditeur de segments dans l'admin (statuts modifié et verrouillé jamais écrasés) et mode d'édition visuel en front (option).
+- SEO : préfixes de langue, slugs traduits avec redirections 301, `hreflang` et `x-default`, canonical, `<html lang>`, balises meta, Open Graph et Twitter traduites, JSON-LD traduit (prix et SKU intacts), sitemaps WordPress, Yoast SEO et Rank Math, `noindex` des langues incomplètes (option).
+- WooCommerce : fiches, catégories, attributs, fragments du panier, pages panier, commande et compte préfixées, emails dans la langue de la commande.
+- Sélecteur de langue (dropdown, pastilles, flottant) : shortcode `[omtr_switcher]`, fonction `omtr_switcher()`, bloc Gutenberg, widget Elementor, élément Oxygen, élément de menu ; drapeaux SVG embarqués et réglables par langue, style personnalisable avec aperçu en direct et contrôle du contraste.
+- Administration React : assistant en 3 écrans, tableau de bord, traductions, glossaire, réglages, export et import de configuration (sans clé API). Interface en français et en anglais.
+- Cookie de préférence de langue (option, désactivé par défaut) et purge des caches WP Rocket, LiteSpeed et WordPress après mise à jour des traductions.
+- Mises à jour depuis les GitHub Releases (désactivables) et désinstallation au choix : conserver les traductions ou tout supprimer.
 
-### Modifié
-- WordPress 6.9 minimum (testé jusqu'à 7.1), Action Scheduler 4.2.
-- Dépendance de développement `body-parser` mise à jour vers 1.20.9 après l'avis GHSA-27r3-jxmh-p828.
-- Recette v1 : archive WooCommerce canonique sur Oxygen pour permettre à Rank Math d'émettre le schéma `Product` ; contrôle JSON-LD structuré FR/EN, parcours Playwright admin sur les trois sites et comparaison différentielle des ressources front désactivé/activé.
-
-### Corrigé
-- Traduction des champs texte JSON-LD Yoast, Rank Math et WooCommerce sur les pages localisées, y compris avec le parseur HTML de PHP 8.1 à 8.3 ; URL internes réécrites, prix et identifiants produit préservés, sortie JSON échappée.
-- Liaison du contrat `TranslationQueueInterface` lorsque WooCommerce initialise la traduction des emails.
-- Désactivation du plugin : l'élément de menu du sélecteur est mis en brouillon (jamais supprimé) pour éviter un lien mort « #omtr-switcher » tant que le plugin est inactif ; il est republié automatiquement à la réactivation.
-- API REST des réglages : acceptation des paramètres de transport `_locale`, `_embed`, `_fields`, `_method`, `_envelope`, `_wpnonce` (échec de `PUT /settings` sinon).
-- Caractères accentués des traductions : sur PHP < 8.4 (sans l'analyseur HTML5 natif), le sérialiseur HTML4 historique convertissait chaque caractère non-ASCII des traductions insérées en entité HTML (`é` → `&eacute;`), rendant le code source incohérent avec la page d'origine. Décodage ciblé, sans jamais altérer les entités structurelles (`&amp; &lt; &gt; &quot; &#039;`).
-- Éditeur de traductions (admin) : clé React dupliquée sur la liste des segments lorsqu'un même segment a plusieurs langues cibles, pouvant mélanger l'état d'édition entre lignes.
-- Désinstallation avec purge : `wp_cache_flush()` après les suppressions SQL directes, pour que `get_option()` ne continue pas de servir une valeur déjà en cache dans le même processus (observé sur l'option de test du fournisseur simulé, mais le mécanisme concerne toute option du plugin).
+### Sécurité
+- Clés API chiffrées (libsodium), jamais renvoyées au navigateur, dans un export, un journal ou une erreur.
+- Réponses de l'IA traitées comme non fiables : JSON strict validé, réinsertion en texte, balises inline en liste blanche.
+- Capability `omtr_manage` et nonce sur chaque action et route REST ; aucune route publique en écriture.
+- Filtre des données personnelles (emails, téléphones, IBAN, cartes) avant tout envoi ; seules les pages publiques rendues en session anonyme partent vers l'IA ; aucune donnée envoyée à Omnium.
+- Protection contre les attaques par coût : traduction à la volée limitée aux contenus publiés connus, query strings ignorées, quota horaire réservé avant mise en file.
