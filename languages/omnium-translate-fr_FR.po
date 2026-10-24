@@ -601,3 +601,18 @@ msgstr "Annuler"
 
 msgid "If the site owner enables the language preference, choosing a language stores a strictly functional cookie (omtr_lang, 12 months maximum) containing only the language code, never any identifier."
 msgstr "Si le responsable du site active la préférence de langue, le choix d’une langue enregistre un cookie strictement fonctionnel (omtr_lang, 12 mois maximum) contenant uniquement le code de langue, jamais d’identifiant."
+
+msgid "processing in the EU"
+msgstr "traitement dans l’UE"
+
+msgid "processing outside the EU"
+msgstr "traitement hors UE"
+
+msgid "Omnium Translate sends the text of public pages, the glossary and the site tone to the AI provider selected by the site owner, only for translation. No visitor account, order, form or personal data is sent, and nothing is sent to Omnium Digital."
+msgstr "Omnium Translate envoie le texte des pages publiques, le glossaire et le ton du site au fournisseur d’IA choisi par l’exploitant du site, uniquement pour la traduction. Aucune donnée de compte visiteur, de commande, de formulaire ni aucune donnée personnelle n’est envoyée, et rien n’est envoyé à Omnium Digital."
+
+msgid "Provider currently selected: %s."
+msgstr "Fournisseur actuellement choisi : %s."
+
+msgid "Available providers and processing location (update this policy if you change provider):"
+msgstr "Fournisseurs disponibles et lieu de traitement (mettez à jour cette politique si vous changez de fournisseur) :"

@@ -27,7 +27,7 @@ final class Settings {
 		'auto_translate'   => false,
 		'on_the_fly'       => false,
 		'monthly_word_cap' => 0,
-		'hourly_quota'     => 0,
+		'hourly_quota'     => 100,
 		'noindex_partial'  => false,
 		'pref_cookie'      => false,
 		'visual_editor'    => false,
