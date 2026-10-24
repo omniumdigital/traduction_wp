@@ -82,7 +82,7 @@ const run = async () => {
 		await page.getByRole("button", { name: /Anthropic Claude/ }).click();
 		await page.getByLabel(T.keyLabel).fill(SECRET);
 		await page.getByRole("button", { name: T.testKey }).click();
-		await page.getByText(T.keyOk, { exact: false }).waitFor({ timeout: 20000 });
+		await page.getByText(T.keyOk, { exact: false }).first().waitFor({ timeout: 20000 });
 		const domAfterSave = await domSecret();
 		await page.getByRole("button", { name: T.continue, exact: true }).click();
 

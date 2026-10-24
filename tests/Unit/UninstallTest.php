@@ -108,10 +108,25 @@ final class UninstallTest extends TestCase {
 	public function test_menu_marker_matches_switcher_module(): void {
 		$this->assertSame( '#omtr-switcher', \Omnium\Translate\Switcher\MenuIntegration::ITEM_URL );
 	}
+
+	/** @testDox La purge supprime les tâches Action Scheduler du plugin quand la table existe. */
+	public function test_purge_deletes_action_scheduler_rows_when_table_exists(): void {
+		$this->wpdb = new RecordingWpdbWithActionScheduler();
+		$GLOBALS['wpdb'] = $this->wpdb;
+
+		$this->run_uninstall( true );
+
+		$as_deletes = array_filter(
+			$this->wpdb->queries,
+			static fn( string $sql ): bool => str_contains( $sql, 'DELETE FROM' ) && str_contains( $sql, 'actionscheduler_actions' )
+		);
+		$this->assertCount( 1, $as_deletes, 'The plugin must delete its own actionscheduler_actions rows.' );
+		$this->assertStringContainsString( 'hook LIKE', array_values( $as_deletes )[0] ?? '' );
+	}
 }
 
 /** Minimal wpdb double recording every query. */
-final class RecordingWpdb {
+class RecordingWpdb {
 
 	public string $prefix = 'wp_';
 
@@ -151,5 +166,29 @@ final class RecordingWpdb {
 	 */
 	public function esc_like( string $text ): string {
 		return addcslashes( $text, '_%\\' );
+	}
+
+	/**
+	 * Simulate the absence of the Action Scheduler table in the test environment.
+	 *
+	 * @param string $query SQL.
+	 */
+	public function get_var( string $query ): ?string {
+		$this->queries[] = $query;
+		return null;
+	}
+}
+
+/** RecordingWpdb variant simulating a site where Action Scheduler is installed. */
+final class RecordingWpdbWithActionScheduler extends RecordingWpdb {
+
+	/**
+	 * Pretend the actionscheduler_actions table exists.
+	 *
+	 * @param string $query SQL.
+	 */
+	public function get_var( string $query ): ?string {
+		$this->queries[] = $query;
+		return $this->prefix . 'actionscheduler_actions';
 	}
 }

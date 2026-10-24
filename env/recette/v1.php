@@ -159,6 +159,7 @@ if ( 'seed' === $stage ) {
 			$product->set_description( 'Description française du produit de recette numéro ' . $p . ', tournée dans notre atelier.' );
 			$product->set_short_description( 'Produit de recette ' . $p . '.' );
 			$product->set_regular_price( 10 + $p );
+			$product->set_sku( $slug );
 			$product->set_stock_status( 'instock' );
 			$product->save();
 			++$products;
@@ -318,10 +319,24 @@ if ( 'seed' === $stage ) {
 	WP_CLI::line( 'ORDER_ID=' . $order->get_id() );
 	WP_CLI::line( 'EMAIL_SUBJECT=' . $email->get_subject() );
 	WP_CLI::line( 'EMAIL_HEADING=' . $email->get_heading() );
+} elseif ( 'product-url' === $stage ) {
+	$product = get_page_by_path( 'recette-v1-produit-01', OBJECT, array( 'product' ) );
+	if ( ! $product ) {
+		$product = get_posts( array( 'post_type' => 'product', 'post_status' => 'publish', 'posts_per_page' => 1 ) )[0] ?? null;
+	}
+	if ( ! $product ) {
+		WP_CLI::error( 'No product available.' );
+	}
+	$wc_product = wc_get_product( $product->ID );
+	WP_CLI::line( 'PRODUCT_URL=' . get_permalink( $product->ID ) );
+	WP_CLI::line( 'PRODUCT_NAME=' . $wc_product->get_name() );
+	WP_CLI::line( 'PRODUCT_PRICE=' . $wc_product->get_regular_price() );
+	WP_CLI::line( 'PRODUCT_SKU=' . $wc_product->get_sku() );
 } elseif ( 'purge' === $stage ) {
 	$rest( 'PUT', '/settings', array( 'uninstall_purge' => true ) );
 } elseif ( 'reset-wizard' === $stage ) {
 	update_option( 'omtr_wizard_done', false, false );
+	delete_option( 'omtr_settings' );
 	WP_CLI::line( 'WIZARD_RESET=ok' );
 } elseif ( 'traces' === $stage ) {
 	global $wpdb;

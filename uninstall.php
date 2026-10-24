@@ -75,3 +75,10 @@ $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->esc_like( '_omtr_' ) . '%'
 	)
 );
+
+// Action Scheduler is shared infrastructure: only this plugin's own
+// scheduled jobs are removed, never the whole table.
+$omtr_as_actions_table = $wpdb->prefix . 'actionscheduler_actions';
+if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $omtr_as_actions_table ) ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$omtr_as_actions_table} WHERE hook LIKE %s", $wpdb->esc_like( 'omtr_' ) . '%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name comes from $wpdb->prefix, not external input.
+}
