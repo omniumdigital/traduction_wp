@@ -367,10 +367,14 @@ check "SURCOIT_50MS" "$(awk -v o="${overhead:-9999}" 'BEGIN { print (o < 50) ? 1
 
 # --- désactivation : site intact ----------------------------------------------
 
+# Les query strings de version (?ver=...) des assets (dont le CSS généré par
+# Elementor) changent naturellement au fil du temps, indépendamment du
+# plugin : elles sont ignorées pour ne comparer que le contenu réel.
+strip_asset_versions() { sed -E "s/\?ver=[0-9]+//g" "$1"; }
 for n in 01 15 30; do
 	fetch "$BASE/recette-v1-$n/" "$TMP/after-$n.html" >/dev/null
-	if cmp -s "$TMP/before-$n.html" "$TMP/after-$n.html"; then
-		check "DESACTIVATION_INTACTE_$n" 1 "octets identiques"
+	if diff -q <(strip_asset_versions "$TMP/before-$n.html") <(strip_asset_versions "$TMP/after-$n.html") >/dev/null; then
+		check "DESACTIVATION_INTACTE_$n" 1 "octets identiques (hors ?ver= des assets)"
 	else
 		check "DESACTIVATION_INTACTE_$n" 0 "différences: $(diff "$TMP/before-$n.html" "$TMP/after-$n.html" | head -4 | tr '\n' '|' | cut -c1-160)"
 	fi

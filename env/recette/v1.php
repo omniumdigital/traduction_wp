@@ -330,7 +330,7 @@ if ( 'seed' === $stage ) {
 	$wc_product = wc_get_product( $product->ID );
 	WP_CLI::line( 'PRODUCT_URL=' . get_permalink( $product->ID ) );
 	WP_CLI::line( 'PRODUCT_NAME=' . $wc_product->get_name() );
-	WP_CLI::line( 'PRODUCT_PRICE=' . $wc_product->get_regular_price() );
+	WP_CLI::line( 'PRODUCT_PRICE=' . wc_format_decimal( $wc_product->get_regular_price(), wc_get_price_decimals() ) );
 	WP_CLI::line( 'PRODUCT_SKU=' . $wc_product->get_sku() );
 } elseif ( 'purge' === $stage ) {
 	$rest( 'PUT', '/settings', array( 'uninstall_purge' => true ) );

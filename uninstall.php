@@ -82,3 +82,9 @@ $omtr_as_actions_table = $wpdb->prefix . 'actionscheduler_actions';
 if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $omtr_as_actions_table ) ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$omtr_as_actions_table} WHERE hook LIKE %s", $wpdb->esc_like( 'omtr_' ) . '%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name comes from $wpdb->prefix, not external input.
 }
+
+// The raw queries above bypass the options/post meta cache: without an
+// explicit flush, a value read earlier in this same request (e.g. by a
+// module bootstrapped before WP_UNINSTALL_PLUGIN was defined) would still
+// be served from the stale runtime cache even though its row is gone.
+wp_cache_flush();
