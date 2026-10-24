@@ -292,14 +292,13 @@ if [ "$KIND" != gutenberg ]; then
 	done
 	note "-- JSON-LD Product : name traduit, price/sku intacts"
 	eval "$(W eval-file "$PHPFILE" product-url 2>/dev/null | sed -n 's/^PRODUCT_URL=\(.*\)$/purl="\1"/p;s/^PRODUCT_NAME=\(.*\)$/pname="\1"/p;s/^PRODUCT_PRICE=\(.*\)$/pprice="\1"/p;s/^PRODUCT_SKU=\(.*\)$/psku="\1"/p')"
+	fetch "$purl" "$TMP/product-source.html" >/dev/null
 	for lang in en es; do
 		upper="$(printf '%s' "$lang" | tr '[:lower:]' '[:upper:]')"
 		purl_lang="$(printf '%s' "$purl" | sed -E "s#^(https?://[^/]+)/#\\1/$lang/#")"
 		fetch "$purl_lang" "$TMP/product-$lang.html" >/dev/null
-		name_ok="$(grep -oE '"name":"[^"]*"' "$TMP/product-$lang.html" | grep -c "\\[$upper\\] $pname" || true)"
-		price_ok="$(grep -F "\"price\":\"$pprice\"" "$TMP/product-$lang.html" >/dev/null 2>&1 && echo 1 || echo 0)"
-		sku_ok="$(grep -F "\"sku\":\"$psku\"" "$TMP/product-$lang.html" >/dev/null 2>&1 && echo 1 || echo 0)"
-		check "JSONLD_PRODUCT_$upper" "$([ "${name_ok:-0}" -ge 1 ] && [ "$price_ok" = "1" ] && [ "$sku_ok" = "1" ] && echo 1 || echo 0)" "name_traduit=$name_ok price_intact=$price_ok sku_intact=$sku_ok (url=$purl_lang)"
+		jsonld_result="$(python3 "$ROOT/env/recette/jsonld-product.py" "$TMP/product-source.html" "$TMP/product-$lang.html" "$pname" "$pprice" "$psku" "$lang" 2>&1)" && jsonld_ok=1 || jsonld_ok=0
+		check "JSONLD_PRODUCT_$upper" "$jsonld_ok" "$jsonld_result (url=$purl_lang)"
 	done
 
 	note "-- Email WooCommerce dans la langue de la commande"
