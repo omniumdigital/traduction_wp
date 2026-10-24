@@ -9,6 +9,7 @@ parameters:
         - tests/stubs/dom-html84.stub
         - tests/stubs/wp-cli-utils.stub
         - tests/stubs/elementor.stub
+        - tests/stubs/oxygen-runtime.php
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
     dynamicConstantNames:
