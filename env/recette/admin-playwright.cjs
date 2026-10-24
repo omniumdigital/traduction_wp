@@ -1,0 +1,114 @@
+// Parcours admin headless pour la recette v1 (site Gutenberg).
+// Usage (module playwright résolu hors des dépendances du projet) :
+//   OMTR_BASE=http://localhost:8881 OMTR_LOCALE=fr_FR OMTR_TIMED=1 \
+//   PLAYWRIGHT_MODULE=<chemin>/node_modules/playwright node admin-playwright.cjs
+//
+// Assistant complet (langues, fournisseur, clé factice, test, estimation,
+// lancement, menu), puis chaque onglet sans erreur console. Vérifie que la clé
+// n'apparaît jamais en clair dans le DOM ni dans les réponses réseau.
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
+
+const BASE = process.env.OMTR_BASE || "http://localhost:8881";
+const LOCALE = process.env.OMTR_LOCALE || "fr_FR";
+const TIMED = process.env.OMTR_TIMED === "1";
+const FR = LOCALE.startsWith("fr");
+const T = {
+	headingWizard: FR ? "Configurer vos traductions" : "Set up your translations",
+	sourceLabel: FR ? "Langue source" : "Source language",
+	continue: FR ? "Continuer" : "Continue",
+	headingProvider: FR ? "Connecter un fournisseur IA" : "Connect an AI provider",
+	keyLabel: FR ? "Clé API" : "API key",
+	testKey: FR ? "Tester la clé" : "Test the key",
+	keyOk: FR ? "La clé fonctionne." : "Key works.",
+	headingLaunch: FR ? "Vérifier et lancer" : "Review and launch",
+	launch: FR ? "Traduire le site" : "Translate the site",
+	tabs: FR
+		? ["Tableau de bord", "Traductions", "Glossaire", "Réglages"]
+		: ["Dashboard", "Translations", "Glossary", "Settings"],
+};
+const SECRET = "local-mock-" + "x".repeat(20);
+
+(async () => {
+	const browser = await chromium.launch({ headless: true });
+	const page = await browser.newPage();
+	const errors = [];
+	const leaks = [];
+	page.on("console", (message) => {
+		if (message.type() === "error") {
+			const location = message.location();
+			errors.push(`${message.text()} @${location.url || "?"}:${location.lineNumber || 0}`);
+		}
+	});
+	page.on("pageerror", (error) => errors.push("pageerror: " + error.message));
+	page.on("response", async (response) => {
+		try {
+			const body = await response.text();
+			if (body && body.includes(SECRET)) leaks.push(response.url());
+		} catch {}
+	});
+
+	const domSecret = () =>
+		page.evaluate((secret) => {
+			const html = document.documentElement.outerHTML;
+			if (html.includes(secret)) return "outerHTML";
+			// React met à jour la propriété value, pas l'attribut : vérifier aussi les valeurs vives.
+			for (const input of document.querySelectorAll("input, textarea")) {
+				if ((input.value || "").includes(secret)) return "input.value";
+			}
+			return "";
+		}, SECRET);
+
+	const start = Date.now();
+	await page.goto(BASE + "/wp-login.php", { waitUntil: "domcontentloaded" });
+	await page.locator("#user_login").fill("admin");
+	await page.locator("#user_pass").fill("password");
+	await page.locator("#wp-submit").click();
+	await page.waitForLoadState("networkidle");
+
+	// Assistant — écran 1 : langues.
+	await page.goto(BASE + "/wp-admin/admin.php?page=omnium-translate", { waitUntil: "networkidle" });
+	await page.getByRole("heading", { name: T.headingWizard }).waitFor({ timeout: 20000 });
+	await page.getByLabel(T.sourceLabel).selectOption("fr");
+	await page.getByRole("checkbox", { name: "English" }).check();
+	await page.getByRole("checkbox", { name: "Español" }).check();
+	await page.getByRole("button", { name: T.continue, exact: true }).click();
+
+	// Écran 2 : fournisseur + clé factice + test obligatoire.
+	await page.getByRole("heading", { name: T.headingProvider }).waitFor();
+	await page.getByRole("button", { name: /Anthropic Claude/ }).click();
+	await page.getByLabel(T.keyLabel).fill(SECRET);
+	await page.getByRole("button", { name: T.testKey }).click();
+	await page.getByText(T.keyOk, { exact: false }).waitFor({ timeout: 20000 });
+	const domAfterSave = await domSecret();
+	await page.getByRole("button", { name: T.continue, exact: true }).click();
+
+	// Écran 3 : estimation puis lancement (menu coché par défaut).
+	await page.getByRole("heading", { name: T.headingLaunch }).waitFor();
+	const launch = page.getByRole("button", { name: T.launch });
+	await launch.waitFor({ timeout: 60000 });
+	await launch.click();
+
+	// Onglets.
+	await page.getByRole("tab", { name: T.tabs[0] }).waitFor({ timeout: 60000 });
+	const seconds = ((Date.now() - start) / 1000).toFixed(1);
+	const domAfterWizard = await domSecret();
+	for (const name of T.tabs) {
+		await page.getByRole("tab", { name }).click();
+		await page.locator('[role="tabpanel"]').waitFor();
+		await page.waitForTimeout(700); // laisse les requêtes REST de l'onglet aboutir
+		const tabErrors = errors.length;
+		console.log(`TAB=${name}:errors=${tabErrors}`);
+	}
+
+	if (TIMED) console.log(`INSTALL_WIZARD_BROWSER_SECONDS=${seconds}`);
+	console.log(`KEY_IN_DOM_AFTER_SAVE=${domAfterSave || "false"}`);
+	console.log(`KEY_IN_DOM_AFTER_WIZARD=${domAfterWizard || "false"}`);
+	console.log(`KEY_IN_API_RESPONSES=${leaks.length}${leaks.length ? ":" + leaks.join(",") : ""}`);
+	console.log(`CONSOLE_ERRORS=${errors.length}`);
+	for (const error of errors.slice(0, 10)) console.log("CONSOLE_ERROR=" + error);
+	await browser.close();
+	if (errors.length || leaks.length || domAfterSave || domAfterWizard) process.exitCode = 1;
+})().catch((error) => {
+	console.error("PLAYWRIGHT_FAILURE=" + error.message);
+	process.exitCode = 1;
+});
