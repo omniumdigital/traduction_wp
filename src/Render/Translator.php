@@ -109,6 +109,9 @@ final class Translator {
 	private function walk( \DOMNode|\Dom\Node $node, string $source_lang, array $stored, bool $excluded ): void {
 		if ( $node instanceof \DOMElement || $node instanceof \Dom\Element ) {
 			$tag = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+			if ( ! $excluded && 'omtr-ph' === $tag && $node instanceof \DOMElement ) {
+				HtmlSegmentExtractor::translate_json_ld_placeholder( $node, $source_lang, $this->current_language->get(), $stored, $this->url_translator );
+			}
 			if ( ! $excluded && 'script' === $tag && 'application/ld+json' === strtolower( trim( (string) $node->getAttribute( 'type' ) ) ) ) {
 				$node->textContent = JsonLdProcessor::translate( (string) $node->textContent, $source_lang, $this->current_language->get(), $stored, $this->url_translator ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
 			}

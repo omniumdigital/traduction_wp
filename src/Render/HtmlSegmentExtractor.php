@@ -129,6 +129,35 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	}
 
 	/**
+	 * Translate a protected JSON-LD script in the HTML4 parser fallback.
+	 *
+	 * @param \DOMElement                            $placeholder Placeholder for a protected block.
+	 * @param string                                 $source_lang Source language.
+	 * @param string                                 $target_lang Target language.
+	 * @param array<string, string>                  $stored      Stored translations.
+	 * @param \Omnium\Translate\Router\UrlTranslator $urls Internal URL translator.
+	 */
+	public static function translate_json_ld_placeholder( \DOMElement $placeholder, string $source_lang, string $target_lang, array $stored, \Omnium\Translate\Router\UrlTranslator $urls ): void {
+		$document = $placeholder->ownerDocument; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Native DOM API.
+		if ( null === $document || null === self::$fallback_state || ! isset( self::$fallback_state[ $document ] ) ) {
+			return;
+		}
+		$state  = self::$fallback_state[ $document ];
+		$marker = $placeholder->getAttribute( 'data-omtr-placeholder' );
+		$prefix = $state['token'] . '-';
+		if ( ! str_starts_with( $marker, $prefix ) || ! ctype_digit( substr( $marker, strlen( $prefix ) ) ) ) {
+			return;
+		}
+		$index = (int) substr( $marker, strlen( $prefix ) );
+		$block = $state['blocks'][ $index ] ?? '';
+		if ( ! preg_match( '~^(<script\b[^>]*\btype=["\']application/ld\+json["\'][^>]*>)(.*?)(</script\s*>)$~is', $block, $matches ) ) {
+			return;
+		}
+		$state['blocks'][ $index ]         = $matches[1] . JsonLdProcessor::translate( $matches[2], $source_lang, $target_lang, $stored, $urls ) . $matches[3];
+		self::$fallback_state[ $document ] = $state;
+	}
+
+	/**
 	 * Replace raw-text and foreign-content elements before the HTML4 fallback parses them.
 	 *
 	 * @param string $html Original HTML.

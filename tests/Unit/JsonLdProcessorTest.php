@@ -11,9 +11,12 @@ use Brain\Monkey\Functions;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Render\HtmlSegmentExtractor;
 use Omnium\Translate\Render\JsonLdProcessor;
+use Omnium\Translate\Render\Translator;
+use Omnium\Translate\Router\CurrentLanguage;
 use Omnium\Translate\Router\UrlTranslator;
 use Omnium\Translate\Security\PiiFilter;
 use Omnium\Translate\Store\SegmentKey;
+use Omnium\Translate\Store\TranslationRepositoryInterface;
 use Omnium\Translate\Tests\TestCase;
 
 /** @group security */
@@ -27,6 +30,8 @@ final class JsonLdProcessorTest extends TestCase {
 		Functions\when( 'url_to_postid' )->justReturn( 0 );
 		Functions\when( 'wp_json_encode' )->alias( static fn( mixed $data, int $flags = 0 ): string|false => json_encode( $data, $flags ) );
 		Functions\when( 'sanitize_text_field' )->alias( static fn( string $text ): string => strip_tags( $text ) );
+		Functions\when( 'wp_kses' )->alias( static fn( string $text ): string => strip_tags( $text, '<strong><em><b><i><br><span><a>' ) );
+		Functions\when( 'esc_attr' )->alias( static fn( string $text ): string => htmlspecialchars( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 	}
 
 	public function test_extracts_and_translates_yoast_graph(): void {
@@ -75,6 +80,53 @@ final class JsonLdProcessorTest extends TestCase {
 		$html = '<html><body><div data-omtr-skip><script type="application/ld+json">{"name":"Nom privé"}</script></div></body></html>';
 		$segments = ( new HtmlSegmentExtractor( new PiiFilter() ) )->extract( $html, 'fr' );
 		$this->assertArrayNotHasKey( SegmentKey::hash( 'fr', 'Nom privé' ), $segments );
+	}
+
+	public function test_rendered_product_uses_shared_cache_and_escapes_untrusted_translation(): void {
+		$html = '<!doctype html><html><head><script type="application/ld+json">'
+			. '{"@type":"Product","@id":"https://example.test/produit#product","url":"https://example.test/produit","name":"Produit","description":"Description source","sku":"SKU-42","gtin13":"1234567890123","offers":{"price":"19.90","priceCurrency":"EUR"}}'
+			. '</script></head><body><p>Produit</p></body></html>';
+		$expected = array(
+			SegmentKey::hash( 'fr', 'Produit' )            => 'Product',
+			SegmentKey::hash( 'fr', 'Description source' ) => '</script><script>alert(1)</script>',
+		);
+		$cache = array();
+		Functions\when( 'wp_cache_get' )->alias( static function ( string $key, string $group ) use ( &$cache ): mixed {
+			return $cache[ $group ][ $key ] ?? false;
+		} );
+		Functions\when( 'wp_cache_set' )->alias( static function ( string $key, mixed $value, string $group ) use ( &$cache ): bool {
+			$cache[ $group ][ $key ] = $value;
+			return true;
+		} );
+		$repository = $this->createMock( TranslationRepositoryInterface::class );
+		$repository->expects( $this->once() )
+			->method( 'find_many' )
+			->with( $this->callback( static function ( array $hashes ) use ( $expected ): bool {
+				return array_keys( $expected ) === array_values( array_intersect( array_keys( $expected ), $hashes ) ) && 2 === count( $hashes );
+			} ), 'en' )
+			->willReturn( $expected );
+		$current = new CurrentLanguage( 'fr' );
+		$current->set( 'en' );
+		$translator = new Translator( $current, new HtmlSegmentExtractor( new PiiFilter() ), $repository, new UrlTranslator( new Settings() ) );
+
+		foreach ( array( 1, 2 ) as $run ) {
+			$output = $translator->translate( $html );
+			$this->assertSame( 0, $translator->missing_count() );
+			$this->assertStringNotContainsString( '</script><script>', $output );
+			$this->assertSame( 1, substr_count( $output, '</script>' ) );
+			$this->assertMatchesRegularExpression( '~<script type="application/ld\+json">(.*?)</script>~s', $output );
+			preg_match( '~<script type="application/ld\+json">(.*?)</script>~s', $output, $matches );
+			$data = json_decode( $matches[1] );
+			$this->assertSame( JSON_ERROR_NONE, json_last_error() );
+			$this->assertSame( 'Product', $data->name );
+			$this->assertSame( 'https://example.test/en/produit#product', $data->{'@id'} );
+			$this->assertSame( 'https://example.test/en/produit', $data->url );
+			$this->assertSame( '19.90', $data->offers->price );
+			$this->assertSame( 'EUR', $data->offers->priceCurrency );
+			$this->assertSame( 'SKU-42', $data->sku );
+			$this->assertSame( '1234567890123', $data->gtin13 );
+			$this->assertStringContainsString( 'Product', $output );
+		}
 	}
 
 	/** @param array<string, string> $translations Existing source-to-target translations. */
