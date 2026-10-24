@@ -269,15 +269,8 @@ else
 	check "SWITCHER_MENU" "$([ "${switcher:-0}" -ge 1 ] && echo 1 || echo 0)" "sélecteur rendu dans le menu : $switcher"
 fi
 
-# --- aucune URL tierce dans le HTML front -------------------------------------
-
-: > "$TMP/external-urls.txt"
-for f in "$TMP/src-01.html" "$TMP/seo-en.html" "$TMP/seo-es.html"; do
-	[ -f "$f" ] || continue
-	grep -oE 'https?://[^"'"'"' <>)]+' "$f" | grep -v "^https\\?://localhost:$PORT" | grep -v "^http://localhost:$PORT" >> "$TMP/external-urls.txt" || true
-done
-ext="$(sort -u "$TMP/external-urls.txt" | grep -v '^$' | tr '\n' ' ')"
-check "AUCUNE_URL_TIERCE" "$([ -z "$ext" ] && echo 1 || echo 0)" "URLS externes: ${ext:-aucune}"
+# Les URL de documentation/schema présentes dans le HTML ne sont pas des
+# ressources chargées. La mesure Playwright, désactivé/activé, suit plus bas.
 
 # --- WooCommerce : pages préfixées + emails -----------------------------------
 
@@ -360,10 +353,27 @@ fi
 
 # --- surcoût d'une page traduite en cache -------------------------------------
 
+PW_DIR="$ROOT/env/recette/tmp/pw"
+if [ ! -d "$PW_DIR/node_modules/playwright" ]; then
+	PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --prefix "$PW_DIR" --no-save --no-package-lock playwright@1.63.0 >/dev/null 2>&1
+fi
+front_resources() {
+	local state="$1" route label
+	for route in recette-v1-01/ en/recette-v1-01/; do
+		label="$(printf '%s' "$route" | tr '/' '_')"
+		OMTR_URL="$BASE/$route" PLAYWRIGHT_MODULE="$PW_DIR/node_modules/playwright" \
+			node "$ROOT/env/recette/front-resources.cjs" > "$TMP/resources-$state-$label.json"
+	done
+}
+front_resources on
+
 note "-- Mesure du surcoût (médiane de 20 requêtes, cache chaud)"
 median_of "$EN_URL" "$TMP/times-en.txt" > "$TMP/median-en.txt"; m_en="$(cat "$TMP/median-en.txt")"
 median_of "$BASE/recette-v1-01/" "$TMP/times-src-on.txt" > "$TMP/median-src-on.txt"; m_src_on="$(cat "$TMP/median-src-on.txt")"
 W plugin deactivate omnium-translate >/dev/null 2>&1
+front_resources off
+resources_diff="$(python3 "$ROOT/env/recette/front-resources-diff.py" "$TMP" 2>&1)" && resources_ok=1 || resources_ok=0
+check "AUCUNE_ORIGINE_TIERCE_AJOUTEE" "$resources_ok" "$resources_diff"
 fetch "$BASE/recette-v1-01/" "$TMP/warm.html" >/dev/null; fetch "$BASE/recette-v1-01/" "$TMP/warm.html" >/dev/null
 median_of "$BASE/recette-v1-01/" "$TMP/times-src-off.txt" > "$TMP/median-src-off.txt"; m_src_off="$(cat "$TMP/median-src-off.txt")"
 overhead="$(awk -v a="${m_en:-0}" -v b="${m_src_off:-0}" 'BEGIN { printf "%.0f", (a - b) * 1000 }')"

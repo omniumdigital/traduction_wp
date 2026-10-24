@@ -21,6 +21,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 ### Modifié
 - WordPress 6.9 minimum (testé jusqu'à 7.1), Action Scheduler 4.2.
 - Dépendance de développement `body-parser` mise à jour vers 1.20.9 après l'avis GHSA-27r3-jxmh-p828.
+- Recette v1 : archive WooCommerce canonique sur Oxygen pour permettre à Rank Math d'émettre le schéma `Product` ; contrôle JSON-LD structuré FR/EN, parcours Playwright admin sur les trois sites et comparaison différentielle des ressources front désactivé/activé.
 
 ### Corrigé
 - Traduction des champs texte JSON-LD Yoast, Rank Math et WooCommerce sur les pages localisées, y compris avec le parseur HTML de PHP 8.1 à 8.3 ; URL internes réécrites, prix et identifiants produit préservés, sortie JSON échappée.
