@@ -25,3 +25,5 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 ### Corrigé
 - Traduction des champs texte JSON-LD Yoast, Rank Math et WooCommerce sur les pages localisées, y compris avec le parseur HTML de PHP 8.1 à 8.3 ; URL internes réécrites, prix et identifiants produit préservés, sortie JSON échappée.
 - Liaison du contrat `TranslationQueueInterface` lorsque WooCommerce initialise la traduction des emails.
+- Désactivation du plugin : l'élément de menu du sélecteur est mis en brouillon (jamais supprimé) pour éviter un lien mort « #omtr-switcher » tant que le plugin est inactif ; il est republié automatiquement à la réactivation.
+- API REST des réglages : acceptation des paramètres de transport `_locale`, `_embed`, `_fields`, `_method`, `_envelope`, `_wpnonce` (échec de `PUT /settings` sinon).

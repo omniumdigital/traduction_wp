@@ -47,6 +47,7 @@ final class UninstallTest extends TestCase {
 		};
 
 		Functions\expect( 'wp_roles' )->atLeast()->once()->andReturn( $marker );
+		Functions\when( 'as_unschedule_all_actions' )->justReturn( null );
 		Functions\stubs(
 			array(
 				'esc_sql' => static fn( string $value ): string => $value,
