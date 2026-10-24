@@ -5,6 +5,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 ## [Non publié]
 
 ### Ajouté
+- Déclenchement de la traduction depuis l’éditeur de blocs (panneau « Traduire cette page ») et une méta-box équivalente dans l’éditeur classique.
+- Édition visuelle privée des traductions en front (option `visual_editor`, désactivée par défaut) : bouton dans la barre d’admin, segments cliquables, enregistrement via l’API REST, réponse jamais mise en cache.
+- Cookie de préférence de langue facultatif (option `pref_cookie`) : `omtr_lang` fonctionnel posé au clic, redirection 302 uniquement pour une arrivée externe sur l’accueil source sans préfixe ; mention ajoutée à la politique de confidentialité.
+- Purge des caches de page après mise à jour des traductions (`clean_post_cache`, LiteSpeed, WP Rocket, hook `omtr_translations_updated`).
 - Backend de l’administration : assistant, réglages, fournisseurs, tableau de bord, traduction complète et import/export JSON sécurisé.
 - Personnalisation du sélecteur et drapeaux alternatifs locaux sous licence MIT ; notice de confidentialité liée au fournisseur choisi.
 - Socle : bootstrap, container, modules, migrations des tables, chiffrement des clés API, capability `omtr_manage`, CI, environnements wp-env.
