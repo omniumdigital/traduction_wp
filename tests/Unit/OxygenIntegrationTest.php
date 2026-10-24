@@ -26,7 +26,6 @@ final class OxygenIntegrationTest extends TestCase {
 			define( 'BREAKDANCE_MODE', 'oxygen' );
 		}
 		$GLOBALS['omtr_oxygen_locations'] = array();
-		$GLOBALS['omtr_oxygen_elements'] = array();
 		require_once dirname( __DIR__, 2 ) . '/src/Switcher/OxygenElement/element.php';
 	}
 
