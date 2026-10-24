@@ -495,7 +495,7 @@ final class Administration {
 		);
 	}
 
-	/** Add an installer's disclosure to the WordPress policy editor. */
+	/** Add the installer's disclosure to the WordPress policy editor. */
 	public function privacy_policy(): void {
 		$provider = $this->providers->get( (string) $this->settings->get( 'provider' ) );
 		if ( null === $provider ) {
@@ -629,6 +629,7 @@ final class Administration {
 			),
 			'noindex_partial'  => $bool,
 			'pref_cookie'      => $bool,
+			'visual_editor'    => $bool,
 			'site_tone'        => array(
 				'type'              => 'string',
 				'maxLength'         => 200,
