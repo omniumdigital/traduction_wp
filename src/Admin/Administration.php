@@ -625,7 +625,7 @@ final class Administration {
 			),
 			'hourly_quota'     => array(
 				'type'              => 'integer',
-				'minimum'           => 0,
+				'minimum'           => 1,
 				'sanitize_callback' => 'absint',
 			),
 			'noindex_partial'  => $bool,

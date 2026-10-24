@@ -38,12 +38,13 @@ final class OnTheFlyTriggerSecurityTest extends TestCase {
 	private array $transients = array();
 
 	private OnTheFlyTrigger $trigger;
+	private OptionStore $options;
 
 	protected function setUp(): void {
 		parent::setUp();
-		$options = new OptionStore();
-		$options->install();
-		$options->data[ Options::SETTINGS ] = array(
+		$this->options = new OptionStore();
+		$this->options->install();
+		$this->options->data[ Options::SETTINGS ] = array(
 			'source_lang'      => 'fr',
 			'target_langs'     => array( 'en' ),
 			'on_the_fly'       => true,
@@ -125,6 +126,7 @@ final class OnTheFlyTriggerSecurityTest extends TestCase {
 		$this->assertSame( array(), $this->queued, 'Nothing may be written or queued during the render.' );
 
 		$this->trigger->flush();
+		$this->assertSame( 3, ( new HourlyQuota( new Settings() ) )->used() );
 
 		$this->assertSame(
 			array(
@@ -135,6 +137,20 @@ final class OnTheFlyTriggerSecurityTest extends TestCase {
 			),
 			$this->queued
 		);
+	}
+
+	public function test_page_exceeding_hourly_quota_is_not_queued(): void {
+		$this->trigger->capture( 11 );
+		$this->trigger->flush();
+		$this->assertSame( array(), $this->queued );
+		$this->assertSame( 0, ( new HourlyQuota( new Settings() ) )->used() );
+	}
+
+	public function test_saved_zero_quota_cannot_enable_unlimited_on_the_fly_work(): void {
+		$this->options->data[ Options::SETTINGS ]['hourly_quota'] = 0;
+		$this->trigger->capture( 101 );
+		$this->trigger->flush();
+		$this->assertSame( array(), $this->queued );
 	}
 
 	public function test_reflected_query_string_never_reaches_the_queue(): void {
