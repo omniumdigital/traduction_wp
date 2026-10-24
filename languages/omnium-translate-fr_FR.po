@@ -125,3 +125,45 @@ msgstr "Le slug traduit est invalide."
 
 msgid "Translated slug set to %s."
 msgstr "Slug traduit défini sur %s."
+
+msgid "Language selector"
+msgstr "Sélecteur de langue"
+
+msgid "Add to Menu"
+msgstr "Ajouter au menu"
+
+msgid "Display links to every configured language."
+msgstr "Affiche des liens vers chaque langue configurée."
+
+msgid "Dropdown"
+msgstr "Menu déroulant"
+
+msgid "Inline"
+msgstr "En ligne"
+
+msgid "Floating"
+msgstr "Flottant"
+
+msgid "Flag and name"
+msgstr "Drapeau et nom"
+
+msgid "Flag only"
+msgstr "Drapeau uniquement"
+
+msgid "Name only"
+msgstr "Nom uniquement"
+
+msgid "Language code"
+msgstr "Code de langue"
+
+msgid "Layout"
+msgstr "Disposition"
+
+msgid "Display"
+msgstr "Affichage"
+
+msgid "Switcher settings"
+msgstr "Réglages du sélecteur"
+
+msgid "Language links are rendered on the published page."
+msgstr "Les liens de langue sont rendus sur la page publiée."
