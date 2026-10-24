@@ -54,6 +54,8 @@ final class SwitcherModule implements ModuleInterface {
 		add_filter( 'walker_nav_menu_start_el', array( $container->get( MenuIntegration::class ), 'filter_item_output' ), 10, 4 );
 		add_action( 'init', array( $container->get( GutenbergBlock::class ), 'register' ) );
 		add_action( 'elementor/widgets/register', array( $container->get( ElementorIntegration::class ), 'register_widget' ) );
-		add_action( 'breakdance_loaded', array( $container->get( OxygenIntegration::class ), 'register_elements' ), 9 );
+		$oxygen = $container->get( OxygenIntegration::class );
+		$oxygen->register_elements();
+		add_action( 'breakdance_loaded', array( $oxygen, 'register_elements' ), 9 );
 	}
 }
