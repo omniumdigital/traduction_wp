@@ -119,6 +119,7 @@ final class JsonLdProcessorTest extends TestCase {
 			$data = json_decode( $matches[1] );
 			$this->assertSame( JSON_ERROR_NONE, json_last_error() );
 			$this->assertSame( 'Product', $data->name );
+			$this->assertSame( 'alert(1)', $data->description );
 			$this->assertSame( 'https://example.test/en/produit#product', $data->{'@id'} );
 			$this->assertSame( 'https://example.test/en/produit', $data->url );
 			$this->assertSame( '19.90', $data->offers->price );
