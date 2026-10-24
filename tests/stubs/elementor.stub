@@ -1,0 +1,23 @@
+<?php
+
+namespace Elementor;
+
+abstract class Widget_Base {
+	/** @param array<string, mixed> $data */
+	public function __construct( array $data = array(), ?array $args = null ) {}
+	/** @param array<string, mixed> $args */
+	protected function start_controls_section( string $id, array $args ): void {}
+	/** @param array<string, mixed> $args */
+	protected function add_control( string $id, array $args ): void {}
+	protected function end_controls_section(): void {}
+	/** @return array<string, mixed> */
+	public function get_settings_for_display(): array {}
+}
+
+final class Controls_Manager {
+	public const SELECT = 'select';
+}
+
+final class Widgets_Manager {
+	public function register( Widget_Base $widget ): void {}
+}

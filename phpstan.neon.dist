@@ -8,6 +8,7 @@ parameters:
         - vendor/woocommerce/action-scheduler/functions.php
         - tests/stubs/dom-html84.stub
         - tests/stubs/wp-cli-utils.stub
+        - tests/stubs/elementor.stub
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
     dynamicConstantNames:

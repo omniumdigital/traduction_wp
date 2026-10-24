@@ -71,6 +71,10 @@ final class QueueModule implements ModuleInterface {
 				$c->get( QueueState::class )
 			)
 		);
+		$container->set(
+			TranslationQueueInterface::class,
+			static fn( Container $c ): TranslationQueueInterface => $c->get( ActionSchedulerQueue::class )
+		);
 
 		$container->set(
 			ScanJob::class,

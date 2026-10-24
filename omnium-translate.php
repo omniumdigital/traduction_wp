@@ -38,6 +38,19 @@ if ( version_compare( PHP_VERSION, OMTR_MIN_PHP, '<' ) || ! extension_loaded( 's
 
 require_once OMTR_DIR . 'vendor/autoload.php';
 
+/**
+ * Return a language switcher for use in theme templates.
+ *
+ * @param array<string, mixed> $args Display options.
+ */
+function omtr_switcher( array $args = array() ): string {
+	$container = \Omnium\Translate\Core\Plugin::instance()->container();
+	if ( ! $container->has( \Omnium\Translate\Switcher\Switcher::class ) ) {
+		return '';
+	}
+	return $container->get( \Omnium\Translate\Switcher\Switcher::class )->render( $args );
+}
+
 \Omnium\Translate\Core\ActionSchedulerLoader::register();
 
 register_activation_hook( __FILE__, array( \Omnium\Translate\Core\Activator::class, 'activate' ) );
