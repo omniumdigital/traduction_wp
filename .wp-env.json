@@ -13,7 +13,7 @@
   "testsEnvironment": false,
   "mappings": {
     "wp-content/plugins/omnium-translate": ".",
-    "wp-content/mu-plugins/omtr-mock-provider.php": "env/recette/mock-provider.php"
+    "wp-content/mu-plugins/omtr-mock-provider.php": "./env/recette/mock-provider.php"
   },
   "lifecycleScripts": {
     "afterStart": "npx wp-env run cli wp plugin activate omnium-translate"
