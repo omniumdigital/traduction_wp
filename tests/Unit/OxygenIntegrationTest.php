@@ -35,7 +35,7 @@ final class OxygenIntegrationTest extends TestCase {
 		$this->assertCount( 1, $GLOBALS['omtr_oxygen_locations'] );
 		$this->assertSame( 'element', $GLOBALS['omtr_oxygen_locations'][0]['type'] );
 		$this->assertSame( 'OmniumTranslate', $GLOBALS['omtr_oxygen_locations'][0]['namespace'] );
-		$this->assertStringEndsWith( '/src/Switcher/OxygenElement', $GLOBALS['omtr_oxygen_locations'][0]['directory_path'] );
+		$this->assertStringEndsWith( '/src/Switcher', $GLOBALS['omtr_oxygen_locations'][0]['directory_path'] );
 	}
 
 	public function test_element_registers_for_oxygen_only(): void {

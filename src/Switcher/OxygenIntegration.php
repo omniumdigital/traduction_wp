@@ -42,7 +42,7 @@ final class OxygenIntegration {
 
 		$plugin_directory = dirname( plugin_basename( OMTR_FILE ) );
 		\Breakdance\ElementStudio\registerSaveLocation(
-			$plugin_directory . '/src/Switcher/OxygenElement',
+			$plugin_directory . '/src/Switcher',
 			'OmniumTranslate',
 			'element',
 			__( 'Omnium Translate', 'omnium-translate' ),
