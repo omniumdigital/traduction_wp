@@ -300,26 +300,14 @@ msgstr "Supprimer"
 msgid "Delete all data on uninstall"
 msgstr "Supprimer toutes les données à la désinstallation"
 
-msgid "Display"
-msgstr "Affichage"
-
 msgid "Export configuration"
 msgstr "Exporter la configuration"
 
 msgid "Filter segments"
 msgstr "Filtrer les segments"
 
-msgid "Flag and name"
-msgstr "Drapeau et nom"
-
-msgid "Flag only"
-msgstr "Drapeau uniquement"
-
 msgid "Flag size"
 msgstr "Taille du drapeau"
-
-msgid "Floating"
-msgstr "Flottant"
 
 msgid "Glossary"
 msgstr "Glossaire"
@@ -330,17 +318,8 @@ msgstr "Quota horaire"
 msgid "Import configuration"
 msgstr "Importer la configuration"
 
-msgid "Inline"
-msgstr "En ligne"
-
 msgid "Language"
 msgstr "Langue"
-
-msgid "Language code"
-msgstr "Code langue"
-
-msgid "Language selector"
-msgstr "Sélecteur de langue"
 
 msgid "Languages and translation"
 msgstr "Langues et traduction"
@@ -363,9 +342,6 @@ msgstr "Modèle"
 msgid "Monthly word cap"
 msgstr "Plafond mensuel de mots"
 
-msgid "Name only"
-msgstr "Nom uniquement"
-
 msgid "Never translate"
 msgstr "Ne jamais traduire"
 
@@ -380,9 +356,6 @@ msgstr "Mettre en pause"
 
 msgid "Provider"
 msgstr "Fournisseur"
-
-msgid "Queue the translation of all these pages?"
-msgstr "Mettre en file la traduction de toutes ces pages ?"
 
 msgid "Recent activity"
 msgstr "Activité récente"
@@ -485,3 +458,29 @@ msgstr "segments"
 
 msgid "words"
 msgstr "mots"
+msgid "The administration interface is not built yet."
+msgstr "L’interface d’administration n’est pas encore compilée."
+
+msgid "API key is valid."
+msgstr "La clé API est valide."
+
+msgid "API key test failed."
+msgstr "Le test de la clé API a échoué."
+
+msgid "Configuration exceeds 1 MB."
+msgstr "La configuration dépasse 1 Mo."
+
+msgid "Invalid administration data."
+msgstr "Les données d’administration sont invalides."
+
+msgid "The provider operation failed."
+msgstr "L’opération du fournisseur a échoué."
+
+msgid "the EU"
+msgstr "l’UE"
+
+msgid "a country outside the EU"
+msgstr "un pays hors de l’UE"
+
+msgid "Omnium Translate sends public page text to %1$s for translation. Processing takes place in %2$s. No visitor account, order or form data is sent."
+msgstr "Omnium Translate envoie le texte des pages publiques à %1$s pour traduction. Le traitement a lieu dans %2$s. Aucune donnée de compte visiteur, de commande ou de formulaire n’est envoyée."

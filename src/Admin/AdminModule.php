@@ -16,12 +16,18 @@ use Omnium\Translate\Queue\PublicContent;
 use Omnium\Translate\Queue\QueueState;
 use Omnium\Translate\Queue\ActionSchedulerQueue;
 use Omnium\Translate\Queue\Crawler;
+use Omnium\Translate\Core\Settings;
+use Omnium\Translate\Providers\ProviderRegistry;
+use Omnium\Translate\Providers\Pricing;
+use Omnium\Translate\Security\ApiKeyStore;
+use Omnium\Translate\Queue\RunLock;
+use Omnium\Translate\Queue\WordCap;
+use Omnium\Translate\Seo\TranslationCoverage;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Settings, wizard, dashboard, segment editor; React UI with @wordpress/components
- * (CLAUDE.md section 9). Every action: capability omtr_manage + nonce. TODO(jalon 3 and 5).
+ * Private administration routes and React page bootstrap.
  */
 final class AdminModule implements ModuleInterface {
 
@@ -31,6 +37,23 @@ final class AdminModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function register( Container $container ): void {
+		$container->set(
+			Administration::class,
+			static fn( Container $c ) => new Administration(
+				$c->get( Settings::class ),
+				$c->get( ProviderRegistry::class ),
+				$c->get( Pricing::class ),
+				$c->get( ApiKeyStore::class ),
+				$c->get( GlossaryRepository::class ),
+				$c->get( ActionSchedulerQueue::class ),
+				$c->get( QueueState::class ),
+				$c->get( RunLock::class ),
+				$c->get( WordCap::class ),
+				$c->get( PublicContent::class ),
+				$c->get( TranslationCoverage::class ),
+				$GLOBALS['wpdb']
+			)
+		);
 		$container->set( SegmentEditorRepository::class, static fn() => new SegmentEditorRepository( $GLOBALS['wpdb'] ) );
 		$container->set(
 			TranslationActions::class,
@@ -59,6 +82,11 @@ final class AdminModule implements ModuleInterface {
 	 * @param Container $container Container.
 	 */
 	public function boot( Container $container ): void {
+		$administration = $container->get( Administration::class );
+		add_action( 'admin_menu', array( $administration, 'menu' ) );
+		add_action( 'admin_enqueue_scripts', array( $administration, 'enqueue' ) );
+		add_action( 'admin_init', array( $administration, 'privacy_policy' ) );
+		add_action( 'rest_api_init', array( $administration, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $container->get( RestController::class ), 'register_routes' ) );
 		add_action( 'rest_api_init', array( $container->get( TriggerController::class ), 'register_routes' ) );
 		$actions = $container->get( TranslationActions::class );
