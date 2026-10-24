@@ -45,11 +45,12 @@ final class HeadTags {
 		}
 
 		$source_url = $this->source_url();
+		$post_id    = is_singular() ? (int) get_queried_object_id() : 0;
 		foreach ( $this->languages() as $language ) {
 			printf(
 				"<link rel=\"alternate\" hreflang=\"%s\" href=\"%s\" />\n",
 				esc_attr( $language ),
-				esc_url( $this->url_translator->translate( $source_url, $language ) )
+				esc_url( $post_id > 0 ? $this->url_translator->translate_post( $post_id, $language ) : $this->url_translator->translate( $source_url, $language ) )
 			);
 		}
 		printf( "<link rel=\"alternate\" hreflang=\"x-default\" href=\"%s\" />\n", esc_url( $source_url ) );
@@ -83,7 +84,8 @@ final class HeadTags {
 	 * Current self-referencing localized URL.
 	 */
 	public function canonical_url(): string {
-		return $this->url_translator->translate( $this->source_url(), $this->current_language->get() );
+		$post_id = is_singular() ? (int) get_queried_object_id() : 0;
+		return $post_id > 0 ? $this->url_translator->translate_post( $post_id, $this->current_language->get() ) : $this->url_translator->translate( $this->source_url(), $this->current_language->get() );
 	}
 
 	/**
