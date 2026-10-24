@@ -48,7 +48,7 @@ final class PromptBuilderTest extends TestCase {
 	}
 
 	/**
-	 * Owner notes never carry URLs or personal data to the provider.
+	 * Owner notes omit absolute URLs and detected personal data.
 	 *
 	 * @group security
 	 */
@@ -60,6 +60,16 @@ final class PromptBuilderTest extends TestCase {
 		$this->assertStringNotContainsString( 'wp-admin', $prompt );
 		$this->assertStringNotContainsString( 'jean.dupont', $prompt );
 		$this->assertStringNotContainsString( 'Site context:', $prompt );
+	}
+
+	/** @group security */
+	public function test_site_notes_drop_relative_admin_paths(): void {
+		$glossary = new Glossary( array(), array(), 'Friendly', 'Bakery notes: /wp-admin/user-edit.php?user_id=7' );
+		$prompt   = $this->builder->system_prompt( 'fr', 'en', $glossary );
+
+		$this->assertStringContainsString( 'Site tone: Friendly', $prompt );
+		$this->assertStringNotContainsString( 'Site context:', $prompt );
+		$this->assertStringNotContainsString( 'user_id=7', $prompt );
 	}
 
 	public function test_system_prompt_contains_glossary_rules(): void {

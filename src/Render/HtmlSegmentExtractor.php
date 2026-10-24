@@ -135,22 +135,22 @@ final class HtmlSegmentExtractor implements SegmentExtractorInterface {
 	/**
 	 * Undo the legacy DOMDocument HTML4 serializer's quirk of entity-encoding
 	 * every non-ASCII character in text nodes created or imported after the
-	 * initial parse (e.g. inserted translations), while leaving the five
-	 * structurally significant XML entities untouched.
+	 * initial parse (e.g. inserted translations). Decode only entities that
+	 * represent a single non-ASCII character: decoding ASCII entities can
+	 * create markup or break quoted attributes after DOM serialization.
 	 *
 	 * @param string $html Serialized HTML.
 	 */
 	private static function decode_spurious_entities( string $html ): string {
-		static $placeholders = array(
-			'&amp;'  => "\x01amp\x01",
-			'&lt;'   => "\x01lt\x01",
-			'&gt;'   => "\x01gt\x01",
-			'&quot;' => "\x01quot\x01",
-			'&#039;' => "\x01apos\x01",
+		$decoded = preg_replace_callback(
+			'/&(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]+);/',
+			static function ( array $matches ): string {
+				$character = html_entity_decode( $matches[0], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				return 1 === preg_match( '/^[^\x00-\x7F]$/u', $character ) ? $character : $matches[0];
+			},
+			$html
 		);
-		$protected           = strtr( $html, $placeholders );
-		$decoded             = html_entity_decode( $protected, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
-		return strtr( $decoded, array_flip( $placeholders ) );
+		return null === $decoded ? $html : $decoded;
 	}
 
 	/**
