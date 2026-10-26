@@ -23,7 +23,11 @@ final class Activator {
 	 */
 	public static function activate(): void {
 		Migrations::maybe_migrate();
-		Capabilities::grant();
+		if ( Capabilities::grant() ) {
+			// Remember the one-shot grant so Plugin::boot() never re-grants
+			// over a deliberate removal (see Capabilities::ensure_granted()).
+			update_option( Options::CAPS_GRANTED, 1, false );
+		}
 		self::publish_switcher_menu_items();
 	}
 

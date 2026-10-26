@@ -7,6 +7,8 @@
 
 namespace Omnium\Translate\Core;
 
+use Omnium\Translate\Security\Capabilities;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -103,6 +105,11 @@ final class Plugin {
 		add_action( 'init', array( $this, 'load_textdomain' ), 1 );
 
 		Migrations::maybe_migrate();
+
+		// "Replace existing" updates skip the activation routine when the
+		// previous version bailed during bootstrap: restore the admin
+		// capability once, unless it was deliberately removed.
+		Capabilities::ensure_granted();
 
 		$modules = $this->modules();
 		foreach ( $modules as $module ) {

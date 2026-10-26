@@ -9,8 +9,11 @@ namespace Omnium\Translate\Tests\Unit;
 use Brain\Monkey\Functions;
 use Omnium\Translate\Core\Activator;
 use Omnium\Translate\Core\Migrations;
+use Omnium\Translate\Core\Options;
+use Omnium\Translate\Security\Capabilities;
 use Omnium\Translate\Switcher\MenuIntegration;
 use Omnium\Translate\Tests\TestCase;
+use Omnium\Translate\Tests\Unit\Doubles\OptionStore;
 
 /** @group security */
 final class ActivatorTest extends TestCase {
@@ -57,5 +60,39 @@ final class ActivatorTest extends TestCase {
 		Activator::activate();
 
 		$this->assertFalse( $updated );
+	}
+
+	/**
+	 * Activation grants the management capability and records the one-shot
+	 * flag so a later boot never re-grants over a deliberate removal.
+	 */
+	public function test_activation_grants_the_capability_and_records_the_flag(): void {
+		$role = new class {
+			/**
+			 * Added capabilities.
+			 *
+			 * @var list<string>
+			 */
+			public array $caps = array();
+
+			/**
+			 * Record a capability addition.
+			 *
+			 * @param string $cap Capability.
+			 */
+			public function add_cap( string $cap ): void {
+				$this->caps[] = $cap;
+			}
+		};
+		Functions\when( 'get_role' )->justReturn( $role );
+		Functions\when( 'get_posts' )->justReturn( array() );
+		$options                     = new OptionStore();
+		$options->data['omtr_db_version'] = Migrations::DB_VERSION;
+		$options->install();
+
+		Activator::activate();
+
+		$this->assertSame( array( Capabilities::MANAGE ), $role->caps );
+		$this->assertSame( 1, $options->data[ Options::CAPS_GRANTED ] );
 	}
 }
