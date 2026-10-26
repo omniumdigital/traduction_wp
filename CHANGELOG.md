@@ -4,6 +4,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.0.2] - 2026-10-26
+
+### Corrigé
+- L’extension ne se désactive plus sur les hébergements où l’extension PHP Sodium est absente : le chiffrement des clés API utilise alors la bibliothèque sodium_compat fournie par WordPress, avec un format de clé identique.
+- Le message d’erreur d’installation indique précisément ce qui manque (version de PHP, chiffrement ou dossier vendor) au lieu d’un message global.
+
 ## [1.0.1] - 2026-10-26
 
 ### Ajouté

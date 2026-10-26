@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,7 +15,7 @@ Omnium Translate traduit le contenu final rendu des pages et stocke les traducti
 
 Les intégrations prises en charge comprennent Gutenberg, Elementor, Oxygen 6 et, en option, WooCommerce. Le sélecteur de langue est disponible sous forme de shortcode, bloc Gutenberg, widget Elementor, élément Oxygen, élément de menu WordPress ou fonction PHP.
 
-Prérequis : WordPress 6.9 ou supérieur, PHP 8.1 ou supérieur et l’extension PHP Sodium. WooCommerce 9.0 à 11.2 est facultatif.
+Prérequis : WordPress 6.9 ou supérieur et PHP 8.1 ou supérieur. Aucune extension PHP à activer : sans l’extension Sodium, la bibliothèque sodium_compat fournie par WordPress prend le relais. WooCommerce 9.0 à 11.2 est facultatif.
 
 Dans l’éditeur WordPress, utilisez le panneau « Traduire cette page » pour mettre une page en file. Un éditeur visuel facultatif permet aux utilisateurs autorisés de corriger les segments traduits directement sur la page. La traduction à la volée est protégée par un quota de 100 segments par heure par défaut, réglable dans les paramètres.
 
@@ -78,6 +78,10 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.0.2 =
+* L’extension fonctionne sans l’extension PHP Sodium, grâce à la bibliothèque sodium_compat fournie par WordPress : plus rien à activer côté serveur.
+* Le message d’erreur d’installation indique précisément ce qui manque (version de PHP, chiffrement ou dossier vendor).
 
 = 1.0.1 =
 * Contrôle qualité des réponses IA (variables, URL, balises et glossaire conservés) avec nouvel essai automatique.

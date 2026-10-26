@@ -14,6 +14,9 @@ defined( 'ABSPATH' ) || exit;
  *
  * Key: OMTR_ENCRYPTION_KEY from wp-config.php if defined, otherwise derived from
  * AUTH_KEY + SECURE_AUTH_SALT. Changing those constants makes stored keys unreadable.
+ *
+ * Works with the native sodium extension or WordPress's bundled sodium_compat
+ * polyfill; both produce the same payloads, so stored keys stay readable either way.
  */
 final class Crypto {
 
@@ -30,7 +33,7 @@ final class Crypto {
 		$key    = $this->key();
 		$nonce  = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 		$cipher = sodium_crypto_secretbox( $plaintext, $nonce, $key );
-		sodium_memzero( $key );
+		self::wipe( $key );
 
 		return self::PREFIX . base64_encode( $nonce . $cipher ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- binary storage encoding, not obfuscation.
 	}
@@ -53,9 +56,26 @@ final class Crypto {
 		$cipher = substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 		$key    = $this->key();
 		$plain  = sodium_crypto_secretbox_open( $cipher, $nonce, $key );
-		sodium_memzero( $key );
+		self::wipe( $key );
 
 		return false === $plain ? null : $plain;
+	}
+
+	/**
+	 * Best-effort wipe of key material.
+	 *
+	 * The sodium_compat polyfill throws from sodium_memzero() because pure PHP
+	 * cannot securely wipe memory, so that path only overwrites the variable.
+	 *
+	 * @param string $secret Secret to wipe, passed by reference.
+	 * @param-out string|null $secret
+	 */
+	private static function wipe( string &$secret ): void {
+		if ( extension_loaded( 'sodium' ) ) {
+			sodium_memzero( $secret );
+			return;
+		}
+		$secret = str_repeat( "\0", strlen( $secret ) );
 	}
 
 	/**

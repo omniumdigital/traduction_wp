@@ -28,9 +28,11 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8.1",
-        "ext-sodium": "*",
         "woocommerce/action-scheduler": "^4.2",
         "yahnis-elsts/plugin-update-checker": "^5.7"
+    },
+    "suggest": {
+        "ext-sodium": "Faster native encryption of API keys; WordPress sodium_compat is used otherwise."
     },
     "require-dev": {
         "brain/monkey": "^2.7",
