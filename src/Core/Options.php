@@ -27,6 +27,8 @@ final class Options {
 	public const QUEUE_PAUSED       = 'omtr_queue_paused';
 	public const WIZARD_DONE        = 'omtr_wizard_done';
 	public const COVERAGE_VERSION   = 'omtr_coverage_version';
+	public const WORDS_TRANSLATED   = 'omtr_words_translated';
+	public const CAPS_GRANTED       = 'omtr_caps_granted';
 
 	/**
 	 * All option names.
@@ -48,6 +50,8 @@ final class Options {
 			self::QUEUE_PAUSED,
 			self::WIZARD_DONE,
 			self::COVERAGE_VERSION,
+			self::WORDS_TRANSLATED,
+			self::CAPS_GRANTED,
 		);
 	}
 }
