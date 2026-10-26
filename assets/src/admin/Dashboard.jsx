@@ -1,16 +1,31 @@
 import { Button, Card, CardBody, Notice } from "@wordpress/components";
 import { __, sprintf } from "@wordpress/i18n";
-import { useEffect, useState } from "@wordpress/element";
+import { useCallback, useEffect, useState } from "@wordpress/element";
 import { Loading } from "./common";
+
+const REFRESH_MS = 5000;
 
 export function Dashboard({ request }) {
 	const [dashboard, setDashboard] = useState(null);
 	const [estimate, setEstimate] = useState(null);
-	useEffect(() => {
-		request({ path: "/dashboard" })
-			.then(setDashboard)
-			.catch(() => {});
+	const [retried, setRetried] = useState(null);
+	const refresh = useCallback(async () => {
+		try {
+			setDashboard(await request({ path: "/dashboard" }));
+		} catch (_) {}
 	}, [request]);
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
+	const busy = Boolean(
+		dashboard && !estimate && ((dashboard.queue?.pending || 0) > 0 || dashboard.queue?.running),
+	);
+	// Live follow-up: poll while a run is outstanding, stop when idle.
+	useEffect(() => {
+		if (!busy) return undefined;
+		const timer = setInterval(refresh, REFRESH_MS);
+		return () => clearInterval(timer);
+	}, [busy, refresh]);
 	const translateAll = async () => {
 		try {
 			setEstimate(await request({ path: "/estimate", method: "POST", data: { all: true } }));
@@ -21,14 +36,35 @@ export function Dashboard({ request }) {
 		try {
 			await request({ path: "/translate/all", method: "POST" });
 			setEstimate(null);
-			setDashboard(await request({ path: "/dashboard" }));
+			await refresh();
 		} catch (_) {
 			setEstimate(null);
 		}
 	};
+	const retryFailed = async () => {
+		try {
+			const response = await request({ path: "/translations/retry", method: "POST" });
+			setRetried(response?.retried || 0);
+			await refresh();
+		} catch (_) {}
+	};
 	if (!dashboard) return <Loading />;
 	return (
 		<div className="omtr-dashboard">
+			{busy && (
+				<Notice status="info" isDismissible={false} className="omtr-live">
+					<span className="omtr-live__dot" aria-hidden="true" />
+					{__("Translation in progress…", "omnium-translate")}{" "}
+					{sprintf(
+						__("%d tasks pending (%d translation batches).", "omnium-translate"),
+						dashboard.queue?.pending || 0,
+						dashboard.queue?.batches || 0,
+					)}
+					{dashboard.queue?.last_activity && (
+						<> {sprintf(__("Last activity: %s", "omnium-translate"), dashboard.queue.last_activity)}</>
+					)}
+				</Notice>
+			)}
 			<div className="omtr-card-grid">
 				{(dashboard.languages || []).map((language) => (
 					<Card key={language.code}>
@@ -36,6 +72,20 @@ export function Dashboard({ request }) {
 							<span>{language.code.toUpperCase()}</span>
 							<strong className="omtr-stat">{language.coverage}%</strong>
 							<small>{__("coverage", "omnium-translate")}</small>
+							<div
+								className="omtr-progress"
+								role="progressbar"
+								aria-valuemin={0}
+								aria-valuemax={100}
+								aria-valuenow={language.coverage}
+								aria-label={sprintf(
+									__("%s coverage: %d%%", "omnium-translate"),
+									language.code.toUpperCase(),
+									language.coverage,
+								)}
+							>
+								<div style={{ width: `${Math.max(0, Math.min(100, language.coverage))}%` }} />
+							</div>
 						</CardBody>
 					</Card>
 				))}
@@ -70,7 +120,7 @@ export function Dashboard({ request }) {
 					<Button
 						onClick={async () => {
 							await request({ path: `/queue/${dashboard.queue?.paused ? "resume" : "pause"}`, method: "POST" });
-							setDashboard(await request({ path: "/dashboard" }));
+							await refresh();
 						}}
 					>
 						{dashboard.queue?.paused ? __("Resume", "omnium-translate") : __("Pause", "omnium-translate")}
@@ -78,12 +128,24 @@ export function Dashboard({ request }) {
 				</CardBody>
 			</Card>
 			{Boolean(dashboard.segments?.failed) && (
-				<Notice status="warning" isDismissible={false}>
+				<Notice
+					status="warning"
+					isDismissible={false}
+					actions={[{ label: __("Retry failed segments", "omnium-translate"), onClick: retryFailed }]}
+				>
 					{sprintf(__("%d segments failed.", "omnium-translate"), dashboard.segments.failed)}{" "}
+					{dashboard.failures?.reason?.message && (
+						<> {sprintf(__("Last error: %s", "omnium-translate"), dashboard.failures.reason.message)}</>
+					)}{" "}
 					{__(
-						"“Translate the whole site” will retry them without charging again for already translated content.",
+						"Retrying only resends what failed, already translated content is never paid twice.",
 						"omnium-translate",
 					)}
+				</Notice>
+			)}
+			{retried !== null && (
+				<Notice status="success" onDismiss={() => setRetried(null)}>
+					{sprintf(__("%d segments queued for retry.", "omnium-translate"), retried)}
 				</Notice>
 			)}
 			<div className="omtr-actions">

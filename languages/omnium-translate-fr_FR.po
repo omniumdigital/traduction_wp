@@ -450,6 +450,30 @@ msgstr "Variante"
 msgid "Words translated this month"
 msgstr "Mots traduits ce mois-ci"
 
+msgid "Translation in progress…"
+msgstr "Traduction en cours…"
+
+msgid "%d tasks pending (%d translation batches)."
+msgstr "%d tâches en file (%d lots de traduction)."
+
+msgid "Last activity: %s"
+msgstr "Dernière activité : %s"
+
+msgid "%s coverage: %d%%"
+msgstr "Couverture %s : %d %%"
+
+msgid "Retry failed segments"
+msgstr "Relancer les segments en échec"
+
+msgid "Last error: %s"
+msgstr "Dernière erreur : %s"
+
+msgid "Retrying only resends what failed, already translated content is never paid twice."
+msgstr "La relance ne renvoie que ce qui a échoué : le contenu déjà traduit n’est jamais payé deux fois."
+
+msgid "%d segments queued for retry."
+msgstr "%d segments remis en file pour une nouvelle tentative."
+
 msgid "%d words in total since installation"
 msgstr "%d mots au total depuis l’installation"
 

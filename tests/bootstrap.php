@@ -35,6 +35,10 @@ if ( ! class_exists( 'wpdb' ) ) {
 			return null;
 		}
 
+		public function get_col( string $query ): array {
+			return array();
+		}
+
 		public function esc_like( string $text ): string {
 			return addcslashes( $text, '_%\\' );
 		}
@@ -67,6 +71,11 @@ if ( ! class_exists( 'WP_Error' ) ) {
 	final class WP_Error {
 
 		/**
+		 * Error code.
+		 */
+		private string $code = '';
+
+		/**
 		 * Error messages.
 		 *
 		 * @var list<string>
@@ -74,15 +83,44 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		public array $errors = array();
 
 		/**
+		 * Error data.
+		 */
+		private mixed $error_data = null;
+
+		/**
 		 * Constructor.
 		 *
+		 * @param string $code    Error code.
 		 * @param string $message Error message.
+		 * @param mixed  $data    Error data (e.g. REST status).
 		 */
-		public function __construct( string $message = '', string $code = '', mixed $data = null ) {
-			unset( $code, $data );
+		public function __construct( string $code = '', string $message = '', mixed $data = null ) {
+			$this->code       = $code;
+			$this->error_data = $data;
 			if ( '' !== $message ) {
 				$this->errors[] = $message;
 			}
+		}
+
+		/**
+		 * Error code.
+		 */
+		public function get_error_code(): string {
+			return $this->code;
+		}
+
+		/**
+		 * First error message.
+		 */
+		public function get_error_message(): string {
+			return $this->errors[0] ?? '';
+		}
+
+		/**
+		 * Error data.
+		 */
+		public function get_error_data(): mixed {
+			return $this->error_data;
 		}
 	}
 }

@@ -77,7 +77,7 @@ final class AdministrationSecurityTest extends TestCase {
 	public function test_all_routes_require_manage_capability(): void {
 		Functions\when( 'current_user_can' )->justReturn( false );
 		$this->api()->register_routes();
-		$this->assertCount( 9, $this->routes );
+		$this->assertCount( 10, $this->routes );
 		foreach ( $this->routes as $route ) {
 			foreach ( $route['args'] as $endpoint ) {
 				$this->assertSame( array( Capabilities::class, 'rest_permission' ), $endpoint['permission_callback'] );

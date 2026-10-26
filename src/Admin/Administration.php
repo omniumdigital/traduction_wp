@@ -176,6 +176,7 @@ final class Administration {
 			'/providers/(?P<id>[a-z]+?)/test' => array( array( 'POST', 'test_key', array( 'id' => $this->provider_arg() ) ) ),
 			'/dashboard'                      => array( array( 'GET', 'dashboard', array() ) ),
 			'/translate/all'                  => array( array( 'POST', 'translate_all', array() ) ),
+			'/translations/retry'             => array( array( 'POST', 'retry_failed', array() ) ),
 			'/wizard/complete'                => array(
 				array(
 					'POST',
@@ -415,15 +416,28 @@ final class Administration {
 				$counts[ $row['status'] ] = (int) $row['count'];
 			}
 		}
-		$log_table = Tables::name( Tables::LOG );
-		$log       = $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT level, context, message, created_at FROM %i ORDER BY created_at DESC LIMIT %d', $log_table, 20 ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared identifier.
+		$log_table  = Tables::name( Tables::LOG );
+		$log        = $this->wpdb->get_results( $this->wpdb->prepare( 'SELECT level, context, message, created_at FROM %i ORDER BY created_at DESC LIMIT %d', $log_table, 20 ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared identifier.
+		$log        = $log ? $log : array();
+		$last_error = null;
+		foreach ( $log as $entry ) {
+			if ( 'error' === (string) $entry['level'] ) {
+				$last_error = array(
+					'message'    => (string) $entry['message'],
+					'created_at' => (string) $entry['created_at'],
+				);
+				break;
+			}
+		}
 		return new \WP_REST_Response(
 			array(
 				'languages' => $langs,
 				'queue'     => array(
-					'paused'  => $this->state->is_paused(),
-					'running' => $this->lock->is_held(),
-					'pending' => $this->queue->pending_work_count(),
+					'paused'        => $this->state->is_paused(),
+					'running'       => $this->lock->is_held(),
+					'pending'       => $this->queue->pending_work_count(),
+					'batches'       => $this->queue->pending_batch_count(),
+					'last_activity' => isset( $log[0]['created_at'] ) ? (string) $log[0]['created_at'] : null,
 				),
 				'words'     => array(
 					'used'             => $this->words->used(),
@@ -432,7 +446,11 @@ final class Administration {
 					'translated_total' => $this->words->translated_total(),
 				),
 				'segments'  => $counts,
-				'log'       => $log ? $log : array(),
+				'failures'  => array(
+					'count'  => $counts['failed'],
+					'reason' => $last_error,
+				),
+				'log'       => $log,
 			)
 		);
 	}
@@ -450,6 +468,46 @@ final class Administration {
 			),
 			202
 		);
+	}
+
+	/**
+	 * Re-queue every failed segment for its target language.
+	 *
+	 * Failed rows keep the (segment, language) pair, so the retry is scoped
+	 * per language: only what actually failed goes back to the provider,
+	 * nothing already translated is paid twice.
+	 */
+	public function retry_failed(): \WP_REST_Response|\WP_Error {
+		if ( ! $this->queue->provider_is_ready() ) {
+			return new \WP_Error( 'omtr_enqueue_refused', $this->queue->last_reason(), array( 'status' => 409 ) );
+		}
+		$retried = 0;
+		foreach ( $this->settings->target_langs() as $lang ) {
+			$ids = $this->failed_segment_ids( $lang );
+			if ( array() === $ids ) {
+				continue;
+			}
+			$this->queue->enqueue_segments( $ids, $lang );
+			$retried += count( $ids );
+		}
+		return new \WP_REST_Response( array( 'retried' => $retried ), 202 );
+	}
+
+	/**
+	 * Segment ids whose latest translation is marked failed for a language.
+	 *
+	 * @param string $target_lang Target language code.
+	 * @return list<int>
+	 */
+	private function failed_segment_ids( string $target_lang ): array {
+		$sql  = $this->wpdb->prepare(
+			'SELECT DISTINCT segment_id FROM %i WHERE target_lang = %s AND status = %s',
+			Tables::name( Tables::TRANSLATIONS ),
+			$target_lang,
+			'failed'
+		);
+		$rows = $this->wpdb->get_col( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
+		return array_values( array_filter( array_map( 'intval', (array) $rows ) ) );
 	}
 
 	/** Mark wizard complete and optionally add a menu marker.
