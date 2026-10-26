@@ -11,6 +11,7 @@ use Omnium\Translate\Core\LoggerInterface;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Core\TranslationCachePurger;
 use Omnium\Translate\Glossary\GlossaryService;
+use Omnium\Translate\Providers\ErrorClassifier;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderInterface;
 use Omnium\Translate\Providers\TranslationQualityValidator;
@@ -117,6 +118,31 @@ final class BatchJob {
 		}
 
 		$glossary = $this->glossary->for_language( $lang );
+
+		// A segment longer than one provider request can carry would fail the
+		// whole batch with an unretryable rejection: exclude it upfront and
+		// mark it failed with an explicit reason instead.
+		$max_chars = max( 1, $provider->limits()->max_batch_chars );
+		$oversized = array_filter(
+			$pending,
+			static fn( string $text ): bool => strlen( $text ) > $max_chars
+		);
+		if ( array() !== $oversized ) {
+			foreach ( array_keys( $oversized ) as $hash ) {
+				$this->logger->log(
+					'error',
+					'queue:batch',
+					sprintf( 'Segment skipped: too long for a single request (%d chars, max %d).', strlen( $oversized[ $hash ] ), $max_chars )
+				);
+			}
+			$this->mark_failed_by_hash( array_keys( $oversized ), $segments, $lang );
+			$pending = array_diff_key( $pending, $oversized );
+			if ( array() === $pending ) {
+				$this->queue->settle_run( $run_id, true );
+				return;
+			}
+		}
+
 		try {
 			$translated = $provider->translate_batch( $pending, $this->settings->source_lang(), $lang, $glossary );
 		} catch ( ProviderException $e ) {
@@ -184,10 +210,27 @@ final class BatchJob {
 			return;
 		}
 
+		// A batch rejected as too large is split in half and each half is
+		// retried: this isolates the oversized segment instead of failing
+		// its 50 neighbours on every manual retry.
+		if ( ErrorClassifier::TOO_LARGE === $e->getMessage() && count( $segments ) > 1 && $attempt < ActionSchedulerQueue::MAX_ATTEMPTS ) {
+			$chunks = array_chunk( $segments, (int) ceil( count( $segments ) / 2 ), true );
+			$this->logger->log(
+				'warning',
+				'queue:batch',
+				sprintf( 'Batch rejected as too large: split into %d halves and rescheduled (http=%d, segments=%d).', count( $chunks ), $e->http_code, count( $segments ) )
+			);
+			foreach ( $chunks as $chunk ) {
+				$this->queue->schedule_batch( $chunk, $lang, $run_id, $attempt + 1, 0, $post_id );
+			}
+			$this->queue->settle_run( $run_id, true );
+			return;
+		}
+
 		$this->logger->log(
 			'error',
 			'queue:batch',
-			sprintf( 'Batch failed after %d attempt(s) (http=%d).', $attempt, $e->http_code )
+			sprintf( 'Batch failed after %d attempt(s) (http=%d): %s', $attempt, $e->http_code, $e->getMessage() )
 		);
 		$this->mark_failed( $pending, $segments, $lang );
 		$this->queue->settle_run( $run_id, true );

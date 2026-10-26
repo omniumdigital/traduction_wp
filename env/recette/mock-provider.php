@@ -88,6 +88,23 @@ add_filter(
 			if ( ! is_array( $segments ) ) {
 				return new WP_Error( 'omtr_mock_bad_segments', 'Invalid mock segments.' );
 			}
+
+			// Simulate a provider plan whose real input limit is lower than
+			// the plugin's conservative batch budget: any batch over 8000
+			// source characters is rejected with HTTP 400 "too large".
+			$total_chars = 0;
+			foreach ( $segments as $source ) {
+				$total_chars += strlen( (string) $source );
+			}
+			if ( $total_chars > 8000 ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode( array( 'object' => 'error', 'message' => 'Request too large: input tokens exceed the model limit', 'type' => 'invalid_request_error' ) ),
+					'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
 			$target = preg_match( '/into language "([a-z-]+)"/i', $system, $target_match ) ? strtolower( $target_match[1] ) : 'en';
 			$words  = str_starts_with( $target, 'es' )
 				? array(

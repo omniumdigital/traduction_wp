@@ -40,6 +40,7 @@ final class ActionSchedulerQueueTest extends TestCase {
 	private ActionSchedulerQueue $queue;
 	private QueueState $state;
 	private ApiKeyStore $keys;
+	private RunLock $lock;
 	private int $sequence = 0;
 
 	/**
@@ -84,7 +85,7 @@ final class ActionSchedulerQueueTest extends TestCase {
 
 		$this->queue = new ActionSchedulerQueue(
 			new Settings(),
-			new RunLock(),
+			$this->lock = new RunLock(),
 			new WordCap( new Settings() ),
 			new HourlyQuota( new Settings() ),
 			$registry,
@@ -242,6 +243,27 @@ final class ActionSchedulerQueueTest extends TestCase {
 	public function test_enqueue_url_with_key_for_active_provider_still_schedules(): void {
 		$this->assertTrue( $this->queue->enqueue_url( 'https://example.test/page/', 42 ) );
 		$this->assertCount( 1, $this->scheduled );
+	}
+
+	/** A lock left behind by a fatal (nothing pending any more) is released instead of blocking new runs. */
+	public function test_dead_run_lock_is_released_when_nothing_is_pending(): void {
+		// First run acquires the lock and finishes cleanly.
+		$this->assertTrue( $this->queue->enqueue_url( 'https://example.test/page/', 42 ) );
+		$run = $this->options->data[ Options::TRANSLATION_LOCK ]['run'];
+		$this->queue->settle_run( $run, false );
+
+		// Simulate the aftermath of a fatal: lock re-acquired, queue empty.
+		$this->lock->acquire( 'dead-run' );
+		$this->scheduled = array();
+		Functions\when( 'as_get_scheduled_actions' )->justReturn( array() );
+
+		$this->assertTrue( $this->queue->enqueue_url( 'https://example.test/page/', 42 ) );
+		$this->assertStringContainsString( 'Released a dead translation run lock', $this->logger->joined() );
+
+		// A live run is still protected: with pending work the refusal stands.
+		Functions\when( 'as_get_scheduled_actions' )->justReturn( array( 1 ) );
+		$this->assertFalse( $this->queue->enqueue_url( 'https://example.test/third/', 44 ) );
+		$this->assertStringContainsString( 'already in progress', $this->queue->last_reason() );
 	}
 
 	public function test_enqueue_segments_resolves_ids_and_skips_translated(): void {

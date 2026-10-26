@@ -9,6 +9,7 @@ namespace Omnium\Translate\Providers\OpenAI;
 
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\Glossary;
+use Omnium\Translate\Providers\ErrorClassifier;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderInterface;
 use Omnium\Translate\Providers\PromptBuilder;
@@ -238,7 +239,8 @@ final class OpenAIProvider implements ProviderInterface {
 			throw $exception;
 		}
 		if ( 200 !== $code ) {
-			$exception = new ProviderException( 'The provider returned an HTTP error.', $code, false );
+			// Fixed local classification only: the raw body is untrusted and never stored.
+			$exception = new ProviderException( ErrorClassifier::classify( (string) wp_remote_retrieve_body( $response ), $code ), $code, false );
 			throw $exception;
 		}
 
