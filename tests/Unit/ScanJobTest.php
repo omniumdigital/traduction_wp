@@ -15,6 +15,7 @@ use Omnium\Translate\Queue\HourlyQuota;
 use Omnium\Translate\Queue\RunLock;
 use Omnium\Translate\Queue\ScanJob;
 use Omnium\Translate\Queue\WordCap;
+use Omnium\Translate\Store\SegmentKey;
 use Omnium\Translate\Tests\TestCase;
 use Omnium\Translate\Tests\Unit\Doubles\FakeProvider;
 use Omnium\Translate\Tests\Unit\Doubles\FakeSegmentExtractor;
@@ -86,6 +87,7 @@ final class ScanJobTest extends TestCase {
 		Functions\when( 'home_url' )->justReturn( 'https://example.test' );
 		Functions\when( 'wp_parse_url' )->alias( 'parse_url' );
 		Functions\when( 'wp_generate_uuid4' )->justReturn( 'run-uuid' );
+		Functions\when( 'get_the_title' )->justReturn( '' );
 		Functions\when( 'is_wp_error' )->alias(
 			static fn( $thing ) => $thing instanceof \WP_Error
 		);
@@ -284,5 +286,71 @@ final class ScanJobTest extends TestCase {
 		$this->job->handle( 'https://example.test/page/', 7, 'run-uuid' );
 
 		$this->assertSame( 'fr', $this->extractor->received_lang );
+	}
+
+	/**
+	 * The raw title often never appears in the rendered HTML (hidden
+	 * Elementor headings): it is registered as a regular page segment so it
+	 * is translated in context and can feed the translated slug.
+	 */
+	public function test_scan_registers_the_post_title_as_a_regular_segment(): void {
+		$received   = 0;
+		$test       = $this;
+		Functions\when( 'get_the_title' )->alias(
+			static function ( $post ) use ( &$received, $test ): string {
+				++$received;
+				$test->assertSame( 7, $post );
+				return 'À propos';
+			}
+		);
+		$this->hold_lock();
+
+		$this->job->handle( 'https://example.test/page/', 7, 'run-uuid' );
+
+		$hash = SegmentKey::hash( 'fr', SegmentKey::normalize( 'À propos' ) );
+		$this->assertSame( array( $hash => 'À propos' ), $this->segments->upserts[0]['segments'] );
+		$this->assertSame( 'fr', $this->segments->upserts[0]['source_lang'] );
+		// One batch per language, like any HTML segment.
+		$this->assertCount( 2, $this->batches );
+		$this->assertSame( array( 'en', 'es' ), array_column( $this->batches, 'lang' ) );
+		// Word caps and quotas apply to the title segment ('À propos' = 2 words x 2 languages).
+		$this->assertSame( 4, $this->word_cap->used() );
+		$this->assertSame( 1, $received );
+	}
+
+	/** A title without any letter or digit carries no translatable content. */
+	public function test_scan_ignores_titles_without_letters_or_digits(): void {
+		Functions\when( 'get_the_title' )->justReturn( '—' );
+		$this->hold_lock();
+
+		$this->job->handle( 'https://example.test/page/', 7, 'run-uuid' );
+
+		$this->assertCount( 0, $this->segments->upserts );
+		$this->assertCount( 0, $this->batches );
+		$this->assertStringContainsString( 'no translatable segment', $this->logger->joined() );
+	}
+
+	/** A title containing personal data is never sent to a provider. */
+	public function test_scan_ignores_titles_flagged_by_the_pii_filter(): void {
+		Functions\when( 'get_the_title' )->justReturn( 'Contact : john.doe@example.com' );
+		$this->hold_lock();
+
+		$this->job->handle( 'https://example.test/page/', 7, 'run-uuid' );
+
+		$this->assertCount( 0, $this->segments->upserts );
+		$this->assertCount( 0, $this->batches );
+	}
+
+	/** A title already extracted from the HTML is only registered once. */
+	public function test_scan_does_not_duplicate_a_title_already_extracted_from_html(): void {
+		$hash = SegmentKey::hash( 'fr', SegmentKey::normalize( 'À propos' ) );
+		Functions\when( 'get_the_title' )->justReturn( 'À propos' );
+		$this->extractor->segments = array( $hash => 'À propos' );
+		$this->hold_lock();
+
+		$this->job->handle( 'https://example.test/page/', 7, 'run-uuid' );
+
+		$this->assertCount( 1, $this->segments->upserts[0]['segments'] );
+		$this->assertSame( 4, $this->word_cap->used() );
 	}
 }
