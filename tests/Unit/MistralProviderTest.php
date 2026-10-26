@@ -11,6 +11,7 @@ use Brain\Monkey\Functions;
 use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\Glossary;
+use Omnium\Translate\Providers\ErrorClassifier;
 use Omnium\Translate\Providers\Mistral\MistralProvider;
 use Omnium\Translate\Providers\PromptBuilder;
 use Omnium\Translate\Providers\ProviderException;
@@ -235,6 +236,22 @@ final class MistralProviderTest extends TestCase {
 		} catch ( ProviderException $e ) {
 			$this->assertFalse( $e->retryable );
 			$this->assertSame( 401, $e->http_code );
+		}
+	}
+
+	/** A 400 "too large" rejection surfaces the fixed classification, never the raw body. */
+	public function test_http_400_too_large_is_classified_without_leaking_the_body(): void {
+		$provider = $this->make_provider();
+		$this->stub_http( array( array( 'code' => 400, 'body' => '{"object":"error","message":"Request too large: input is too long","type":"invalid_request_error"}' ) ) );
+
+		try {
+			$provider->translate_batch( array( 'hash-1' => 'Hello' ), 'fr', 'en', new Glossary() );
+			$this->fail( 'Expected ProviderException.' );
+		} catch ( ProviderException $e ) {
+			$this->assertFalse( $e->retryable );
+			$this->assertSame( 400, $e->http_code );
+			$this->assertSame( ErrorClassifier::TOO_LARGE, $e->getMessage() );
+			$this->assertStringNotContainsString( 'Request too large: input is too long', $e->getMessage() );
 		}
 	}
 

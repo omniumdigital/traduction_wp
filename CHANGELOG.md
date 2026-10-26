@@ -4,6 +4,18 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.1.1] - 2026-10-26
+
+### Corrigé
+- Erreurs de lots enfin explicites : les réponses d’erreur des fournisseurs sont classifiées en motifs fixes et lisibles (taille dépassée, modèle inconnu, format refusé, clé refusée), repris dans le journal et le bandeau d’échec du tableau de bord — le message brut du fournisseur, non fiable, n’est jamais stocké ni affiché.
+- Un lot rejeté comme trop grand (HTTP 400) est scindé en deux moitiés réessayées automatiquement jusqu’à isolation du segment responsable : ses voisins ne sont plus condamnés à échouer à chaque relance manuelle.
+- Un segment plus long qu’une requête unique est écarté avant l’appel au fournisseur, marqué en échec avec un motif explicite et décompté correctement.
+- Verrou de traduction auto-réparé : un run interrompu brutalement (erreur fatale) ne bloque plus les lancements suivants pendant trois heures ; le verrou est libéré dès qu’aucun travail ne reste en file.
+- Sous-espaces de noms : `ErrorClassifier` correctement importé dans les quatre fournisseurs (une référence non qualifiée provoquait une erreur fatale sur les lots en échec HTTP).
+
+### Ajouté
+- `Providers\ErrorClassifier` : classification locale des erreurs fournisseurs, avec tests unitaires couvrant chaque motif et l’absence de fuite du corps de réponse.
+
 ## [1.1.0] - 2026-10-26
 
 ### Ajouté

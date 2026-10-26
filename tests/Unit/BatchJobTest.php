@@ -12,6 +12,7 @@ use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\GlossaryRepository;
 use Omnium\Translate\Glossary\GlossaryService;
+use Omnium\Translate\Providers\ErrorClassifier;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Queue\ActionSchedulerQueue;
@@ -221,10 +222,55 @@ final class BatchJobTest extends TestCase {
 		);
 		Functions\when( 'wp_kses' )->returnArg();
 
-		$this->job->handle( array( 1 => 'hash-a', 2 => 'hash-b' ), 'en', '', 1 );
+			$this->job->handle( array( 1 => 'hash-a', 2 => 'hash-b' ), 'en', '', 1 );
 
 		$this->assertCount( 1, $this->translations->autos );
 		$this->assertSame( 3, $this->word_cap->translated_this_month() );
 		$this->assertSame( 3, $this->word_cap->translated_total() );
+	}
+
+	/** A segment longer than one request can carry never reaches the provider: it is marked failed with an explicit reason. */
+	public function test_oversized_segment_is_skipped_locally_without_provider_call(): void {
+		$this->segments->seed( 'hash-big', str_repeat( 'mot ', 4000 ) );
+		$this->provider->response = array( 'hash-big' => 'never used' );
+
+		$this->job->handle( array( 2 => 'hash-big' ), 'en', '', 1 );
+
+		$this->assertCount( 0, $this->provider->calls );
+		$this->assertStringContainsString( 'too long for a single request', $this->logger->joined() );
+		$this->assertContains( 2, $this->translations->failures[0]['ids'] );
+		$this->assertSame( 0, $this->word_cap->translated_total() );
+	}
+
+	/** A batch rejected as too large is split in half and rescheduled, never blanket-failed. */
+	public function test_too_large_batch_is_split_and_rescheduled(): void {
+		$this->segments->seed( 'hash-b', 'Texte B' );
+		$this->segments->seed( 'hash-c', 'Texte C' );
+		$this->segments->seed( 'hash-d', 'Texte D' );
+		$this->provider->exception = new ProviderException( ErrorClassifier::TOO_LARGE, 400, false );
+
+		$this->job->handle( array( 1 => 'hash-a', 2 => 'hash-b', 3 => 'hash-c', 4 => 'hash-d' ), 'en', '', 1 );
+
+		$this->assertStringContainsString( 'split into 2 halves', $this->logger->joined() );
+		$batches = array_values(
+			array_filter(
+				$this->scheduled,
+				static fn( array $action ): bool => 'omtr_translate_batch' === $action['hook']
+			)
+		);
+		$this->assertCount( 2, $batches );
+		$this->assertCount( 2, $batches[0]['segments'] );
+		$this->assertCount( 2, $batches[1]['segments'] );
+		$this->assertSame( array(), $this->translations->failures );
+	}
+
+	/** Once the split isolates a single segment it is failed with the classified reason, ending the loop. */
+	public function test_single_segment_too_large_is_failed_with_reason(): void {
+		$this->provider->exception = new ProviderException( ErrorClassifier::TOO_LARGE, 400, false );
+
+		$this->job->handle( array( 1 => 'hash-a' ), 'en', '', 1 );
+
+		$this->assertStringContainsString( 'input or output too large', $this->logger->joined() );
+		$this->assertSame( array( array( 'ids' => array( 1 ), 'lang' => 'en' ) ), $this->translations->failures );
 	}
 }

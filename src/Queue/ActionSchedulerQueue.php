@@ -152,9 +152,17 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		}
 
 		if ( $this->lock->is_held() ) {
-			$this->reason = __( 'A translation run is already in progress.', 'omnium-translate' );
-			$this->logger->log( 'warning', 'queue', 'Enqueue refused: translation run already in progress.' );
-			return false;
+			// Self-heal: a run whose every action died (fatal error, dropped
+			// table) leaves the lock held with nothing left in the queue —
+			// without this the site would wait for the 3-hour stale window.
+			$dead_run = $this->lock->current_run();
+			if ( null === $dead_run || 0 < $this->pending_work_count() ) {
+				$this->reason = __( 'A translation run is already in progress.', 'omnium-translate' );
+				$this->logger->log( 'warning', 'queue', 'Enqueue refused: translation run already in progress.' );
+				return false;
+			}
+			$this->lock->release( $dead_run );
+			$this->logger->log( 'warning', 'queue', 'Released a dead translation run lock (no pending work).' );
 		}
 
 		$run_id = (string) wp_generate_uuid4();
