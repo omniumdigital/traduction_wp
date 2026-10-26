@@ -108,6 +108,7 @@ final class BatchJobTest extends TestCase {
 
 	public function test_sanitizes_untrusted_ai_html_before_storage(): void {
 		$payload = '<script>alert(1)</script><img src=x onerror=alert(2)><a href="javascript:alert(3)">link</a><strong>ok</strong>';
+		$this->segments->texts['hash-a'] = '<a>Texte</a><strong>source</strong>';
 		$this->provider->response = array( 'hash-a' => $payload );
 		$this->lock->acquire( 'run-a' );
 
@@ -122,6 +123,17 @@ final class BatchJobTest extends TestCase {
 		$this->assertStringNotContainsString( 'Texte source secret', $this->logger->joined() );
 		$this->assertStringNotContainsString( $payload, $this->logger->joined() );
 		$this->assertFalse( $this->lock->is_held() );
+	}
+
+	public function test_provider_independent_quality_gate_rejects_missing_placeholder(): void {
+		$this->segments->texts['hash-a'] = 'Prix : %s';
+		$this->provider->response        = array( 'hash-a' => 'Price' );
+		Functions\when( 'wp_kses' )->returnArg();
+
+		$this->job->handle( array( 1 => 'hash-a' ), 'en', '', 1 );
+
+		$this->assertCount( 0, $this->translations->autos );
+		$this->assertSame( array( 1 ), $this->translations->failures[0]['ids'] );
 	}
 
 	public function test_already_translated_segment_is_never_sent_again(): void {

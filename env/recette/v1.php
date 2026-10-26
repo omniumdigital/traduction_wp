@@ -260,14 +260,14 @@ if ( 'seed' === $stage ) {
 } elseif ( 'edited' === $stage ) {
 	global $wpdb;
 	$table  = $wpdb->prefix . 'omtr_translations';
-	$row    = $wpdb->get_row( $wpdb->prepare( "SELECT t.id, t.segment_id FROM {$table} t WHERE t.target_lang = %s AND t.status = %s AND t.text LIKE %s LIMIT 1", 'en', 'auto', '[EN]%' ), ARRAY_A );
+	$row    = $wpdb->get_row( $wpdb->prepare( "SELECT t.id, t.segment_id FROM {$table} t WHERE t.target_lang = %s AND t.status = %s AND t.text <> %s LIMIT 1", 'en', 'auto', '' ), ARRAY_A );
 	if ( ! $row ) {
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT t.id, t.segment_id FROM {$table} t WHERE t.target_lang = %s AND t.status = %s LIMIT 1", 'en', 'auto' ), ARRAY_A );
 	}
 	if ( ! $row ) {
 		WP_CLI::error( 'No automatic translation found.' );
 	}
-	$correction = '[EN] Correction manuelle stable';
+	$correction = 'Correction manuelle stable';
 	$rest( 'PUT', '/segments/' . (int) $row['segment_id'], array( 'target_lang' => 'en', 'text' => $correction ) );
 	WP_CLI::line( 'EDITED_ID=' . (int) $row['segment_id'] );
 	WP_CLI::line( 'EDITED_TEXT=' . $correction );

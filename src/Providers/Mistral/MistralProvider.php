@@ -145,6 +145,7 @@ final class MistralProvider implements ProviderInterface {
 		if ( array() === $segments ) {
 			return array();
 		}
+		$numbered = $this->prompts->number( $segments );
 
 		$body = array(
 			'model'      => $this->model(),
@@ -156,7 +157,7 @@ final class MistralProvider implements ProviderInterface {
 				),
 				array(
 					'role'    => 'user',
-					'content' => $this->prompts->user_prompt( $this->prompts->number( $segments ) ),
+					'content' => $this->prompts->user_prompt( $numbered ),
 				),
 			),
 		);
@@ -166,7 +167,7 @@ final class MistralProvider implements ProviderInterface {
 		while ( true ) {
 			++$attempts;
 			$raw       = $this->request( $body );
-			$validated = $this->validator->validate( $this->text_from_response( $raw ), array_keys( $this->prompts->number( $segments ) ) );
+			$validated = $this->validator->validate( $this->text_from_response( $raw ), array_keys( $numbered ), $numbered, $glossary );
 			if ( null !== $validated ) {
 				return $this->map_to_hashes( $validated, array_keys( $segments ) );
 			}

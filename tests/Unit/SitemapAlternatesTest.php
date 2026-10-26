@@ -108,8 +108,8 @@ final class SitemapAlternatesTest extends TestCase {
 		$this->options['noindex_partial'] = true;
 		$this->wpdb->expects( $this->exactly( 2 ) )->method( 'prepare' )->willReturn( 'coverage' );
 		$this->wpdb->expects( $this->exactly( 2 ) )->method( 'get_results' )->with( 'coverage', ARRAY_A )->willReturnOnConsecutiveCalls(
-			array( array( 'total' => '2', 'translated' => '2' ) ),
-			array( array( 'total' => '2', 'translated' => '1' ) )
+			array( array( 'tracked' => '1', 'total' => '2', 'translated' => '2' ) ),
+			array( array( 'tracked' => '1', 'total' => '2', 'translated' => '1' ) )
 		);
 		$xml = $this->alternates()->filter_plugin_url( '<url><loc>https://safe.test/article</loc></url>', array( 'loc' => 'https://safe.test/article' ) );
 

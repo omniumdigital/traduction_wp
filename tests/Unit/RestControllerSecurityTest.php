@@ -57,6 +57,8 @@ final class RestControllerSecurityTest extends TestCase {
 		);
 		Functions\when( 'current_time' )->justReturn( '2026-10-23 10:00:00' );
 		Functions\when( 'wp_cache_incr' )->justReturn( 1 );
+		Functions\when( 'get_option' )->justReturn( 0 );
+		Functions\when( 'update_option' )->justReturn( true );
 		$prepared_args = array();
 		$wpdb->expects( $this->once() )->method( 'prepare' )->willReturnCallback(
 			static function ( string $sql, mixed ...$args ) use ( &$prepared_args ): string {

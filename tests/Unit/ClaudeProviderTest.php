@@ -286,13 +286,12 @@ final class ClaudeProviderTest extends TestCase {
 		$this->assertStringNotContainsString( 'authentication_error', $result->message );
 	}
 
-	public function test_unknown_ids_in_response_are_not_returned(): void {
+	public function test_unknown_ids_make_the_response_invalid(): void {
 		$provider = $this->make_provider();
 		$body     = $this->response_body( array( 1 => 'Bonjour', 7 => 'injected' ) );
 		$this->stub_http( array( array( 'code' => 200, 'body' => $body ) ) );
 
-		$result = $provider->translate_batch( array( 'hash-1' => 'Hello' ), 'fr', 'en', new Glossary() );
-
-		$this->assertSame( array( 'hash-1' => 'Bonjour' ), $result );
+		$this->expectException( ProviderException::class );
+		$provider->translate_batch( array( 'hash-1' => 'Hello' ), 'fr', 'en', new Glossary() );
 	}
 }

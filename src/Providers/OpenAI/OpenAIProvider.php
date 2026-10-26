@@ -131,11 +131,12 @@ final class OpenAIProvider implements ProviderInterface {
 		if ( array() === $segments ) {
 			return array();
 		}
+		$numbered = $this->prompts->number( $segments );
 
 		$body = array(
 			'model'             => $this->model(),
 			'instructions'      => $this->prompts->system_prompt( $source, $target, $glossary ),
-			'input'             => $this->prompts->user_prompt( $this->prompts->number( $segments ) ),
+			'input'             => $this->prompts->user_prompt( $numbered ),
 			'max_output_tokens' => $this->max_tokens_for( $segments ),
 			'store'             => false,
 		);
@@ -145,7 +146,7 @@ final class OpenAIProvider implements ProviderInterface {
 		while ( true ) {
 			++$attempts;
 			$raw       = $this->request( $body );
-			$validated = $this->validator->validate( $this->text_from_response( $raw ), array_keys( $this->prompts->number( $segments ) ) );
+			$validated = $this->validator->validate( $this->text_from_response( $raw ), array_keys( $numbered ), $numbered, $glossary );
 			if ( null !== $validated ) {
 				return $this->map_to_hashes( $validated, array_keys( $segments ) );
 			}

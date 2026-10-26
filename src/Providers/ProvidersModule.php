@@ -31,7 +31,8 @@ final class ProvidersModule implements ModuleInterface {
 	 */
 	public function register( Container $container ): void {
 		$container->set( PromptBuilder::class, static fn() => new PromptBuilder() );
-		$container->set( ResponseValidator::class, static fn() => new ResponseValidator() );
+		$container->set( TranslationQualityValidator::class, static fn() => new TranslationQualityValidator() );
+		$container->set( ResponseValidator::class, static fn( Container $c ) => new ResponseValidator( $c->get( TranslationQualityValidator::class ) ) );
 		$container->set( Pricing::class, static fn() => new Pricing() );
 
 		$container->set(

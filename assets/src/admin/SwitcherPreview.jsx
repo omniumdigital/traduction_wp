@@ -11,17 +11,19 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 		"--omtr-hover": colors.hover || "#f4f4f5",
 		"--omtr-border": colors.border || "#e4e4e7",
 		"--omtr-radius": `${switcher.radius || 8}px`,
-		"--omtr-flag-size": `${switcher.flag_size || 18}px`,
+		"--omtr-flag-size": `${switcher.flag_size || 16}px`,
 	};
 	const flag = flagSource ? (
 		<img className="omtr-switcher__flag" src={flagSource} alt="" width="24" height="18" />
 	) : null;
 	return (
 		<div
-			className={`omtr-switcher omtr-switcher--${switcher.variant || "dropdown"} omtr-switcher--${
+			className={`omtr-switcher notranslate omtr-switcher--${switcher.variant || "dropdown"} omtr-switcher--${
 				switcher.display || "flag-name"
 			}`}
 			style={style}
+			data-omtr-skip
+			translate="no"
 		>
 			{switcher.variant === "inline" ? (
 				<ul className="omtr-switcher__list">

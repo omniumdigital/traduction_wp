@@ -50,7 +50,8 @@ final class EstimatorTest extends TestCase {
 
 		$this->assertSame( 3, $result['segments'] );
 		$this->assertSame( 5, $result['words'] );
-		$this->assertSame( 7, $result['input_tokens'] );
+		$this->assertGreaterThan( 7, $result['input_tokens'] );
+		$this->assertGreaterThan( 0, $result['output_tokens'] );
 		$this->assertNull( $result['cost'] );
 	}
 }

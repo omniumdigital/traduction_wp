@@ -4,6 +4,27 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.0.1] - 2026-10-26
+
+### Ajouté
+- Contrôle qualité déterministe des réponses IA : réponse complète obligatoire, conservation exacte des variables, URL et balises HTML, respect du glossaire, détection des sorties inchangées ou de longueur anormale.
+- Couverture de traduction calculée page par page grâce à un inventaire persistant des segments ; les variantes incomplètes sont exclues de `hreflang` et des sitemaps lorsque la protection SEO est active.
+- Variantes linguistiques régionales pour l’anglais, l’allemand, l’espagnol, le français, l’italien, le néerlandais et le portugais.
+
+### Modifié
+- L’option `noindex` des traductions partielles est désormais activée par défaut pour les nouvelles installations.
+- L’estimation des coûts inclut le prompt système, l’enveloppe JSON, la taille réelle des lots et une marge d’expansion de la traduction.
+- Les quatre fournisseurs retentent une réponse complète lorsqu’un contrôle de format ou de qualité échoue.
+- Le sélecteur de langue adopte un rendu plus compact inspiré de shadcn/ui : hauteur réduite, drapeaux de 16 px, espacement resserré, bordure et ombre plus discrètes.
+- L’environnement local utilise désormais l’interface WordPress et Omnium Translate en français.
+
+### Corrigé
+- La migration de base force un nouveau scan des pages existantes afin de construire leur inventaire SEO sans nouvel appel IA pour les segments déjà traduits.
+- Les pages de recherche WordPress ne reçoivent plus de canonical ou de groupe `hreflang` potentiellement ambigu produit par l’extension.
+- Le sélecteur est explicitement exclu du moteur de traduction afin que ses libellés natifs ne reçoivent plus de préfixes artificiels comme `[EN]` ou `[ES]`.
+- Le fournisseur simulé des sites de test ne préfixe plus les traductions avec un code de langue entre crochets.
+- Le cache de résultats PHPUnit (`.phpunit.result.cache`) est exclu du zip de distribution.
+
 ## [1.0.0] - 2026-10-24
 
 Première version publique.

@@ -47,7 +47,13 @@ export function Wizard({ data, request, onComplete }) {
 		setKeyStatus(null);
 		try {
 			if (key) {
-				await request({ path: `/providers/${settings.provider}/key`, method: "PUT", data: { key } });
+				const storedKey = await request({ path: `/providers/${settings.provider}/key`, method: "PUT", data: { key } });
+				setKey("");
+				setProviders((current) =>
+					current.map((item) =>
+						item.id === settings.provider ? { ...item, key: { ...item.key, ...storedKey } } : item,
+					),
+				);
 			}
 			setKeyStatus(await request({ path: `/providers/${settings.provider}/test`, method: "POST" }));
 		} catch (reason) {

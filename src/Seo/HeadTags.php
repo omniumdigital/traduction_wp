@@ -46,7 +46,7 @@ final class HeadTags {
 
 		$source_url = $this->source_url();
 		$post_id    = is_singular() ? (int) get_queried_object_id() : 0;
-		foreach ( $this->languages() as $language ) {
+		foreach ( $this->languages( $post_id, $source_url ) as $language ) {
 			printf(
 				"<link rel=\"alternate\" hreflang=\"%s\" href=\"%s\" />\n",
 				esc_attr( $language ),
@@ -97,6 +97,7 @@ final class HeadTags {
 			&& ! is_robots()
 			&& ! is_trackback()
 			&& ! is_404()
+			&& ! is_search()
 			&& ! is_preview()
 			&& ! post_password_required();
 	}
@@ -113,9 +114,11 @@ final class HeadTags {
 	/**
 	 * Source and configured target languages.
 	 *
+	 * @param int    $post_id    Related post id.
+	 * @param string $source_url Canonical source URL.
 	 * @return list<string>
 	 */
-	private function languages(): array {
+	private function languages( int $post_id, string $source_url ): array {
 		$languages = array_values( array_unique( array_merge( array( $this->settings->source_lang() ), $this->settings->target_langs() ) ) );
 		if ( ! (bool) $this->settings->get( 'noindex_partial' ) ) {
 			return $languages;
@@ -123,7 +126,7 @@ final class HeadTags {
 		return array_values(
 			array_filter(
 				$languages,
-				fn( string $language ): bool => $this->coverage->is_complete( $language )
+				fn( string $language ): bool => $this->coverage->is_page_complete( $language, $post_id, $source_url )
 			)
 		);
 	}

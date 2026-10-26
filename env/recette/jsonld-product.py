@@ -43,23 +43,40 @@ def read_products(path):
     return [product for block in parser.blocks for product in products(block)]
 
 
+def offer_prices(offers):
+    """Return every price from a Schema.org Offer or AggregateOffer tree."""
+    if isinstance(offers, dict):
+        prices = {
+            str(offers[key])
+            for key in ("price", "lowPrice", "highPrice")
+            if offers.get(key) is not None
+        }
+        for value in offers.values():
+            if isinstance(value, (dict, list)):
+                prices.update(offer_prices(value))
+        return prices
+    if isinstance(offers, list):
+        return {price for offer in offers for price in offer_prices(offer)}
+    return set()
+
+
 def main():
-    source_path, target_path, expected_name, expected_price, expected_sku, lang = sys.argv[1:]
+    source_path, target_path, expected_name, expected_price, expected_sku = sys.argv[1:]
     source = read_products(source_path)
     target = read_products(target_path)
-    prefix = f"[{lang.upper()}] "
     matched = [
         (original, translated)
         for original in source
         for translated in target
         if expected_name in original.get("name", "")
-        and translated.get("name") == prefix + original.get("name")
+        and translated.get("name")
+        and translated.get("name") != original.get("name")
     ]
     ok = any(
         original.get("sku") == translated.get("sku") == expected_sku
-        and original.get("offers", {}).get("price")
-        == translated.get("offers", {}).get("price")
-        == expected_price
+        and offer_prices(original.get("offers"))
+        == offer_prices(translated.get("offers"))
+        and expected_price in offer_prices(original.get("offers"))
         for original, translated in matched
     )
     print(

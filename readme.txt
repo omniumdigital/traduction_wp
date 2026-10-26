@@ -3,79 +3,90 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Translate rendered WordPress pages with your chosen AI provider and API key. Translations are stored on your site; no Omnium account or subscription is required, and no data is sent to Omnium.
+Traduisez les pages WordPress rendues avec le fournisseur IA et la clé API de votre choix. Les traductions restent sur votre site, sans compte ni abonnement Omnium, et aucune donnée n’est envoyée à Omnium.
 
 == Description ==
 
-Omnium Translate translates rendered page content and stores translations in your WordPress database. It sends translation requests directly to the AI provider you select, using your own API key. New translation work is processed in the background.
+Omnium Translate traduit le contenu final rendu des pages et stocke les traductions dans votre base WordPress. Les demandes sont envoyées directement au fournisseur IA sélectionné avec votre propre clé API. Les nouvelles traductions sont traitées en arrière-plan.
 
-Supported integrations include Gutenberg, Elementor, Oxygen 6, and optional WooCommerce support. The language selector is available as a shortcode, Gutenberg block, Elementor widget, Oxygen element, WordPress menu item, or PHP function.
+Les intégrations prises en charge comprennent Gutenberg, Elementor, Oxygen 6 et, en option, WooCommerce. Le sélecteur de langue est disponible sous forme de shortcode, bloc Gutenberg, widget Elementor, élément Oxygen, élément de menu WordPress ou fonction PHP.
 
-Requirements: WordPress 6.9 or later, PHP 8.1 or later, and the Sodium PHP extension. WooCommerce 9.0–11.2 is optional.
+Prérequis : WordPress 6.9 ou supérieur, PHP 8.1 ou supérieur et l’extension PHP Sodium. WooCommerce 9.0 à 11.2 est facultatif.
 
-In the WordPress editor, use the “Translate this page” panel to queue a page for translation. An optional front-end visual editor lets authorized users correct translated segments on the page. On-the-fly translation of missing segments is protected by an hourly quota of 100 segments by default; the limit can be changed in settings.
+Dans l’éditeur WordPress, utilisez le panneau « Traduire cette page » pour mettre une page en file. Un éditeur visuel facultatif permet aux utilisateurs autorisés de corriger les segments traduits directement sur la page. La traduction à la volée est protégée par un quota de 100 segments par heure par défaut, réglable dans les paramètres.
 
-JSON-LD text fields are translated and internal URLs are rewritten while prices and product identifiers are preserved. After translations change, the plugin clears its own cache and purges WP Rocket and LiteSpeed page caches when available. Integrations can also listen for the omtr_translations_updated($post_id, $lang) action.
+Les champs textuels JSON-LD sont traduits et les URL internes réécrites, tandis que les prix et identifiants produit sont préservés. Après une modification, l’extension vide son cache ainsi que ceux de WP Rocket et LiteSpeed lorsqu’ils sont disponibles. Les intégrations peuvent aussi écouter l’action omtr_translations_updated($post_id, $lang).
 
-The optional language preference cookie stores the selected language. When enabled, it redirects only an external arrival at the unprefixed source-language homepage. No cookie is set by default.
+Avant enregistrement, chaque réponse IA doit être complète et conserver exactement les variables, URL et balises HTML du texte source. Le glossaire est vérifié automatiquement. Une réponse manifestement anormale est refusée et retentée une fois par le fournisseur.
+
+La couverture SEO est calculée pour chaque page : avec la protection des traductions partielles, activée par défaut, une variante incomplète reste en noindex et n’est pas ajoutée aux groupes hreflang ni aux sitemaps. Les variantes régionales courantes comme en-us, en-gb, fr-ca et pt-br sont proposées dans les réglages.
+
+Le cookie facultatif de préférence mémorise uniquement la langue sélectionnée. Lorsqu’il est activé, il redirige seulement une arrivée externe sur la page d’accueil sans préfixe. Aucun cookie n’est créé par défaut.
 
 == Installation ==
 
-1. Download omnium-translate.zip from the GitHub Release for the version you want.
-2. In WordPress, go to Plugins > Add New Plugin > Upload Plugin, upload the ZIP, and activate Omnium Translate.
-3. Open Omnium Translate in the administration area and follow the setup wizard.
-4. Choose source and target languages, select an AI provider, add and test its API key, review the estimate, and start the translation.
+1. Téléchargez omnium-translate.zip depuis la version GitHub souhaitée.
+2. Dans WordPress, ouvrez Extensions > Ajouter une extension > Téléverser une extension, envoyez le ZIP et activez Omnium Translate.
+3. Ouvrez Omnium Translate dans l’administration et suivez l’assistant de configuration.
+4. Choisissez les langues source et cibles, sélectionnez un fournisseur IA, ajoutez et testez sa clé API, vérifiez l’estimation puis lancez la traduction.
 
-Create an API key with your chosen provider:
+Créez une clé API auprès du fournisseur choisi :
 
-* Anthropic / Claude: https://console.anthropic.com/settings/keys (outside the EU; no free tier)
-* OpenAI: https://platform.openai.com/api-keys (outside the EU; no free tier)
-* Mistral: https://console.mistral.ai/api-keys (EU; limited free tier)
-* Google Gemini: https://aistudio.google.com/apikey (outside the EU; limited free tier)
+* Anthropic / Claude : https://console.anthropic.com/settings/keys (hors UE ; pas de palier gratuit)
+* OpenAI : https://platform.openai.com/api-keys (hors UE ; pas de palier gratuit)
+* Mistral : https://console.mistral.ai/api-keys (UE ; palier gratuit limité)
+* Google Gemini : https://aistudio.google.com/apikey (hors UE ; palier gratuit limité)
 
-Provider regions, free tiers, and data terms may change. Free tiers may allow the provider to reuse submitted data under its terms; review the provider's current terms before use.
+Les régions, paliers gratuits et conditions d’utilisation des données peuvent évoluer. Un palier gratuit peut autoriser le fournisseur à réutiliser les contenus transmis ; vérifiez ses conditions en vigueur avant utilisation.
 
-API keys are encrypted with Sodium. You can define a dedicated encryption key in wp-config.php:
+Les clés API sont chiffrées avec Sodium. Vous pouvez définir une clé de chiffrement dédiée dans wp-config.php :
 
     define( 'OMTR_ENCRYPTION_KEY', 'replace-with-a-long-random-secret-value' );
 
-If this constant is not defined, the plugin derives its encryption key from the WordPress AUTH_KEY and SECURE_AUTH_SALT values.
+Si cette constante n’est pas définie, l’extension dérive sa clé de chiffrement des valeurs WordPress AUTH_KEY et SECURE_AUTH_SALT.
 
-Add a selector with [omtr_switcher]. Optional attributes: variant="dropdown|inline|floating" and display="flag-name|flag|name|code". You can also use the Omnium Translate block, Elementor widget, Oxygen 6 element, menu item, or call omtr_switcher() from a theme template.
+Ajoutez un sélecteur avec [omtr_switcher]. Attributs facultatifs : variant="dropdown|inline|floating" et display="flag-name|flag|name|code". Vous pouvez aussi utiliser le bloc Omnium Translate, le widget Elementor, l’élément Oxygen 6, l’élément de menu ou appeler omtr_switcher() depuis un modèle de thème.
 
 == Frequently Asked Questions ==
 
-= What content is sent to the AI provider? =
+= Quel contenu est envoyé au fournisseur IA ? =
 
-Public rendered text, the source and target languages, and (when configured) glossary rules and site tone/context are sent to the selected provider. Detected email addresses, phone numbers, IBANs, and payment card numbers are filtered out. The plugin sends no data to Omnium.
+Le texte public rendu, les langues source et cibles et, lorsqu’ils sont configurés, le glossaire, le ton et le contexte sont envoyés au fournisseur sélectionné. Les adresses email, numéros de téléphone, IBAN et cartes de paiement détectés sont exclus. L’extension n’envoie aucune donnée à Omnium.
 
-= Does the plugin set cookies? =
+= L’extension crée-t-elle des cookies ? =
 
-No cookie is set by default. The language is represented in the URL. An optional functional language preference cookie can be enabled in settings. It redirects only an external arrival at the unprefixed source-language homepage.
+Aucun cookie n’est créé par défaut : la langue se trouve dans l’URL. Un cookie fonctionnel facultatif peut être activé dans les réglages. Il redirige seulement une arrivée externe sur la page d’accueil de la langue source sans préfixe.
 
-= How should I configure my page cache? =
+= Comment configurer le cache de pages ? =
 
-Language versions use URL path prefixes such as /en/ and /es/, while the source language has no prefix. Configure WP Rocket, LiteSpeed Cache, or another page cache to vary by the full URL so each language URL has its own cached page. The plugin purges WP Rocket and LiteSpeed caches after translation updates when those plugins are available. Other integrations can use the omtr_translations_updated($post_id, $lang) action.
+Les versions linguistiques utilisent des préfixes comme /en/ et /es/, tandis que la langue source n’en utilise pas. Configurez WP Rocket, LiteSpeed Cache ou votre cache pour varier selon l’URL complète. L’extension purge les caches WP Rocket et LiteSpeed après une mise à jour. Les autres intégrations peuvent utiliser l’action omtr_translations_updated($post_id, $lang).
 
-= What should I check before production? =
+= Que vérifier avant la mise en production ? =
 
-Test the setup with a real API key and review the translated pages and site workflows. Before the first client production deployment, have a second developer review the plugin or run a Patchstack or WPScan scan.
+Testez la configuration avec une vraie clé API, puis contrôlez les pages traduites et les parcours du site. Avant la première mise en production chez un client, faites relire l’extension par un second développeur ou lancez une analyse Patchstack ou WPScan.
 
-= What happens when I uninstall the plugin? =
+= Que se passe-t-il lors de la désinstallation ? =
 
-The encrypted API key and scheduled tasks are removed. Translations and settings are kept by default. Enable the full purge option in the plugin settings before uninstalling to remove the plugin's tables, options, transients, and metadata too.
+La clé API chiffrée et les tâches planifiées sont supprimées. Les traductions et réglages sont conservés par défaut. Activez l’option de purge complète avant la désinstallation pour retirer aussi les tables, options, transients et métadonnées de l’extension.
 
-= How are plugin updates delivered? =
+= Comment les mises à jour sont-elles distribuées ? =
 
-The plugin checks public GitHub Releases using Plugin Update Checker. Update checks can be disabled in the plugin settings.
+L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
 
+= 1.0.1 =
+* Contrôle qualité des réponses IA (variables, URL, balises et glossaire conservés) avec nouvel essai automatique.
+* Couverture de traduction par page : les variantes incomplètes sont exclues de hreflang et des sitemaps ; noindex des traductions partielles activé par défaut.
+* Variantes linguistiques régionales et estimation des coûts plus précise.
+* Interface locale française et sélecteur de langue plus compact, inspiré de shadcn/ui.
+* Le sélecteur est exclu de la traduction afin d’éviter les marqueurs de langue artificiels.
+
 = 1.0.0 =
-* Translate pages from the editor and optionally correct translations in a visual front-end editor.
-* Add JSON-LD translation, page cache purging, an optional language preference cookie, and configurable on-the-fly hourly quota.
-* Include language selector integrations, glossary, translated slugs, SEO metadata, and optional WooCommerce support.
+* Traduction depuis l’éditeur et correction facultative dans un éditeur visuel en front.
+* Traduction JSON-LD, purge des caches, cookie de préférence facultatif et quota horaire configurable.
+* Sélecteur de langue, glossaire, slugs traduits, métadonnées SEO et prise en charge facultative de WooCommerce.

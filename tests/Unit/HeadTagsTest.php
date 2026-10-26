@@ -36,8 +36,9 @@ final class HeadTagsTest extends TestCase {
 		parent::setUp();
 		Functions\when( 'get_option' )->justReturn(
 			array(
-				'source_lang'  => 'fr',
-				'target_langs' => array( 'en', 'es' ),
+				'source_lang'     => 'fr',
+				'target_langs'    => array( 'en', 'es' ),
+				'noindex_partial' => false,
 			)
 		);
 		Functions\when( 'is_singular' )->justReturn( false );
@@ -55,6 +56,7 @@ final class HeadTagsTest extends TestCase {
 		Functions\when( 'is_robots' )->justReturn( false );
 		Functions\when( 'is_trackback' )->justReturn( false );
 		Functions\when( 'is_404' )->justReturn( false );
+		Functions\when( 'is_search' )->justReturn( false );
 		Functions\when( 'is_preview' )->justReturn( false );
 		Functions\when( 'post_password_required' )->justReturn( false );
 		Functions\when( 'esc_attr' )->alias( static fn( string $value ): string => htmlspecialchars( $value, ENT_QUOTES ) );

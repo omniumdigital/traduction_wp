@@ -58,6 +58,7 @@ final class SeoNoindexTest extends TestCase {
 		Functions\when( 'is_robots' )->justReturn( false );
 		Functions\when( 'is_trackback' )->justReturn( false );
 		Functions\when( 'is_404' )->justReturn( false );
+		Functions\when( 'is_search' )->justReturn( false );
 		Functions\when( 'is_preview' )->justReturn( false );
 		Functions\when( 'post_password_required' )->justReturn( false );
 		Functions\when( 'is_singular' )->justReturn( false );
@@ -101,6 +102,16 @@ final class SeoNoindexTest extends TestCase {
 		$this->assertSame( 42.5, ( new TranslationCoverage( $this->wpdb, new Settings() ) )->percentage( 'en' ) );
 	}
 
+	/** Page coverage is based only on segments mapped to that page. */
+	public function test_page_coverage_uses_page_segment_mapping(): void {
+		$this->mock_coverage_query( 3, 3 );
+		$coverage = new TranslationCoverage( $this->wpdb, new Settings() );
+
+		$this->assertSame( 100.0, $coverage->page_percentage( 'en', 12, 'https://safe.test/article' ) );
+		$this->assertContains( 'wp_omtr_page_segments', $this->prepared_args );
+		$this->assertContains( 12, $this->prepared_args );
+	}
+
 	/** Incomplete translated pages are noindex,follow for all supported SEO outputs. */
 	public function test_incomplete_language_is_noindex_follow(): void {
 		$this->mock_coverage_query( 2, 1 );
@@ -119,8 +130,8 @@ final class SeoNoindexTest extends TestCase {
 		$this->assertSame( array( 'noindex', 'follow' ), $robots->filter_rank_math_robots( array( 'index', 'follow' ) ) );
 	}
 
-	/** The option is off by default and leaves robots directives untouched. */
-	public function test_noindex_option_is_off_by_default(): void {
+	/** The safe default keeps an unscanned translated page out of indexes. */
+	public function test_noindex_option_is_on_by_default(): void {
 		$this->options = array(
 			'source_lang'  => 'fr',
 			'target_langs' => array( 'en' ),
@@ -129,7 +140,7 @@ final class SeoNoindexTest extends TestCase {
 		$current->set( 'en' );
 		$robots = new Robots( new Settings(), $current, new RequestGuard(), new TranslationCoverage( $this->wpdb, new Settings() ) );
 
-		$this->assertSame( array( 'index' => true ), $robots->filter_wp_robots( array( 'index' => true ) ) );
+		$this->assertSame( array( 'noindex' => true, 'follow' => true ), $robots->filter_wp_robots( array( 'index' => true ) ) );
 	}
 
 	/** Incomplete target languages are omitted from hreflang links. */
@@ -164,6 +175,7 @@ final class SeoNoindexTest extends TestCase {
 		$this->wpdb->expects( $this->once() )->method( 'get_results' )->with( 'prepared-coverage', ARRAY_A )->willReturn(
 			array(
 				array(
+					'tracked'    => '1',
 					'total'      => (string) $total,
 					'translated' => (string) $translated,
 				),

@@ -7,6 +7,7 @@
 
 namespace Omnium\Translate\Admin;
 
+use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Tables;
 use Omnium\Translate\Security\Sanitizer;
 use Omnium\Translate\Store\TranslationRepository;
@@ -129,6 +130,8 @@ final class SegmentEditorRepository {
 			if ( false === $version ) {
 				wp_cache_set( TranslationRepository::CACHE_VERSION_KEY, 1, TranslationRepository::CACHE_GROUP );
 			}
+			$coverage_version = (int) get_option( Options::COVERAGE_VERSION, 0 );
+			update_option( Options::COVERAGE_VERSION, $coverage_version + 1, false );
 		}
 		return false !== $done;
 	}

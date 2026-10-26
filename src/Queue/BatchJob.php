@@ -13,6 +13,7 @@ use Omnium\Translate\Core\TranslationCachePurger;
 use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderInterface;
+use Omnium\Translate\Providers\TranslationQualityValidator;
 use Omnium\Translate\Router\SlugGenerator;
 use Omnium\Translate\Security\Sanitizer;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
@@ -36,15 +37,16 @@ final class BatchJob {
 	/**
 	 * Constructor.
 	 *
-	 * @param Settings                       $settings     Plugin settings.
-	 * @param RunLock                        $lock         Translation run lock.
-	 * @param ActionSchedulerQueue           $queue        Queue.
-	 * @param SegmentRepositoryInterface     $segments     Segments repository.
-	 * @param TranslationRepositoryInterface $translations Translations repository.
-	 * @param LoggerInterface                $logger       Logger.
-	 * @param GlossaryService                $glossary     Glossary service.
-	 * @param QueueState|null                $state        Manual pause state.
-	 * @param SlugGenerator|null             $slug_generator Translated slug generator.
+	 * @param Settings                         $settings     Plugin settings.
+	 * @param RunLock                          $lock         Translation run lock.
+	 * @param ActionSchedulerQueue             $queue        Queue.
+	 * @param SegmentRepositoryInterface       $segments     Segments repository.
+	 * @param TranslationRepositoryInterface   $translations Translations repository.
+	 * @param LoggerInterface                  $logger       Logger.
+	 * @param GlossaryService                  $glossary     Glossary service.
+	 * @param QueueState|null                  $state        Manual pause state.
+	 * @param SlugGenerator|null               $slug_generator Translated slug generator.
+	 * @param TranslationQualityValidator|null $quality      Final provider-independent quality gate.
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -55,7 +57,8 @@ final class BatchJob {
 		private LoggerInterface $logger,
 		private GlossaryService $glossary,
 		private ?QueueState $state = null,
-		private ?SlugGenerator $slug_generator = null
+		private ?SlugGenerator $slug_generator = null,
+		private ?TranslationQualityValidator $quality = null
 	) {}
 
 	/**
@@ -111,19 +114,24 @@ final class BatchJob {
 			return;
 		}
 
+		$glossary = $this->glossary->for_language( $lang );
 		try {
-			$translated = $provider->translate_batch( $pending, $this->settings->source_lang(), $lang, $this->glossary->for_language( $lang ) );
+			$translated = $provider->translate_batch( $pending, $this->settings->source_lang(), $lang, $glossary );
 		} catch ( ProviderException $e ) {
 			$this->handle_error( $e, $pending, $segments, $lang, $run_id, $attempt, $post_id );
 			return;
 		}
 
-		$saved = array();
+		$quality         = $this->quality ?? new TranslationQualityValidator();
+		$saved           = array();
+		$accepted_hashes = array();
 		foreach ( $translated as $hash => $text ) {
-			$id = array_search( $hash, $segments, true );
-			if ( false !== $id ) {
+			$id    = array_search( $hash, $segments, true );
+			$clean = Sanitizer::inline_html( $text );
+			if ( false !== $id && isset( $pending[ $hash ] ) && $quality->is_valid( $pending[ $hash ], $clean, $glossary ) ) {
 				// Untrusted AI output: strict whitelist sanitization before storage.
-				$saved[ $id ] = Sanitizer::inline_html( $text );
+				$saved[ $id ]      = $clean;
+				$accepted_hashes[] = $hash;
 			}
 		}
 
@@ -135,7 +143,7 @@ final class BatchJob {
 			TranslationCachePurger::purge( $post_id, $lang );
 		}
 
-		$untranslated = array_diff( array_keys( $pending ), array_keys( $translated ) );
+		$untranslated = array_diff( array_keys( $pending ), $accepted_hashes );
 		if ( array() !== $untranslated ) {
 			$this->logger->log( 'warning', 'queue:batch', sprintf( 'Batch partial: %d segment(s) not translated.', count( $untranslated ) ) );
 			$this->mark_failed_by_hash( $untranslated, $segments, $lang );
