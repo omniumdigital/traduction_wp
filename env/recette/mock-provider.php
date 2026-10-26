@@ -91,6 +91,7 @@ add_filter(
 			$target = preg_match( '/into language "([a-z-]+)"/i', $system, $target_match ) ? strtolower( $target_match[1] ) : 'en';
 			$words  = str_starts_with( $target, 'es' )
 				? array(
+					'À propos'     => 'Acerca de',
 					'Présentation de notre atelier et de ses services' => 'Presentación de nuestro taller y sus servicios',
 					'Atelier de céramique artisanale à Lyon' => 'Taller de cerámica artesanal en Lyon',
 					'Donnez de l’élan à vos idées' => 'Dé impulso a sus ideas',
@@ -106,6 +107,7 @@ add_filter(
 					'française'    => 'francesa',
 				)
 				: array(
+					'À propos'     => 'About',
 					'Présentation de notre atelier et de ses services' => 'Presentation of our workshop and its services',
 					'Atelier de céramique artisanale à Lyon' => 'Artisanal ceramics workshop in Lyon',
 					'Donnez de l’élan à vos idées' => 'Give momentum to your ideas',
