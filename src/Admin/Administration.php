@@ -12,6 +12,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Core\Tables;
 use Omnium\Translate\Glossary\GlossaryRepository;
 use Omnium\Translate\Providers\Pricing;
+use Omnium\Translate\Providers\ProviderInterface;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Queue\ActionSchedulerQueue;
 use Omnium\Translate\Queue\PublicContent;
@@ -123,8 +124,9 @@ final class Administration {
 		$asset_path = OMTR_DIR . 'assets/build/admin.asset.php';
 		$asset      = require $asset_path;
 		wp_enqueue_style( 'wp-components' );
+		wp_enqueue_style( 'omtr-switcher', OMTR_URL . 'assets/css/switcher.css', array(), OMTR_VERSION );
 		if ( file_exists( OMTR_DIR . 'assets/build/admin.css' ) ) {
-			wp_enqueue_style( 'omtr-admin', OMTR_URL . 'assets/build/admin.css', array( 'wp-components' ), $asset['version'] );
+			wp_enqueue_style( 'omtr-admin', OMTR_URL . 'assets/build/admin.css', array( 'wp-components', 'omtr-switcher' ), $asset['version'] );
 		}
 		wp_enqueue_script( 'omtr-admin', OMTR_URL . 'assets/build/admin.js', $asset['dependencies'], $asset['version'], true );
 		wp_add_inline_script(
@@ -288,11 +290,16 @@ final class Administration {
 
 	/** Store a provider key.
 	 *
+	 * When the key is saved for a provider that is not the active one and the
+	 * active provider has no key, the active provider switches to it: without
+	 * this, every enqueue would target a provider that cannot answer.
+	 *
 	 * @param \WP_REST_Request $request REST request.
 	 */
 	public function put_key( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$id = (string) $request['id'];
-		if ( null === $this->providers->get( $id ) ) {
+		$id       = (string) $request['id'];
+		$provider = $this->providers->get( $id );
+		if ( null === $provider ) {
 			return $this->invalid();
 		}
 		$key = (string) $request['key'];
@@ -304,12 +311,48 @@ final class Administration {
 		} catch ( \Throwable $error ) {
 			return $this->unavailable();
 		}
+		$previous = (string) $this->settings->get( 'provider' );
+		$active   = $this->activate_provider_with_key( $provider );
 		return new \WP_REST_Response(
 			array(
-				'set'    => true,
-				'masked' => $this->keys->masked( $id ),
+				'set'      => true,
+				'masked'   => $this->keys->masked( $id ),
+				'provider' => $active,
+				'switched' => $active !== $previous,
 			)
 		);
+	}
+
+	/**
+	 * Make the freshly keyed provider the active one when the current active
+	 * provider has no usable key, then return the active provider id.
+	 *
+	 * @param ProviderInterface $provider Freshly keyed provider.
+	 */
+	private function activate_provider_with_key( ProviderInterface $provider ): string {
+		$active = (string) $this->settings->get( 'provider' );
+		if ( $active === $provider->id() ) {
+			return $active;
+		}
+		$active_provider = $this->providers->get( $active );
+		$has_key         = false;
+		if ( null !== $active_provider ) {
+			try {
+				$has_key = '' !== $this->keys->masked( $active );
+			} catch ( \Throwable $error ) {
+				$has_key = false;
+			}
+		}
+		if ( $has_key ) {
+			return $active;
+		}
+		$update = array( 'provider' => $provider->id() );
+		if ( ! isset( $provider->models()[ (string) $this->settings->get( 'model' ) ] ) ) {
+			// The stored model belongs to the previous provider: fall back to its recommended default.
+			$update['model'] = '';
+		}
+		$this->settings->update( $update );
+		return $provider->id();
 	}
 
 	/** Remove a provider key.
@@ -383,8 +426,10 @@ final class Administration {
 					'pending' => $this->queue->pending_work_count(),
 				),
 				'words'     => array(
-					'used' => $this->words->used(),
-					'cap'  => $this->words->limit(),
+					'used'             => $this->words->used(),
+					'cap'              => $this->words->limit(),
+					'translated_month' => $this->words->translated_this_month(),
+					'translated_total' => $this->words->translated_total(),
 				),
 				'segments'  => $counts,
 				'log'       => $log ? $log : array(),

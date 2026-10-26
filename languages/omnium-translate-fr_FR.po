@@ -153,6 +153,15 @@ msgstr "Aucun contenu public publié n’a été sélectionné."
 msgid "The translation queue is paused."
 msgstr "La file de traduction est en pause."
 
+msgid "No provider is configured."
+msgstr "Aucun fournisseur n’est configuré."
+
+msgid "No API key is configured for the selected provider (%s). Add one in Settings or choose another provider."
+msgstr "Aucune clé API n’est configurée pour le fournisseur sélectionné (%s). Ajoutez-en une dans les réglages ou choisissez un autre fournisseur."
+
+msgid "The active provider is now %s (the previous one had no API key)."
+msgstr "Le fournisseur actif est désormais %s (le précédent n’avait pas de clé API)."
+
 msgid "Translation queue paused."
 msgstr "File de traduction mise en pause."
 
@@ -438,14 +447,17 @@ msgstr "Utilisez au moins 4,5:1 pour le texte normal."
 msgid "Variant"
 msgstr "Variante"
 
-msgid "Words this month"
-msgstr "Mots ce mois-ci"
+msgid "Words translated this month"
+msgstr "Mots traduits ce mois-ci"
+
+msgid "%d words in total since installation"
+msgstr "%d mots au total depuis l’installation"
+
+msgid "Monthly cap: %d words"
+msgstr "Plafond mensuel : %d mots"
 
 msgid "coverage"
 msgstr "couverture"
-
-msgid "of %d"
-msgstr "sur %d"
 
 msgid "pages"
 msgstr "pages"
@@ -458,6 +470,16 @@ msgstr "segments"
 
 msgid "words"
 msgstr "mots"
+
+msgid "%d segments failed."
+msgstr "%d segments en échec."
+
+msgid "%d failed"
+msgstr "%d en échec"
+
+msgid "“Translate the whole site” will retry them without charging again for already translated content."
+msgstr "« Traduire tout le site » les relance sans repayer ce qui est déjà traduit."
+
 msgid "The administration interface is not built yet."
 msgstr "L’interface d’administration n’est pas encore compilée."
 

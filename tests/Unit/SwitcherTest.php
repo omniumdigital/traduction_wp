@@ -222,6 +222,31 @@ final class SwitcherTest extends TestCase {
 		$this->assertSame( 1, $this->print_calls );
 	}
 
+	/** Stylesheet size remains under the 4 KB budget without external resources. */
+	public function test_switcher_css_is_under_4kb(): void {
+		$css_path = dirname( __DIR__, 2 ) . '/assets/css/switcher.css';
+		$this->assertFileExists( $css_path );
+		$size = (int) filesize( $css_path );
+		$this->assertLessThanOrEqual( 4096, $size );
+	}
+
+	/** Flag and code displays adjust the dropdown list width to their content. */
+	public function test_switcher_css_adjusts_list_width_for_flag_and_code_displays(): void {
+		$css_path = dirname( __DIR__, 2 ) . '/assets/css/switcher.css';
+		$css      = (string) file_get_contents( $css_path );
+		$this->assertStringContainsString( '.omtr-switcher--flag .omtr-switcher__dropdown > .omtr-switcher__list', $css );
+		$this->assertStringContainsString( '.omtr-switcher--code .omtr-switcher__dropdown > .omtr-switcher__list', $css );
+		$this->assertStringContainsString( 'min-width: 100%', $css );
+	}
+
+	/** Active language remains visible with hover background in flag-only mode. */
+	public function test_switcher_css_highlights_active_language_in_flag_only_mode(): void {
+		$css_path = dirname( __DIR__, 2 ) . '/assets/css/switcher.css';
+		$css      = (string) file_get_contents( $css_path );
+		$this->assertStringContainsString( '.omtr-switcher--flag .is-active', $css );
+		$this->assertStringContainsString( 'background: var(--omtr-hover)', $css );
+	}
+
 	/**
 	 * Build the service under test.
 	 *
