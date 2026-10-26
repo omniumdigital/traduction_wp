@@ -34,11 +34,17 @@ export function Dashboard({ request }) {
 				))}
 				<Card>
 					<CardBody>
-						<span>{__("Words this month", "omnium-translate")}</span>
-						<strong className="omtr-stat">{dashboard.words?.used || 0}</strong>
+						<span>{__("Words translated this month", "omnium-translate")}</span>
+						<strong className="omtr-stat">{dashboard.words?.translated_month || 0}</strong>
+						<small>
+							{sprintf(
+								__("%d words in total since installation", "omnium-translate"),
+								dashboard.words?.translated_total || 0,
+							)}
+						</small>
 						<small>
 							{dashboard.words?.cap
-								? sprintf(__("of %d", "omnium-translate"), dashboard.words.cap)
+								? sprintf(__("Monthly cap: %d words", "omnium-translate"), dashboard.words.cap)
 								: __("No monthly cap", "omnium-translate")}
 						</small>
 					</CardBody>

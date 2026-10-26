@@ -425,8 +425,10 @@ final class Administration {
 					'pending' => $this->queue->pending_work_count(),
 				),
 				'words'     => array(
-					'used' => $this->words->used(),
-					'cap'  => $this->words->limit(),
+					'used'             => $this->words->used(),
+					'cap'              => $this->words->limit(),
+					'translated_month' => $this->words->translated_this_month(),
+					'translated_total' => $this->words->translated_total(),
 				),
 				'segments'  => $counts,
 				'log'       => $log ? $log : array(),

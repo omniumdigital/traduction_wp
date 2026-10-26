@@ -72,6 +72,56 @@ final class WordCapTest extends TestCase {
 		$this->assertSame( 0, $cap->count_words( array( '---' ) ) );
 	}
 
+	public function test_translated_words_counter_starts_empty_without_cap(): void {
+		$cap = $this->make_cap( 0 );
+
+		$this->assertTrue( $cap->reserve( 500 ) );
+		$this->assertSame( 0, $cap->translated_this_month() );
+		$this->assertSame( 0, $cap->translated_total() );
+	}
+
+	public function test_record_translated_increments_month_and_total(): void {
+		$cap = $this->make_cap( 0 );
+
+		$cap->record_translated( 12 );
+		$cap->record_translated( 7 );
+
+		$this->assertSame( 19, $cap->translated_this_month() );
+		$this->assertSame( 19, $cap->translated_total() );
+	}
+
+	public function test_record_translated_resets_month_but_never_total(): void {
+		$cap = $this->make_cap( 0 );
+		$cap->record_translated( 30 );
+
+		$this->options->data[ Options::WORDS_TRANSLATED ] = array(
+			'month'       => gmdate( 'Y-m', strtotime( '-40 days' ) ),
+			'month_words' => 30,
+			'total_words' => 30,
+		);
+
+		$cap->record_translated( 5 );
+
+		$this->assertSame( 5, $cap->translated_this_month() );
+		$this->assertSame( 35, $cap->translated_total() );
+		$this->assertSame(
+			gmdate( 'Y-m' ),
+			$this->options->data[ Options::WORDS_TRANSLATED ]['month']
+		);
+	}
+
+	public function test_translated_month_reads_zero_for_stale_month(): void {
+		$cap = $this->make_cap( 0 );
+		$this->options->data[ Options::WORDS_TRANSLATED ] = array(
+			'month'       => gmdate( 'Y-m', strtotime( '-40 days' ) ),
+			'month_words' => 30,
+			'total_words' => 30,
+		);
+
+		$this->assertSame( 0, $cap->translated_this_month() );
+		$this->assertSame( 30, $cap->translated_total() );
+	}
+
 	public function test_reservation_is_refused_while_counter_lock_is_held(): void {
 		$cap = $this->make_cap( 100 );
 		$this->options->data[ Options::MONTH_WORDS_LOCK ] = time();

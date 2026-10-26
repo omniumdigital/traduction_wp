@@ -107,7 +107,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( GlossaryService::class ),
 				$c->get( QueueState::class ),
 				$c->get( SlugGenerator::class ),
-				$c->get( TranslationQualityValidator::class )
+				$c->get( TranslationQualityValidator::class ),
+				$c->get( WordCap::class )
 			)
 		);
 

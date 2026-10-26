@@ -38,6 +38,7 @@ final class BatchJobTest extends TestCase {
 	private FakeTranslationRepository $translations;
 	private SpyLogger $logger;
 	private RunLock $lock;
+	private WordCap $word_cap;
 	private BatchJob $job;
 
 	/**
@@ -95,6 +96,7 @@ final class BatchJobTest extends TestCase {
 
 		$wpdb            = new \wpdb();
 		$GLOBALS['wpdb'] = $wpdb;
+		$this->word_cap  = new WordCap( new Settings() );
 		$this->job       = new BatchJob(
 			new Settings(),
 			$this->lock,
@@ -102,7 +104,11 @@ final class BatchJobTest extends TestCase {
 			$this->segments,
 			$this->translations,
 			$this->logger,
-			new GlossaryService( new GlossaryRepository( $wpdb ), new Settings() )
+			new GlossaryService( new GlossaryRepository( $wpdb ), new Settings() ),
+			null,
+			null,
+			null,
+			$this->word_cap
 		);
 	}
 
@@ -170,5 +176,55 @@ final class BatchJobTest extends TestCase {
 		$this->job->handle( array( 999 => 'unknown-hash' ), 'en', '', 1 );
 
 		$this->assertCount( 0, $this->provider->calls );
+	}
+
+	public function test_successful_batch_records_translated_source_words(): void {
+		$this->segments->texts['hash-a'] = 'Bonjour tout le monde';
+		$this->provider->response        = array( 'hash-a' => 'Hello whole wide world' );
+		Functions\when( 'wp_kses' )->returnArg();
+
+		$this->job->handle( array( 1 => 'hash-a' ), 'en', '', 1 );
+
+		$this->assertCount( 1, $this->translations->autos );
+		$this->assertSame( 4, $this->word_cap->translated_this_month() );
+		$this->assertSame( 4, $this->word_cap->translated_total() );
+	}
+
+	public function test_failed_batch_records_no_translated_words(): void {
+		$this->provider->exception = new ProviderException( 'generic', 401, false );
+
+		$this->job->handle( array( 1 => 'hash-a' ), 'en', '', 1 );
+
+		$this->assertCount( 0, $this->translations->autos );
+		$this->assertSame( array( 1 ), $this->translations->failures[0]['ids'] );
+		$this->assertSame( 0, $this->word_cap->translated_this_month() );
+		$this->assertSame( 0, $this->word_cap->translated_total() );
+	}
+
+	public function test_quality_rejected_segment_is_not_counted_as_translated(): void {
+		$this->segments->texts['hash-a'] = 'Prix : %s euros';
+		$this->provider->response        = array( 'hash-a' => 'Prix : 12 euros' );
+		Functions\when( 'wp_kses' )->returnArg();
+
+		$this->job->handle( array( 1 => 'hash-a' ), 'en', '', 1 );
+
+		$this->assertCount( 0, $this->translations->autos );
+		$this->assertSame( 0, $this->word_cap->translated_total() );
+	}
+
+	public function test_partial_batch_records_only_saved_source_words(): void {
+		$this->segments->texts['hash-a'] = 'Bonjour le monde';
+		$this->segments->texts['hash-b'] = 'Prix : %s euros';
+		$this->provider->response        = array(
+			'hash-a' => 'Hello the world',
+			'hash-b' => 'Prix : 12 euros',
+		);
+		Functions\when( 'wp_kses' )->returnArg();
+
+		$this->job->handle( array( 1 => 'hash-a', 2 => 'hash-b' ), 'en', '', 1 );
+
+		$this->assertCount( 1, $this->translations->autos );
+		$this->assertSame( 3, $this->word_cap->translated_this_month() );
+		$this->assertSame( 3, $this->word_cap->translated_total() );
 	}
 }

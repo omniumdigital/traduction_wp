@@ -447,14 +447,17 @@ msgstr "Utilisez au moins 4,5:1 pour le texte normal."
 msgid "Variant"
 msgstr "Variante"
 
-msgid "Words this month"
-msgstr "Mots ce mois-ci"
+msgid "Words translated this month"
+msgstr "Mots traduits ce mois-ci"
+
+msgid "%d words in total since installation"
+msgstr "%d mots au total depuis l’installation"
+
+msgid "Monthly cap: %d words"
+msgstr "Plafond mensuel : %d mots"
 
 msgid "coverage"
 msgstr "couverture"
-
-msgid "of %d"
-msgstr "sur %d"
 
 msgid "pages"
 msgstr "pages"
