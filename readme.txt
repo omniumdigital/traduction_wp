@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,15 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.0.3 =
+* Sélecteur de langue : les liens du sélecteur ne sont plus réécrits vers la langue courante sur une page traduite ; chaque entrée pointe à nouveau vers sa langue.
+* Slugs traduits fiables : le titre du contenu est toujours traduit même lorsqu’il n’apparaît pas tel quel dans le HTML (titres masqués des builders), le slug source n’est plus jamais enregistré comme repli et un slug modifié manuellement n’est plus écrasé ; les anciens replis sont remplacés avec redirection 301.
+* Couverture de traduction : le taux affiché se met à jour immédiatement après une nouvelle traduction.
+* Menu d’administration : la capability est rétablie au démarrage pour les installations mises à jour sans réactivation.
+* Fournisseur actif : saisir une clé pour un autre fournisseur l’active automatiquement quand le fournisseur courant n’a pas de clé ; toute mise en file est refusée tant qu’aucune clé n’est configurée, avec un message explicite.
+* Statistiques : compteur des mots réellement traduits (mois en cours et total) et segments en échec affichés sur le tableau de bord avec indication de relance.
+* Sélecteur en affichage « drapeau seul » ou « code » : la liste déroulante s’ajuste à son contenu et la langue active reste repérable.
 
 = 1.0.2 =
 * L’extension fonctionne sans l’extension PHP Sodium, grâce à la bibliothèque sodium_compat fournie par WordPress : plus rien à activer côté serveur.
