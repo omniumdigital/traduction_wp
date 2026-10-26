@@ -273,10 +273,18 @@ final class Translator {
 	/**
 	 * Rewrite same-site links for the active language.
 	 *
+	 * Anchors carrying an hreflang attribute target an explicit language
+	 * (switcher entries, hreflang alternates): rewriting them would point
+	 * every switcher entry back at the current language, so they are never
+	 * touched.
+	 *
 	 * @param \DOMDocument|\Dom\HTMLDocument $document Document.
 	 */
 	private function rewrite_links( \DOMDocument|\Dom\HTMLDocument $document ): void {
 		foreach ( $document->getElementsByTagName( 'a' ) as $anchor ) {
+			if ( $anchor->hasAttribute( 'hreflang' ) ) {
+				continue;
+			}
 			if ( $anchor->hasAttribute( 'href' ) ) {
 				$href = $anchor->getAttribute( 'href' );
 				$anchor->setAttribute( 'href', $this->url_translator->translate( $href, $this->current_language->get() ) );
