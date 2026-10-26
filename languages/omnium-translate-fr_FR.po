@@ -521,8 +521,16 @@ msgstr "La clé fonctionne."
 msgid "Omnium Translate"
 msgstr "Omnium Translate"
 
-msgid "Omnium Translate requires PHP 8.1+, the sodium extension and a complete installation (vendor folder)."
-msgstr "Omnium Translate nécessite PHP 8.1+, l’extension sodium et une installation complète (dossier vendor)."
+#. translators: 1: required PHP version, 2: current PHP version.
+#, php-format
+msgid "Omnium Translate requires PHP %1$s or later (current version: %2$s). Ask your host to upgrade PHP."
+msgstr "Omnium Translate nécessite PHP %1$s ou plus récent (version actuelle : %2$s). Demandez à votre hébergeur de mettre PHP à jour."
+
+msgid "Omnium Translate cannot encrypt API keys: neither the PHP sodium extension nor the WordPress sodium_compat library is available."
+msgstr "Omnium Translate ne peut pas chiffrer les clés API : ni l’extension PHP sodium ni la bibliothèque sodium_compat de WordPress ne sont disponibles."
+
+msgid "Omnium Translate is incomplete (vendor folder missing). Install the omnium-translate.zip file from the GitHub release, not the source code archive."
+msgstr "Omnium Translate est incomplet (dossier vendor manquant). Installez le fichier omnium-translate.zip de la release GitHub, et non l’archive du code source."
 
 msgid "Omnium Translate status"
 msgstr "État d’Omnium Translate"

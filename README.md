@@ -8,7 +8,7 @@ Le plugin traduit le HTML rendu, avec des intégrations pour Gutenberg, Elemento
 
 - WordPress 6.9 ou ultérieur (testé jusqu'à WordPress 7.1)
 - PHP 8.1 ou ultérieur
-- L'extension PHP Sodium (`sodium`) pour chiffrer les clés API
+- Aucune extension PHP à activer : les clés API sont chiffrées avec l'extension Sodium si elle est présente, sinon avec la bibliothèque sodium_compat fournie par WordPress
 - WooCommerce 9.0 à 11.2 si vous souhaitez traduire un catalogue WooCommerce (facultatif)
 
 ## Installation et configuration
