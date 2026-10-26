@@ -94,6 +94,12 @@
 	box-shadow: 0 6px 18px rgb(0 0 0 / 9%);
 }
 
+.omtr-switcher--flag .omtr-switcher__dropdown > .omtr-switcher__list,
+.omtr-switcher--code .omtr-switcher__dropdown > .omtr-switcher__list {
+	min-width: 100%;
+	width: max-content;
+}
+
 .omtr-switcher__link {
 	min-height: 30px;
 	padding: 0 8px;
@@ -149,6 +155,10 @@
 
 .omtr-switcher--flag .omtr-switcher__check {
 	display: none;
+}
+
+.omtr-switcher--flag .is-active {
+	background: var(--omtr-hover);
 }
 
 .omtr-switcher--bottom-left {

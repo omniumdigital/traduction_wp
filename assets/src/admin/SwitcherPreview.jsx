@@ -1,10 +1,33 @@
 import { __ } from "@wordpress/i18n";
 
+function renderItemContent(display, flag, label, code) {
+	const showFlag = Boolean(flag) && (display === "flag-name" || display === "flag");
+	if (display === "flag" && flag) {
+		return flag;
+	}
+	const text = display === "code" || display === "flag" ? code : label;
+	return (
+		<>
+			{showFlag && flag}
+			<span className="omtr-switcher__label">{text}</span>
+		</>
+	);
+}
+
 export function SwitcherPreview({ settings, flagsUrl }) {
 	const switcher = settings.switcher || {};
 	const colors = switcher.colors || {};
-	const flagCode = settings.flags?.en || "gb";
-	const flagSource = flagsUrl ? `${flagsUrl.replace(/\/$/, "")}/${flagCode}.svg` : "";
+	const display = switcher.display || "flag-name";
+	const variant = switcher.variant || "dropdown";
+	const flagCodeEn = settings.flags?.en || "gb";
+	const flagCodeFr = settings.flags?.fr || "fr";
+	const baseUrl = flagsUrl ? flagsUrl.replace(/\/$/, "") : "";
+	const flagEn = baseUrl ? (
+		<img className="omtr-switcher__flag" src={`${baseUrl}/${flagCodeEn}.svg`} alt="" width="24" height="18" />
+	) : null;
+	const flagFr = baseUrl ? (
+		<img className="omtr-switcher__flag" src={`${baseUrl}/${flagCodeFr}.svg`} alt="" width="24" height="18" />
+	) : null;
 	const style = {
 		"--omtr-bg": colors.bg || "#ffffff",
 		"--omtr-fg": colors.fg || "#0a0a0a",
@@ -13,24 +36,22 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 		"--omtr-radius": `${switcher.radius || 8}px`,
 		"--omtr-flag-size": `${switcher.flag_size || 16}px`,
 	};
-	const flag = flagSource ? (
-		<img className="omtr-switcher__flag" src={flagSource} alt="" width="24" height="18" />
-	) : null;
+
+	const englishContent = renderItemContent(display, flagEn, __("English", "omnium-translate"), "EN");
+	const frenchContent = renderItemContent(display, flagFr, __("French", "omnium-translate"), "FR");
+
 	return (
 		<div
-			className={`omtr-switcher notranslate omtr-switcher--${switcher.variant || "dropdown"} omtr-switcher--${
-				switcher.display || "flag-name"
-			}`}
+			className={`omtr-switcher notranslate omtr-switcher--${variant} omtr-switcher--${display}`}
 			style={style}
 			data-omtr-skip
 			translate="no"
 		>
-			{switcher.variant === "inline" ? (
+			{variant === "inline" ? (
 				<ul className="omtr-switcher__list">
 					<li className="omtr-switcher__item">
 						<a className="omtr-switcher__link is-active" href="#preview" lang="en" aria-current="page">
-							{flag}
-							<span className="omtr-switcher__label">{__("English", "omnium-translate")}</span>
+							{englishContent}
 							<span className="omtr-switcher__check" aria-hidden="true">
 								✓
 							</span>
@@ -38,22 +59,20 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 					</li>
 					<li className="omtr-switcher__item">
 						<a className="omtr-switcher__link" href="#preview" lang="fr">
-							{__("French", "omnium-translate")}
+							{frenchContent}
 						</a>
 					</li>
 				</ul>
 			) : (
 				<details className="omtr-switcher__dropdown" open>
 					<summary className="omtr-switcher__trigger" aria-haspopup="true">
-						{flag}
-						<span className="omtr-switcher__label">{__("English", "omnium-translate")}</span>
+						{englishContent}
 						<span className="omtr-switcher__chevron" aria-hidden="true" />
 					</summary>
 					<ul className="omtr-switcher__list">
 						<li className="omtr-switcher__item">
 							<a className="omtr-switcher__link is-active" href="#preview" lang="en" aria-current="page">
-								{flag}
-								<span className="omtr-switcher__label">{__("English", "omnium-translate")}</span>
+								{englishContent}
 								<span className="omtr-switcher__check" aria-hidden="true">
 									✓
 								</span>
@@ -61,7 +80,7 @@ export function SwitcherPreview({ settings, flagsUrl }) {
 						</li>
 						<li className="omtr-switcher__item">
 							<a className="omtr-switcher__link" href="#preview" lang="fr">
-								{__("French", "omnium-translate")}
+								{frenchContent}
 							</a>
 						</li>
 					</ul>

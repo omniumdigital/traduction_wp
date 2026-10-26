@@ -124,8 +124,9 @@ final class Administration {
 		$asset_path = OMTR_DIR . 'assets/build/admin.asset.php';
 		$asset      = require $asset_path;
 		wp_enqueue_style( 'wp-components' );
+		wp_enqueue_style( 'omtr-switcher', OMTR_URL . 'assets/css/switcher.css', array(), OMTR_VERSION );
 		if ( file_exists( OMTR_DIR . 'assets/build/admin.css' ) ) {
-			wp_enqueue_style( 'omtr-admin', OMTR_URL . 'assets/build/admin.css', array( 'wp-components' ), $asset['version'] );
+			wp_enqueue_style( 'omtr-admin', OMTR_URL . 'assets/build/admin.css', array( 'wp-components', 'omtr-switcher' ), $asset['version'] );
 		}
 		wp_enqueue_script( 'omtr-admin', OMTR_URL . 'assets/build/admin.js', $asset['dependencies'], $asset['version'], true );
 		wp_add_inline_script(
