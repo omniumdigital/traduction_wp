@@ -241,6 +241,17 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	}
 
 	/**
+	 * Whether the active provider can serve paid work right now.
+	 *
+	 * Thin public wrapper over the enqueue guard: the dashboard and the
+	 * failed-segments retry route answer "can we translate?" without
+	 * enqueueing anything and without touching the frozen queue contract.
+	 */
+	public function provider_is_ready(): bool {
+		return $this->paid_provider_is_ready();
+	}
+
+	/**
 	 * Reason of the last refusal, for CLI feedback.
 	 */
 	public function last_reason(): string {
