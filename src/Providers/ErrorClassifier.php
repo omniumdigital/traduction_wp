@@ -32,6 +32,12 @@ final class ErrorClassifier {
 	/** The key was refused (quota plan, wrong scope, disabled). */
 	public const KEY_REFUSED = 'Request rejected: the key was not accepted for this request.';
 
+	/** The account has no credit, no billing set up or no quota left. */
+	public const BILLING = 'Request rejected: no credit or quota left on the provider account.';
+
+	/** The provider does not serve the server's location. */
+	public const REGION = 'Request rejected: the provider does not serve this server location.';
+
 	/** No known pattern matched. */
 	public const UNKNOWN = 'Request rejected by the provider.';
 
@@ -47,6 +53,15 @@ final class ErrorClassifier {
 		if ( 401 === $http_code || 403 === $http_code ) {
 			return self::KEY_REFUSED;
 		}
+		if ( 402 === $http_code || preg_match( '/(credit balance|billing|insufficient_quota|exceeded your current quota|payment required|purchase credits)/i', $text ) ) {
+			return self::BILLING;
+		}
+		if ( preg_match( '/(api key not valid|api_key_invalid|invalid api key|invalid x-api-key|permission_denied)/i', $text ) ) {
+			return self::KEY_REFUSED;
+		}
+		if ( preg_match( '/(location is not supported|unsupported_country|country, region, or territory not supported)/i', $text ) ) {
+			return self::REGION;
+		}
 		if ( preg_match( '/\b(too (large|long|big)|context length|max_tokens|token limit|request entity|payload too large|input.*too long)\b/i', $text ) ) {
 			return self::TOO_LARGE;
 		}
@@ -57,6 +72,34 @@ final class ErrorClassifier {
 			return self::BAD_FORMAT;
 		}
 		return self::UNKNOWN;
+	}
+
+	/**
+	 * Provider machine error code (e.g. "invalid_request_error", "INVALID_ARGUMENT").
+	 *
+	 * Only identifier-shaped values from code/type/status fields are kept, so
+	 * the free-text message (which may echo submitted content) never leaks;
+	 * the code is what makes an otherwise unknown rejection diagnosable.
+	 *
+	 * @param string $raw_body Raw error response body, never persisted.
+	 * @return string Sanitized code, empty string when none.
+	 */
+	public static function provider_code( string $raw_body ): string {
+		$decoded = json_decode( $raw_body, true );
+		if ( ! is_array( $decoded ) ) {
+			return '';
+		}
+		$error = isset( $decoded['error'] ) && is_array( $decoded['error'] ) ? $decoded['error'] : array();
+		$parts = array();
+		foreach ( array( $error['status'] ?? null, $error['type'] ?? null, $error['code'] ?? null, $decoded['type'] ?? null, $decoded['code'] ?? null ) as $candidate ) {
+			if ( is_int( $candidate ) ) {
+				$candidate = (string) $candidate;
+			}
+			if ( is_string( $candidate ) && 1 === preg_match( '/^[A-Za-z0-9_.:-]{1,64}$/', $candidate ) && ! in_array( $candidate, $parts, true ) ) {
+				$parts[] = $candidate;
+			}
+		}
+		return implode( '/', array_slice( $parts, 0, 3 ) );
 	}
 
 	/**
