@@ -199,6 +199,17 @@ final class MistralProvider implements ProviderInterface {
 			if ( 0 === $e->http_code ) {
 				return Result::error( __( 'Connection to Mistral failed.', 'omnium-translate' ), 0 );
 			}
+			if ( '' !== $e->provider_code ) {
+				return Result::error(
+					sprintf(
+						/* translators: 1: HTTP status code, 2: provider error code. */
+						__( 'Key test failed (HTTP %1$d, code %2$s).', 'omnium-translate' ),
+						$e->http_code,
+						$e->provider_code
+					),
+					$e->http_code
+				);
+			}
 			return Result::error(
 				sprintf(
 					/* translators: %d: HTTP status code. */
@@ -265,7 +276,8 @@ final class MistralProvider implements ProviderInterface {
 		}
 		if ( 200 !== $code ) {
 			// Fixed local classification only: the raw body is untrusted and never stored.
-			$exception = new ProviderException( ErrorClassifier::classify( (string) wp_remote_retrieve_body( $response ), $code ), $code, false );
+			$error_body = (string) wp_remote_retrieve_body( $response );
+			$exception  = new ProviderException( ErrorClassifier::classify( $error_body, $code ), $code, false, ErrorClassifier::provider_code( $error_body, $key ) );
 			throw $exception;
 		}
 

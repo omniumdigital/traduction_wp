@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,11 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.1.2 =
+* Erreurs fournisseur diagnostiquables : le code d’erreur du fournisseur (par exemple `invalid_request_error`) est affiché avec le motif, sans jamais reprendre son message brut.
+* Crédit ou quota épuisé, clé Gemini invalide et localisation non desservie sont désormais reconnus explicitement.
+* Bouton « Tester la clé » ajouté dans l’onglet Réglages.
 
 = 1.1.1 =
 * Erreurs de lots explicites : chaque rejet du fournisseur (HTTP 400/401…) est classifié en motif fixe et lisible (« entrée ou sortie trop grande pour le modèle », « modèle inconnu », « clé refusée »…), affiché dans le bandeau d’échec du tableau de bord — jamais le message brut du fournisseur.

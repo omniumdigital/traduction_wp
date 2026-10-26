@@ -20,6 +20,7 @@ export function Settings({ request, data: initialData }) {
 	const [providers, setProviders] = useState([]);
 	const [key, setKey] = useState("");
 	const [switchedTo, setSwitchedTo] = useState(null);
+	const [keyStatus, setKeyStatus] = useState(null);
 	useEffect(() => {
 		if (initialData) return;
 		Promise.all([request({ path: "/settings" }), request({ path: "/providers" })])
@@ -133,7 +134,26 @@ export function Settings({ request, data: initialData }) {
 						}}
 					>
 						{__("Save key", "omnium-translate")}
+					</Button>{" "}
+					<Button
+						variant="secondary"
+						disabled={!providers.find((item) => item.id === settings.provider)?.key?.set}
+						onClick={async () => {
+							setKeyStatus(null);
+							try {
+								setKeyStatus(await request({ path: `/providers/${settings.provider}/test`, method: "POST" }));
+							} catch (reason) {
+								setKeyStatus({ ok: false, message: reason?.message || __("Key test failed.", "omnium-translate") });
+							}
+						}}
+					>
+						{__("Test the key", "omnium-translate")}
 					</Button>
+					{keyStatus && (
+						<Notice status={keyStatus.ok ? "success" : "error"} onDismiss={() => setKeyStatus(null)}>
+							{keyStatus.message}
+						</Notice>
+					)}
 					{switchedTo && (
 						<Notice status="success" onDismiss={() => setSwitchedTo(null)}>
 							{sprintf(

@@ -322,12 +322,14 @@ final class GeminiProviderTest extends TestCase {
 
 	public function test_test_key_invalid_key(): void {
 		$provider = $this->make_provider();
-		$this->stub_http( array( array( 'code' => 401, 'body' => '{"error":{"status":"UNAUTHENTICATED"}}' ) ) );
+		$this->stub_http( array( array( 'code' => 401, 'body' => '{"error":{"status":"UNAUTHENTICATED","message":"secret echoed text"}}' ) ) );
 
 		$result = $provider->test_key();
 		$this->assertFalse( $result->ok );
 		$this->assertSame( 401, $result->http_code );
-		$this->assertStringNotContainsString( 'UNAUTHENTICATED', $result->message );
+		// Only the identifier-shaped provider code is surfaced, never the free-text message.
+		$this->assertStringContainsString( 'UNAUTHENTICATED', $result->message );
+		$this->assertStringNotContainsString( 'secret echoed text', $result->message );
 	}
 
 	public function test_unknown_ids_make_the_response_invalid(): void {

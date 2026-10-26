@@ -230,7 +230,7 @@ final class BatchJob {
 		$this->logger->log(
 			'error',
 			'queue:batch',
-			sprintf( 'Batch failed after %d attempt(s) (http=%d): %s', $attempt, $e->http_code, $e->getMessage() )
+			sprintf( 'Batch failed after %d attempt(s) (http=%d%s): %s', $attempt, $e->http_code, '' !== $e->provider_code ? ', code=' . $e->provider_code : '', $e->getMessage() )
 		);
 		$this->mark_failed( $pending, $segments, $lang );
 		$this->queue->settle_run( $run_id, true );
