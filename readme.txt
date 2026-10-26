@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.3
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,11 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.1.0 =
+* Suivi de la traduction en direct : le tableau de bord se rafraîchit toutes les 5 secondes pendant un run, avec barres de progression par langue, nombre de tâches et de lots en file et horodatage de la dernière activité.
+* Segments en échec : le tableau de bord affiche la cause de l’échec la plus récente et un bouton « Relancer les segments en échec » qui ne renvoie que ce qui a échoué, par langue, sans jamais repayer le contenu déjà traduit.
+* La relance est refusée avec un message clair tant qu’aucune clé API n’est configurée pour le fournisseur actif.
 
 = 1.0.3 =
 * Sélecteur de langue : les liens du sélecteur ne sont plus réécrits vers la langue courante sur une page traduite ; chaque entrée pointe à nouveau vers sa langue.

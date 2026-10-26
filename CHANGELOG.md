@@ -4,6 +4,18 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.1.0] - 2026-10-26
+
+### Ajouté
+- Suivi de la traduction en direct : le tableau de bord se rafraîchit automatiquement (5 s) pendant qu’une traduction est en file, avec point d’activité, nombre de tâches et de lots en attente et horodatage de la dernière activité.
+- Barres de progression de couverture par langue sur le tableau de bord (avec libellé accessible).
+- Bloc « échecs » du tableau de bord : nombre de segments en échec et dernière erreur connue (message technique du journal).
+- Route REST `POST /omtr/v1/translations/retry` : relance exactement les paires (segment, langue) en échec, par langue cible, sans jamais renvoyer un segment déjà traduit ; refusée en 409 avec la raison tant que le fournisseur actif n’a pas de clé.
+- Bouton « Relancer les segments en échec » dans le bandeau d’échec du tableau de bord, avec confirmation du nombre de segments remis en file.
+
+### Corrigé
+- La file expose `provider_is_ready()` : l’interface et les routes peuvent vérifier qu’un run payant est possible sans mettre quoi que ce soit en file.
+
 ## [1.0.3] - 2026-10-26
 
 ### Corrigé
