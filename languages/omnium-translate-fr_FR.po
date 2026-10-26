@@ -153,6 +153,15 @@ msgstr "Aucun contenu public publié n’a été sélectionné."
 msgid "The translation queue is paused."
 msgstr "La file de traduction est en pause."
 
+msgid "No provider is configured."
+msgstr "Aucun fournisseur n’est configuré."
+
+msgid "No API key is configured for the selected provider (%s). Add one in Settings or choose another provider."
+msgstr "Aucune clé API n’est configurée pour le fournisseur sélectionné (%s). Ajoutez-en une dans les réglages ou choisissez un autre fournisseur."
+
+msgid "The active provider is now %s (the previous one had no API key)."
+msgstr "Le fournisseur actif est désormais %s (le précédent n’avait pas de clé API)."
+
 msgid "Translation queue paused."
 msgstr "File de traduction mise en pause."
 

@@ -54,6 +54,10 @@ export function Wizard({ data, request, onComplete }) {
 						item.id === settings.provider ? { ...item, key: { ...item.key, ...storedKey } } : item,
 					),
 				);
+				if (storedKey?.switched && storedKey.provider && storedKey.provider !== settings.provider) {
+					// The server activated this provider because the previous one had no key.
+					setSettings((current) => ({ ...current, provider: storedKey.provider, model: "" }));
+				}
 			}
 			setKeyStatus(await request({ path: `/providers/${settings.provider}/test`, method: "POST" }));
 		} catch (reason) {

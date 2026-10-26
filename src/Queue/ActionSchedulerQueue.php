@@ -12,6 +12,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Providers\ProviderInterface;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Providers\RateLimits;
+use Omnium\Translate\Security\ApiKeyStore;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
 
@@ -75,6 +76,7 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	 * @param SegmentRepositoryInterface|null     $segments     Segments repository (only enqueue_segments needs it).
 	 * @param TranslationRepositoryInterface|null $translations Translations repository (only enqueue_segments needs it).
 	 * @param QueueState|null                     $state        Manual pause state.
+	 * @param ApiKeyStore|null                    $keys         API key store for the paid-enqueue guard (always injected by QueueModule).
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -85,7 +87,8 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 		private LoggerInterface $logger,
 		private ?SegmentRepositoryInterface $segments = null,
 		private ?TranslationRepositoryInterface $translations = null,
-		private ?QueueState $state = null
+		private ?QueueState $state = null,
+		private ?ApiKeyStore $keys = null
 	) {}
 
 	/**
@@ -114,6 +117,9 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	public function enqueue_urls( array $targets ): bool {
 		if ( null !== $this->state && $this->state->is_paused() ) {
 			$this->reason = __( 'The translation queue is paused.', 'omnium-translate' );
+			return false;
+		}
+		if ( ! $this->paid_provider_is_ready() ) {
 			return false;
 		}
 		$accepted = array();
@@ -174,6 +180,9 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	public function enqueue_segments( array $segment_ids, string $target_lang ): void {
 		if ( null !== $this->state && $this->state->is_paused() ) {
 			$this->logger->log( 'warning', 'queue', 'Segment enqueue refused: queue is paused.' );
+			return;
+		}
+		if ( ! $this->paid_provider_is_ready() ) {
 			return;
 		}
 		if ( array() === $segment_ids || null === $this->segments || null === $this->translations ) {
@@ -400,6 +409,42 @@ final class ActionSchedulerQueue implements TranslationQueueInterface {
 	public function current_provider(): ?ProviderInterface {
 		$id = (string) $this->settings->get( 'provider' );
 		return $this->providers->get( $id );
+	}
+
+	/**
+	 * Refuse paid enqueuing when the selected provider cannot serve a request:
+	 * no provider selected, or no API key stored for it. Every batch would
+	 * otherwise burn attempts and fail (CLAUDE.md sections 5 and 11).
+	 *
+	 * The log stays technical: no key material, no segment content.
+	 */
+	private function paid_provider_is_ready(): bool {
+		$provider = $this->current_provider();
+		if ( null === $provider ) {
+			$this->reason = __( 'No provider is configured.', 'omnium-translate' );
+			$this->logger->log( 'warning', 'queue', 'Enqueue refused: no provider is configured.' );
+			return false;
+		}
+		if ( null === $this->keys ) {
+			return true;
+		}
+		try {
+			$has_key = '' !== $this->keys->masked( $provider->id() );
+		} catch ( \Throwable $error ) {
+			// Unreadable key material behaves like a missing key: a key could
+			// never have been stored in this state anyway.
+			$has_key = false;
+		}
+		if ( ! $has_key ) {
+			$this->reason = sprintf(
+				/* translators: %s: provider name. */
+				__( 'No API key is configured for the selected provider (%s). Add one in Settings or choose another provider.', 'omnium-translate' ),
+				$provider->label()
+			);
+			$this->logger->log( 'warning', 'queue', sprintf( 'Enqueue refused: provider "%s" has no API key.', $provider->id() ) );
+			return false;
+		}
+		return true;
 	}
 
 	/**

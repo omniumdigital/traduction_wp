@@ -18,6 +18,7 @@ use Omnium\Translate\Providers\TranslationQualityValidator;
 use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Router\RequestGuard;
 use Omnium\Translate\Router\SlugGenerator;
+use Omnium\Translate\Security\ApiKeyStore;
 use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
@@ -69,7 +70,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( LoggerInterface::class ),
 				$c->get( SegmentRepositoryInterface::class ),
 				$c->get( TranslationRepositoryInterface::class ),
-				$c->get( QueueState::class )
+				$c->get( QueueState::class ),
+				$c->get( ApiKeyStore::class )
 			)
 		);
 		$container->set(

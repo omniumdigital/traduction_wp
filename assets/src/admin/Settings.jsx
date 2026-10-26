@@ -1,6 +1,7 @@
 import {
 	Button,
 	ColorPicker,
+	Notice,
 	Panel,
 	PanelBody,
 	SelectControl,
@@ -8,7 +9,7 @@ import {
 	TextareaControl,
 	ToggleControl,
 } from "@wordpress/components";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useState } from "@wordpress/element";
 import { Loading } from "./common";
 import { Contrast } from "./Contrast";
@@ -18,6 +19,7 @@ export function Settings({ request, data: initialData }) {
 	const [data, setData] = useState(initialData || null);
 	const [providers, setProviders] = useState([]);
 	const [key, setKey] = useState("");
+	const [switchedTo, setSwitchedTo] = useState(null);
 	useEffect(() => {
 		if (initialData) return;
 		Promise.all([request({ path: "/settings" }), request({ path: "/providers" })])
@@ -117,12 +119,29 @@ export function Settings({ request, data: initialData }) {
 					/>
 					<Button
 						onClick={async () => {
-							await request({ path: `/providers/${settings.provider}/key`, method: "PUT", data: { key } });
+							const stored = await request({
+								path: `/providers/${settings.provider}/key`,
+								method: "PUT",
+								data: { key },
+							});
 							setKey("");
+							if (stored?.switched && stored.provider && stored.provider !== settings.provider) {
+								setData({ ...data, settings: { ...settings, provider: stored.provider } });
+								setSwitchedTo(stored.provider);
+							}
+							setProviders(await request({ path: "/providers" }));
 						}}
 					>
 						{__("Save key", "omnium-translate")}
 					</Button>
+					{switchedTo && (
+						<Notice status="success" onDismiss={() => setSwitchedTo(null)}>
+							{sprintf(
+								__("The active provider is now %s (the previous one had no API key).", "omnium-translate"),
+								providers.find((item) => item.id === switchedTo)?.label || switchedTo,
+							)}
+						</Notice>
+					)}
 				</PanelBody>
 				<PanelBody title={__("SEO", "omnium-translate")} initialOpen>
 					<ToggleControl
