@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,12 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.1.1 =
+* Erreurs de lots explicites : chaque rejet du fournisseur (HTTP 400/401…) est classifié en motif fixe et lisible (« entrée ou sortie trop grande pour le modèle », « modèle inconnu », « clé refusée »…), affiché dans le bandeau d’échec du tableau de bord — jamais le message brut du fournisseur.
+* Lots rejetés comme trop grands : le lot est scindé en deux moitiés réessayées automatiquement, ce qui isole le segment responsable au lieu de faire échouer ses voisins à chaque relance.
+* Segment plus long qu’une requête : il est écarté avant l’appel avec un motif explicite (« trop long pour une requête unique ») au lieu d’un échec générique.
+* Verrou de run auto-réparé : un run dont toutes les actions sont mortes ne bloque plus le site pendant 3 heures, le verrou est libéré dès qu’aucun travail ne reste en file.
 
 = 1.1.0 =
 * Suivi de la traduction en direct : le tableau de bord se rafraîchit toutes les 5 secondes pendant un run, avec barres de progression par langue, nombre de tâches et de lots en file et horodatage de la dernière activité.
