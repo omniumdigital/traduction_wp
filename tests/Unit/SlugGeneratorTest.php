@@ -20,6 +20,13 @@ final class SlugGeneratorTest extends TestCase {
 
 	private FakeTranslationRepository $translations;
 
+	/**
+	 * Executed SQL, in call order.
+	 *
+	 * @var list<string>
+	 */
+	private array $queries = array();
+
 	protected function setUp(): void {
 		parent::setUp();
 		Functions\when( 'get_option' )->justReturn( array( 'source_lang' => 'fr', 'target_langs' => array( 'en' ) ) );
@@ -39,40 +46,64 @@ final class SlugGeneratorTest extends TestCase {
 		$this->translations = new FakeTranslationRepository();
 	}
 
+	/**
+	 * Slug is built from the title translation even when the raw title never
+	 * appears in the rendered HTML (hidden Elementor heading, rewritten title).
+	 */
 	public function test_generates_ascii_slug_from_translated_title_and_adds_unique_suffix(): void {
-		$post            = new \WP_Post();
-		$post->ID        = 42;
-		$post->post_name = 'titre-source';
-		Functions\when( 'get_post' )->justReturn( $post );
-		Functions\when( 'get_the_title' )->justReturn( 'Titre source' );
-		$hash = SegmentKey::hash( 'fr', SegmentKey::normalize( 'Titre source' ) );
-		$this->translations->seed( $hash, 'en', 'Über Café' );
+		$this->seed_title_translation( 'Titre source', 'Über Café' );
+		$this->mock_post( 'a-propos' );
 
-		$wpdb         = $this->createMock( \wpdb::class );
-		$wpdb->prefix = 'wp_';
-		$GLOBALS['wpdb'] = $wpdb;
-		$wpdb->method( 'prepare' )->willReturnCallback( static fn( string $sql, mixed ...$args ): string => $sql . '|' . implode( '|', array_map( 'strval', $args ) ) );
-		$wpdb->expects( $this->exactly( 4 ) )->method( 'get_var' )->willReturnOnConsecutiveCalls( '9', null, null, null );
-		$wpdb->expects( $this->exactly( 2 ) )->method( 'query' );
+		// get_var: current slug (none), slug conflict ('9' = other post), history conflict (none), save re-read (none).
+		$slug = $this->generator( $this->db( array( null, '9', null, null, null ) ) )->generate( 42, 'en' );
 
-		$this->assertSame( 'uber-cafe-2', $this->generator( $wpdb )->generate( 42, 'en' ) );
+		$this->assertSame( 'uber-cafe-2', $slug );
 	}
 
-	public function test_falls_back_to_source_slug_without_title_translation(): void {
-		$post            = new \WP_Post();
-		$post->ID        = 42;
-		$post->post_name = 'page-source';
-		Functions\when( 'get_post' )->justReturn( $post );
+	/**
+	 * Without a stored translation of the title, nothing is persisted: the
+	 * source post_name is never saved as a fallback slug anymore.
+	 */
+	public function test_returns_null_without_a_title_translation_and_never_touches_the_db(): void {
 		Functions\when( 'get_the_title' )->justReturn( 'Titre source' );
+		$this->mock_post( 'a-propos' );
 
 		$wpdb         = $this->createMock( \wpdb::class );
 		$wpdb->prefix = 'wp_';
 		$GLOBALS['wpdb'] = $wpdb;
-		$wpdb->method( 'prepare' )->willReturnCallback( static fn( string $sql, mixed ...$args ): string => $sql . '|' . implode( '|', array_map( 'strval', $args ) ) );
-		$wpdb->expects( $this->exactly( 3 ) )->method( 'get_var' )->willReturn( null );
-		$wpdb->expects( $this->exactly( 2 ) )->method( 'query' );
+		$wpdb->expects( $this->never() )->method( 'query' );
 
-		$this->assertSame( 'page-source', $this->generator( $wpdb )->generate( 42, 'en' ) );
+		$this->assertNull( $this->generator( $wpdb )->generate( 42, 'en' ) );
+	}
+
+	/** A manually edited slug is never overwritten by a later generation. */
+	public function test_manual_slug_is_preserved(): void {
+		$this->seed_title_translation( 'Titre source', 'About us' );
+		$this->mock_post( 'a-propos' );
+
+		// get_var: existing manual slug, different from the source fallback.
+		$wpdb = $this->db( array( 'notre-equipe' ) );
+
+		$this->assertSame( 'notre-equipe', $this->generator( $wpdb )->generate( 42, 'en' ) );
+		$this->assertSame( array(), $this->queries );
+	}
+
+	/**
+	 * The 1.0.x fallback (source post_name stored as the translated slug) is
+	 * the only replaceable value: it is swapped for the translated slug and
+	 * kept in slug_history for the 301 redirect.
+	 */
+	public function test_legacy_source_slug_fallback_is_replaced_and_kept_in_history(): void {
+		$this->seed_title_translation( 'Titre source', 'About us' );
+		$this->mock_post( 'a-propos' );
+
+		// get_var: existing fallback slug, slug conflict, history conflict, save re-read.
+		$slug = $this->generator( $this->db( array( 'a-propos', null, null, 'a-propos' ) ) )->generate( 42, 'en' );
+
+		$this->assertSame( 'about-us', $slug );
+		$this->assertCount( 3, $this->queries ); // history restore-delete, slug upsert, slug_history insert.
+		$this->assertStringContainsString( 'omtr_slug_history', $this->queries[2] );
+		$this->assertStringContainsString( 'a-propos', $this->queries[2] );
 	}
 
 	/** @dataProvider maliciousSlugs */
@@ -90,6 +121,52 @@ final class SlugGeneratorTest extends TestCase {
 		yield 'traversal' => array( '../admin' );
 		yield 'markup' => array( '<script>alert(1)</script>' );
 		yield 'absolute URL' => array( 'https://evil.test/x' );
+	}
+
+	/**
+	 * Stub the scanned post and its translated title.
+	 *
+	 * @param string $title      Source title.
+	 * @param string $translated Stored English translation.
+	 */
+	private function seed_title_translation( string $title, string $translated ): void {
+		Functions\when( 'get_the_title' )->justReturn( $title );
+		$hash = SegmentKey::hash( 'fr', SegmentKey::normalize( $title ) );
+		$this->translations->seed( $hash, 'en', $translated );
+	}
+
+	/**
+	 * Stub the scanned post.
+	 *
+	 * @param string $post_name Source post_name.
+	 */
+	private function mock_post( string $post_name ): void {
+		$post            = new \WP_Post();
+		$post->ID        = 42;
+		$post->post_name = $post_name;
+		Functions\when( 'get_post' )->justReturn( $post );
+	}
+
+	/**
+	 * wpdb double recording every write, with a scripted get_var sequence.
+	 *
+	 * @param list<string|null> $vars Consecutive get_var results.
+	 */
+	private function db( array $vars ): \wpdb {
+		$this->queries    = array();
+		$test             = $this;
+		$wpdb             = $this->createMock( \wpdb::class );
+		$wpdb->prefix     = 'wp_';
+		$GLOBALS['wpdb']  = $wpdb;
+		$wpdb->method( 'prepare' )->willReturnCallback( static fn( string $sql, mixed ...$args ): string => $sql . '|' . implode( '|', array_map( 'strval', $args ) ) );
+		$wpdb->method( 'get_var' )->willReturnOnConsecutiveCalls( ...$vars );
+		$wpdb->method( 'query' )->willReturnCallback(
+			static function ( string $sql ) use ( $test ): int {
+				$test->queries[] = $sql;
+				return 1;
+			}
+		);
+		return $wpdb;
 	}
 
 	private function generator( \wpdb $wpdb ): SlugGenerator {

@@ -59,7 +59,12 @@ final class TranslationCoverage {
 			return $this->percentages[ $language ];
 		}
 
-		$cache_key = 'omtr_translation_coverage_' . md5( $language . '|' . $this->settings->source_lang() );
+		// The coverage version is bumped every time a translation changes
+		// (TranslationRepository, SegmentEditorRepository, PageRepository):
+		// without it in the key, a stale 0% would survive a retranslation
+		// for the whole TTL. page_percentage() below versions its key too.
+		$version   = (int) get_option( Options::COVERAGE_VERSION, 0 );
+		$cache_key = 'omtr_translation_coverage_' . md5( $version . '|' . $language . '|' . $this->settings->source_lang() );
 		$cached    = get_transient( $cache_key );
 		if ( is_numeric( $cached ) ) {
 			$this->percentages[ $language ] = (float) $cached;

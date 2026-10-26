@@ -10,6 +10,8 @@ namespace Omnium\Translate\Queue;
 use Omnium\Translate\Core\LoggerInterface;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Render\SegmentExtractorInterface;
+use Omnium\Translate\Security\PiiFilter;
+use Omnium\Translate\Store\SegmentKey;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
 use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
@@ -85,8 +87,16 @@ final class ScanJob {
 			throw new \RuntimeException( 'omtr: scan fetch failed' );
 		}
 
-		$source  = $this->settings->source_lang();
-		$found   = $this->extractor->extract( $html, $source );
+		$source = $this->settings->source_lang();
+		$found  = $this->extractor->extract( $html, $source );
+		$title  = $this->title_segment( $post_id, $source );
+		if ( null !== $title ) {
+			// The raw title often never appears verbatim in the rendered HTML
+			// (hidden Elementor headings, rewritten <title>): register it as a
+			// regular page segment so it is always translated in the context of
+			// the other segments and can feed the translated slug.
+			$found[ $title['hash'] ] = $title['text'];
+		}
 		$content = $found;
 		ksort( $content );
 		$content_hash = hash( 'sha256', (string) wp_json_encode( $content ) );
@@ -164,6 +174,35 @@ final class ScanJob {
 		}
 
 		return $scheduled;
+	}
+
+	/**
+	 * Build the title segment of the scanned post, or null when unusable.
+	 *
+	 * Identity matches SlugGenerator::generate() exactly (SegmentKey over the
+	 * raw get_the_title value), otherwise the translated slug lookup would
+	 * miss. Titles without any letter or digit, or flagged by the PiiFilter,
+	 * are ignored — same guarantees as HTML-extracted segments.
+	 *
+	 * @param int    $post_id Post id of the scanned content.
+	 * @param string $source  Source language.
+	 * @return array{hash: string, text: string}|null
+	 */
+	private function title_segment( int $post_id, string $source ): ?array {
+		if ( $post_id <= 0 ) {
+			return null;
+		}
+		$title = SegmentKey::normalize( (string) get_the_title( $post_id ) );
+		if ( '' === $title || 0 === preg_match( '/[\p{L}\p{N}]/u', $title ) ) {
+			return null;
+		}
+		if ( ( new PiiFilter() )->contains_pii( $title ) ) {
+			return null;
+		}
+		return array(
+			'hash' => SegmentKey::hash( $source, $title ),
+			'text' => $title,
+		);
 	}
 
 	/**
