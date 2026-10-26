@@ -174,6 +174,17 @@ final class OpenAIProvider implements ProviderInterface {
 			if ( 0 === $e->http_code ) {
 				return Result::error( __( 'Connection to OpenAI failed.', 'omnium-translate' ), 0 );
 			}
+			if ( '' !== $e->provider_code ) {
+				return Result::error(
+					sprintf(
+						/* translators: 1: HTTP status code, 2: provider error code. */
+						__( 'Key test failed (HTTP %1$d, code %2$s).', 'omnium-translate' ),
+						$e->http_code,
+						$e->provider_code
+					),
+					$e->http_code
+				);
+			}
 			return Result::error(
 				sprintf(
 					/* translators: %d: HTTP status code. */

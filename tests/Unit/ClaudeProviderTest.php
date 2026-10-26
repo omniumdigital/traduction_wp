@@ -219,7 +219,7 @@ final class ClaudeProviderTest extends TestCase {
 
 	public function test_http_401_is_not_retryable(): void {
 		$provider = $this->make_provider();
-		$this->stub_http( array( array( 'code' => 401, 'body' => '{"type":"authentication_error"}' ) ) );
+		$this->stub_http( array( array( 'code' => 401, 'body' => '{"type":"error","error":{"type":"authentication_error","message":"secret echoed text"}}' ) ) );
 
 		try {
 			$provider->translate_batch( array( 'hash-1' => 'Hello' ), 'fr', 'en', new Glossary() );
@@ -278,12 +278,14 @@ final class ClaudeProviderTest extends TestCase {
 
 	public function test_test_key_invalid_key(): void {
 		$provider = $this->make_provider();
-		$this->stub_http( array( array( 'code' => 401, 'body' => '{"type":"authentication_error"}' ) ) );
+		$this->stub_http( array( array( 'code' => 401, 'body' => '{"type":"error","error":{"type":"authentication_error","message":"secret echoed text"}}' ) ) );
 
 		$result = $provider->test_key();
 		$this->assertFalse( $result->ok );
 		$this->assertSame( 401, $result->http_code );
-		$this->assertStringNotContainsString( 'authentication_error', $result->message );
+		// Only the identifier-shaped provider code is surfaced, never the free-text message.
+		$this->assertStringContainsString( 'authentication_error', $result->message );
+		$this->assertStringNotContainsString( 'secret echoed text', $result->message );
 	}
 
 	public function test_unknown_ids_make_the_response_invalid(): void {

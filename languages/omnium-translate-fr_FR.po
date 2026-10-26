@@ -670,3 +670,6 @@ msgstr "Fournisseur actuellement choisi : %s."
 
 msgid "Available providers and processing location (update this policy if you change provider):"
 msgstr "Fournisseurs disponibles et lieu de traitement (mettez à jour cette politique si vous changez de fournisseur) :"
+
+msgid "Key test failed (HTTP %1$d, code %2$s)."
+msgstr "Le test de la clé a échoué (HTTP %1$d, code %2$s)."

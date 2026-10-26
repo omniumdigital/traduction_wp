@@ -166,7 +166,7 @@ final class ClaudeProvider implements ProviderInterface {
 	public function test_key(): Result {
 		$body = array(
 			'model'      => $this->model(),
-			'max_tokens' => 1,
+			'max_tokens' => 16,
 			'messages'   => array(
 				array(
 					'role'    => 'user',
@@ -180,6 +180,17 @@ final class ClaudeProvider implements ProviderInterface {
 		} catch ( ProviderException $e ) {
 			if ( 0 === $e->http_code ) {
 				return Result::error( __( 'Connection to Anthropic failed.', 'omnium-translate' ), 0 );
+			}
+			if ( '' !== $e->provider_code ) {
+				return Result::error(
+					sprintf(
+						/* translators: 1: HTTP status code, 2: provider error code. */
+						__( 'Key test failed (HTTP %1$d, code %2$s).', 'omnium-translate' ),
+						$e->http_code,
+						$e->provider_code
+					),
+					$e->http_code
+				);
 			}
 			return Result::error(
 				sprintf(
