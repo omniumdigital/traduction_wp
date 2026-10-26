@@ -18,6 +18,7 @@ use Omnium\Translate\Queue\RunLock;
 use Omnium\Translate\Queue\WordCap;
 use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Tests\TestCase;
+use Omnium\Translate\Tests\Unit\Doubles\FakeProvider;
 use Omnium\Translate\Tests\Unit\Doubles\FakeSegmentExtractor;
 use Omnium\Translate\Tests\Unit\Doubles\OptionStore;
 use Omnium\Translate\Tests\Unit\Doubles\SpyLogger;
@@ -86,8 +87,10 @@ final class CrawlerTest extends TestCase {
 				return 1;
 			}
 		);
-		$settings = new Settings();
-		$queue = new ActionSchedulerQueue( $settings, new RunLock(), new WordCap( $settings ), new HourlyQuota( $settings ), new ProviderRegistry(), new SpyLogger() );
+		$settings  = new Settings();
+		$registry  = new ProviderRegistry();
+		$registry->add( new FakeProvider() );
+		$queue     = new ActionSchedulerQueue( $settings, new RunLock(), new WordCap( $settings ), new HourlyQuota( $settings ), $registry, new SpyLogger() );
 		$extractor = new FakeSegmentExtractor();
 		$extractor->segments = array( 'stable-hash' => 'Public' );
 		$crawler = new Crawler( new PublicContent(), new PageRepository( $wpdb ), $queue, $extractor, $settings, new SpyLogger() );

@@ -9,6 +9,7 @@ namespace Omnium\Translate\Tests\Unit;
 
 use Brain\Monkey\Functions;
 use Omnium\Translate\Core\LoggerInterface;
+use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Queue\ActionSchedulerQueue;
@@ -16,6 +17,8 @@ use Omnium\Translate\Queue\HourlyQuota;
 use Omnium\Translate\Queue\QueueState;
 use Omnium\Translate\Queue\RunLock;
 use Omnium\Translate\Queue\WordCap;
+use Omnium\Translate\Security\ApiKeyStore;
+use Omnium\Translate\Security\Crypto;
 use Omnium\Translate\Tests\TestCase;
 use Omnium\Translate\Tests\Unit\Doubles\FakeProvider;
 use Omnium\Translate\Tests\Unit\Doubles\FakeSegmentRepository;
@@ -36,6 +39,7 @@ final class ActionSchedulerQueueTest extends TestCase {
 	private FakeTranslationRepository $translations;
 	private ActionSchedulerQueue $queue;
 	private QueueState $state;
+	private ApiKeyStore $keys;
 	private int $sequence = 0;
 
 	/**
@@ -73,6 +77,11 @@ final class ActionSchedulerQueueTest extends TestCase {
 		$registry = new ProviderRegistry();
 		$registry->add( new FakeProvider() );
 
+		// The active provider (claude) starts with a stored key, like a
+		// configured site: refusal tests remove it explicitly.
+		$this->keys = new ApiKeyStore( new Crypto() );
+		$this->keys->set( 'claude', 'unit-test-key-not-a-secret' );
+
 		$this->queue = new ActionSchedulerQueue(
 			new Settings(),
 			new RunLock(),
@@ -82,7 +91,8 @@ final class ActionSchedulerQueueTest extends TestCase {
 			$this->logger,
 			$this->segments,
 			$this->translations,
-			$this->state
+			$this->state,
+			$this->keys
 		);
 
 		Functions\when( 'as_schedule_single_action' )->alias(
@@ -196,6 +206,42 @@ final class ActionSchedulerQueueTest extends TestCase {
 
 		$this->assertFalse( $this->queue->enqueue_url( 'https://example.test/page/' ) );
 		$this->assertCount( 0, $this->scheduled );
+	}
+
+	public function test_enqueue_url_refused_when_active_provider_has_no_key(): void {
+		unset( $this->options->data[ Options::API_KEYS ] );
+
+		$this->assertFalse( $this->queue->enqueue_url( 'https://example.test/page/', 42 ) );
+		$this->assertCount( 0, $this->scheduled );
+
+		$this->assertStringContainsString( 'No API key is configured', $this->queue->last_reason() );
+		$this->assertStringContainsString( 'Fake Provider', $this->queue->last_reason() );
+		$this->assertStringContainsString( 'has no API key', $this->logger->joined() );
+		$this->assertStringNotContainsString( 'unit-test-key-not-a-secret', $this->logger->joined() );
+	}
+
+	public function test_enqueue_segments_refused_when_active_provider_has_no_key(): void {
+		unset( $this->options->data[ Options::API_KEYS ] );
+		$this->segments->seed( 'hash-a', 'Hello' );
+		$this->translations->id_hash = array_flip( $this->segments->ids );
+
+		$this->queue->enqueue_segments( array( $this->segments->ids['hash-a'] ), 'en' );
+
+		$this->assertCount( 0, $this->scheduled );
+		$this->assertStringContainsString( 'has no API key', $this->logger->joined() );
+	}
+
+	public function test_enqueue_refused_when_no_provider_is_configured(): void {
+		$this->options->data[ Options::SETTINGS ] = array( 'provider' => 'unknown' );
+
+		$this->assertFalse( $this->queue->enqueue_url( 'https://example.test/page/' ) );
+		$this->assertCount( 0, $this->scheduled );
+		$this->assertStringContainsString( 'No provider is configured.', $this->queue->last_reason() );
+	}
+
+	public function test_enqueue_url_with_key_for_active_provider_still_schedules(): void {
+		$this->assertTrue( $this->queue->enqueue_url( 'https://example.test/page/', 42 ) );
+		$this->assertCount( 1, $this->scheduled );
 	}
 
 	public function test_enqueue_segments_resolves_ids_and_skips_translated(): void {

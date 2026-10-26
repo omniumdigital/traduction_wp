@@ -110,6 +110,60 @@ final class AdministrationSecurityTest extends TestCase {
 		$this->assertStringNotContainsString( $secret, json_encode( $error ) );
 	}
 
+	/** Saving a key for an idle provider switches the active one when it had no key. */
+	public function test_put_key_switches_active_provider_without_key(): void {
+		$api      = $this->api();
+		$response = $api->put_key(
+			new \WP_REST_Request(
+				array(
+					'id'  => 'mistral',
+					'key' => 'mistral-unit-test-key',
+				)
+			)
+		);
+
+		$this->assertSame( 'mistral', $response->data['provider'] );
+		$this->assertTrue( $response->data['switched'] );
+		$this->assertSame( 'mistral', ( new Settings() )->get( 'provider' ) );
+		$this->assertStringNotContainsString( 'mistral-unit-test-key', json_encode( $response->data ) );
+	}
+
+	/** The active provider stays when it already has a usable key. */
+	public function test_put_key_keeps_active_provider_with_key(): void {
+		( new ApiKeyStore( new Crypto() ) )->set( 'claude', 'claude-unit-test-key' );
+		$api      = $this->api();
+		$response = $api->put_key(
+			new \WP_REST_Request(
+				array(
+					'id'  => 'mistral',
+					'key' => 'mistral-unit-test-key',
+				)
+			)
+		);
+
+		$this->assertSame( 'claude', $response->data['provider'] );
+		$this->assertFalse( $response->data['switched'] );
+		$this->assertSame( 'claude', ( new Settings() )->get( 'provider' ) );
+	}
+
+	/** A model chosen for the previous provider is reset on switch. */
+	public function test_put_key_switch_resets_model_of_previous_provider(): void {
+		( new OptionStore() )->install();
+		( new Settings() )->update( array( 'model' => 'claude-haiku-5-5' ) );
+
+		$response = $this->api()->put_key(
+			new \WP_REST_Request(
+				array(
+					'id'  => 'mistral',
+					'key' => 'mistral-unit-test-key',
+				)
+			)
+		);
+
+		$this->assertTrue( $response->data['switched'] );
+		$this->assertSame( '', ( new Settings() )->get( 'model' ) );
+	}
+
 	/** Large import bodies are rejected before decoding. */
 	public function test_json_import_over_one_megabyte_is_rejected(): void {
 		$request = new class() extends \WP_REST_Request {

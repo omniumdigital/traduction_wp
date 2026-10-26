@@ -38,6 +38,12 @@ final class SlugGenerator {
 	/**
 	 * Generate and persist one translated slug.
 	 *
+	 * A slug is only built from a stored translation of the post title; the
+	 * source post_name is never persisted as a fallback. An existing slug is
+	 * never overwritten — except when it is still the source-slug fallback
+	 * written by the 1.0.x versions, which is then replaced by the translated
+	 * slug (the old value is kept in slug_history for the 301 redirect).
+	 *
 	 * @param int    $post_id Post id.
 	 * @param string $lang    Target language.
 	 */
@@ -50,14 +56,33 @@ final class SlugGenerator {
 		$normalized = SegmentKey::normalize( $title );
 		$hash       = SegmentKey::hash( $this->settings->source_lang(), $normalized );
 		$translated = $this->translations->find_many( array( $hash ), $lang );
-		$post       = get_post( $post_id );
-		$fallback   = $post instanceof \WP_Post ? (string) $post->post_name : '';
-		$base       = $this->normalize( (string) ( $translated[ $hash ] ?? $fallback ) );
+
+		// Without a translated title there is nothing reliable to build a
+		// slug from: keep waiting for the title segment to be translated.
+		if ( ! isset( $translated[ $hash ] ) ) {
+			return null;
+		}
+
+		$base = $this->normalize( (string) $translated[ $hash ] );
 		if ( '' === $base ) {
 			return null;
 		}
 
+		$existing = $this->slugs->get( $post_id, $lang );
+		if ( null !== $existing ) {
+			$post     = get_post( $post_id );
+			$fallback = $post instanceof \WP_Post ? $this->normalize( (string) $post->post_name ) : '';
+			// A slug that differs from the source fallback was set manually
+			// (or regenerated on purpose): never overwrite it.
+			if ( '' === $fallback || $existing !== $fallback ) {
+				return $existing;
+			}
+		}
+
 		$slug = $this->unique( $base, $lang, $post_id );
+		if ( $slug === $existing ) {
+			return $slug;
+		}
 		$this->slugs->save( $post_id, $lang, $slug );
 		return $slug;
 	}

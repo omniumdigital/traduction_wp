@@ -11,13 +11,20 @@ export function Dashboard({ request }) {
 			.then(setDashboard)
 			.catch(() => {});
 	}, [request]);
-	const translateAll = async () =>
-		setEstimate(await request({ path: "/estimate", method: "POST", data: { all: true } }));
+	const translateAll = async () => {
+		try {
+			setEstimate(await request({ path: "/estimate", method: "POST", data: { all: true } }));
+		} catch (_) {}
+	};
 	const confirmAll = async () => {
 		if (!window.confirm(__("Queue the translation of all these pages?", "omnium-translate"))) return;
-		await request({ path: "/translate/all", method: "POST" });
-		setEstimate(null);
-		setDashboard(await request({ path: "/dashboard" }));
+		try {
+			await request({ path: "/translate/all", method: "POST" });
+			setEstimate(null);
+			setDashboard(await request({ path: "/dashboard" }));
+		} catch (_) {
+			setEstimate(null);
+		}
 	};
 	if (!dashboard) return <Loading />;
 	return (
@@ -34,11 +41,17 @@ export function Dashboard({ request }) {
 				))}
 				<Card>
 					<CardBody>
-						<span>{__("Words this month", "omnium-translate")}</span>
-						<strong className="omtr-stat">{dashboard.words?.used || 0}</strong>
+						<span>{__("Words translated this month", "omnium-translate")}</span>
+						<strong className="omtr-stat">{dashboard.words?.translated_month || 0}</strong>
+						<small>
+							{sprintf(
+								__("%d words in total since installation", "omnium-translate"),
+								dashboard.words?.translated_total || 0,
+							)}
+						</small>
 						<small>
 							{dashboard.words?.cap
-								? sprintf(__("of %d", "omnium-translate"), dashboard.words.cap)
+								? sprintf(__("Monthly cap: %d words", "omnium-translate"), dashboard.words.cap)
 								: __("No monthly cap", "omnium-translate")}
 						</small>
 					</CardBody>
@@ -50,6 +63,9 @@ export function Dashboard({ request }) {
 					<p>
 						{dashboard.queue?.pending || 0} {__("pending", "omnium-translate")} ·{" "}
 						{dashboard.queue?.paused ? __("paused", "omnium-translate") : __("running", "omnium-translate")}
+						{Boolean(dashboard.segments?.failed) && (
+							<> · {sprintf(__("%d failed", "omnium-translate"), dashboard.segments.failed)}</>
+						)}
 					</p>
 					<Button
 						onClick={async () => {
@@ -61,6 +77,15 @@ export function Dashboard({ request }) {
 					</Button>
 				</CardBody>
 			</Card>
+			{Boolean(dashboard.segments?.failed) && (
+				<Notice status="warning" isDismissible={false}>
+					{sprintf(__("%d segments failed.", "omnium-translate"), dashboard.segments.failed)}{" "}
+					{__(
+						"“Translate the whole site” will retry them without charging again for already translated content.",
+						"omnium-translate",
+					)}
+				</Notice>
+			)}
 			<div className="omtr-actions">
 				<Button variant="secondary" onClick={() => request({ path: "/crawl", method: "POST" })}>
 					{__("Translate new and changed content", "omnium-translate")}

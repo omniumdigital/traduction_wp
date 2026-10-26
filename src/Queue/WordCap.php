@@ -143,7 +143,52 @@ final class WordCap {
 	}
 
 	/**
-	 * Stored payload.
+	 * Words actually translated this month (successful saves only), whatever
+	 * the cap: 0 when no cap is configured, since reserve() counts nothing.
+	 */
+	public function translated_this_month(): int {
+		$payload = $this->translated_raw();
+		if ( array() === $payload || gmdate( 'Y-m' ) !== $payload['month'] ) {
+			return 0;
+		}
+		return max( 0, (int) $payload['month_words'] );
+	}
+
+	/**
+	 * Words actually translated since installation.
+	 */
+	public function translated_total(): int {
+		$payload = $this->translated_raw();
+		return array() === $payload ? 0 : max( 0, (int) $payload['total_words'] );
+	}
+
+	/**
+	 * Record the source words of translations that were successfully saved.
+	 * The monthly figure resets when the month changes; the total never does.
+	 *
+	 * @param int $words Word count, ignored when negative or zero.
+	 */
+	public function record_translated( int $words ): void {
+		if ( $words <= 0 ) {
+			return;
+		}
+		$month       = gmdate( 'Y-m' );
+		$raw         = $this->translated_raw();
+		$month_words = ( array() !== $raw && $raw['month'] === $month ) ? (int) $raw['month_words'] : 0;
+		$total       = array() === $raw ? 0 : (int) $raw['total_words'];
+		update_option(
+			Options::WORDS_TRANSLATED,
+			array(
+				'month'       => $month,
+				'month_words' => $month_words + $words,
+				'total_words' => $total + $words,
+			),
+			false
+		);
+	}
+
+	/**
+	 * Stored cap payload.
 	 *
 	 * @return array{month: string, words: int}|array{}
 	 */
@@ -158,6 +203,26 @@ final class WordCap {
 		return array(
 			'month' => $payload['month'],
 			'words' => (int) $payload['words'],
+		);
+	}
+
+	/**
+	 * Stored translated-words payload.
+	 *
+	 * @return array{month: string, month_words: int, total_words: int}|array{}
+	 */
+	private function translated_raw(): array {
+		$payload = get_option( Options::WORDS_TRANSLATED );
+		if ( ! is_array( $payload ) || ! isset( $payload['month'], $payload['month_words'], $payload['total_words'] ) ) {
+			return array();
+		}
+		if ( ! is_string( $payload['month'] ) || ! is_numeric( $payload['month_words'] ) || ! is_numeric( $payload['total_words'] ) ) {
+			return array();
+		}
+		return array(
+			'month'       => $payload['month'],
+			'month_words' => (int) $payload['month_words'],
+			'total_words' => (int) $payload['total_words'],
 		);
 	}
 

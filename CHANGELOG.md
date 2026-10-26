@@ -4,6 +4,18 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.0.3] - 2026-10-26
+
+### Corrigé
+- Sélecteur de langue utilisable sur les pages traduites : les liens portant un attribut `hreflang` (entrées du sélecteur, alternatives) ne sont plus réécrits vers la langue courante.
+- Slugs traduits : le titre du contenu est enregistré comme segment de page même lorsqu’il n’apparaît pas tel quel dans le HTML (titres masqués des builders), le slug source n’est plus jamais persisté comme repli, un slug réglé manuellement n’est plus écrasé, et les anciens replis des versions 1.0.x sont remplacés par le slug traduit avec conservation dans l’historique pour la redirection 301.
+- Couverture de traduction : la clé de cache inclut la version de couverture, le pourcentage affiché reflète immédiatement une nouvelle traduction.
+- Capability `omtr_manage` réaccordée une fois au démarrage pour les installations activées pendant un bootstrap interrompu puis mises à jour sans réactivation ; un retrait volontaire reste respecté.
+- Fournisseur actif : l’enregistrement d’une clé pour un autre fournisseur l’active automatiquement quand le fournisseur courant n’a pas de clé, et toute mise en file payante est refusée tant qu’aucune clé n’est configurée, avec un message explicite.
+- Statistiques « mots » : compteur des mots réellement traduits (mois en cours et total depuis l’installation), indépendant du plafond mensuel, incrémenté uniquement après enregistrement réussi.
+- Tableau de bord : nombre de segments en échec affiché avec indication que « Traduire tout le site » les relance sans repayer le contenu déjà traduit.
+- Sélecteur en menu déroulant « drapeau seul » ou « code » : la liste s’ajuste à son contenu au lieu de forcer 148 px, et la langue active reste repérable par son fond.
+
 ## [1.0.2] - 2026-10-26
 
 ### Corrigé

@@ -47,6 +47,7 @@ final class BatchJob {
 	 * @param QueueState|null                  $state        Manual pause state.
 	 * @param SlugGenerator|null               $slug_generator Translated slug generator.
 	 * @param TranslationQualityValidator|null $quality      Final provider-independent quality gate.
+	 * @param WordCap|null                     $word_cap     Word cap, used to count translated words (always injected by QueueModule).
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -58,7 +59,8 @@ final class BatchJob {
 		private GlossaryService $glossary,
 		private ?QueueState $state = null,
 		private ?SlugGenerator $slug_generator = null,
-		private ?TranslationQualityValidator $quality = null
+		private ?TranslationQualityValidator $quality = null,
+		private ?WordCap $word_cap = null
 	) {}
 
 	/**
@@ -137,6 +139,12 @@ final class BatchJob {
 
 		if ( array() !== $saved ) {
 			$this->translations->save_auto( $saved, $lang, $provider->id(), $this->model_id( $provider ) );
+			if ( null !== $this->word_cap ) {
+				// Statistics only: source words of segments successfully saved.
+				$this->word_cap->record_translated(
+					$this->word_cap->count_words( array_intersect_key( $pending, array_flip( $accepted_hashes ) ) )
+				);
+			}
 			if ( $post_id > 0 && null !== $this->slug_generator ) {
 				$this->slug_generator->generate( $post_id, $lang );
 			}
