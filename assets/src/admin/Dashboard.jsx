@@ -11,13 +11,20 @@ export function Dashboard({ request }) {
 			.then(setDashboard)
 			.catch(() => {});
 	}, [request]);
-	const translateAll = async () =>
-		setEstimate(await request({ path: "/estimate", method: "POST", data: { all: true } }));
+	const translateAll = async () => {
+		try {
+			setEstimate(await request({ path: "/estimate", method: "POST", data: { all: true } }));
+		} catch (_) {}
+	};
 	const confirmAll = async () => {
 		if (!window.confirm(__("Queue the translation of all these pages?", "omnium-translate"))) return;
-		await request({ path: "/translate/all", method: "POST" });
-		setEstimate(null);
-		setDashboard(await request({ path: "/dashboard" }));
+		try {
+			await request({ path: "/translate/all", method: "POST" });
+			setEstimate(null);
+			setDashboard(await request({ path: "/dashboard" }));
+		} catch (_) {
+			setEstimate(null);
+		}
 	};
 	if (!dashboard) return <Loading />;
 	return (
@@ -56,6 +63,9 @@ export function Dashboard({ request }) {
 					<p>
 						{dashboard.queue?.pending || 0} {__("pending", "omnium-translate")} ·{" "}
 						{dashboard.queue?.paused ? __("paused", "omnium-translate") : __("running", "omnium-translate")}
+						{Boolean(dashboard.segments?.failed) && (
+							<> · {sprintf(__("%d failed", "omnium-translate"), dashboard.segments.failed)}</>
+						)}
 					</p>
 					<Button
 						onClick={async () => {
@@ -67,6 +77,15 @@ export function Dashboard({ request }) {
 					</Button>
 				</CardBody>
 			</Card>
+			{Boolean(dashboard.segments?.failed) && (
+				<Notice status="warning" isDismissible={false}>
+					{sprintf(__("%d segments failed.", "omnium-translate"), dashboard.segments.failed)}{" "}
+					{__(
+						"“Translate the whole site” will retry them without charging again for already translated content.",
+						"omnium-translate",
+					)}
+				</Notice>
+			)}
 			<div className="omtr-actions">
 				<Button variant="secondary" onClick={() => request({ path: "/crawl", method: "POST" })}>
 					{__("Translate new and changed content", "omnium-translate")}

@@ -470,6 +470,16 @@ msgstr "segments"
 
 msgid "words"
 msgstr "mots"
+
+msgid "%d segments failed."
+msgstr "%d segments en échec."
+
+msgid "%d failed"
+msgstr "%d en échec"
+
+msgid "“Translate the whole site” will retry them without charging again for already translated content."
+msgstr "« Traduire tout le site » les relance sans repayer ce qui est déjà traduit."
+
 msgid "The administration interface is not built yet."
 msgstr "L’interface d’administration n’est pas encore compilée."
 
