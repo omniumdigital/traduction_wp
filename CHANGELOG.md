@@ -4,6 +4,16 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.1.2] - 2026-10-26
+
+### Corrigé
+- Rejet HTTP 400 non reconnu (« Request rejected by the provider ») : le code d’erreur machine du fournisseur (`type`/`code`/`status`, identifiant uniquement, jamais le message) est ajouté au journal, au bandeau d’échec du tableau de bord et au résultat du test de clé.
+- Nouveaux motifs reconnus : crédit ou quota épuisé (Anthropic répond 400 quand le crédit est insuffisant), clé Gemini invalide (HTTP 400), localisation du serveur non desservie.
+- Test de clé Anthropic : 16 tokens demandés au lieu de 1, comme les autres fournisseurs.
+
+### Ajouté
+- Bouton « Tester la clé » dans l’onglet Réglages (il n’existait que dans l’assistant).
+
 ## [1.1.1] - 2026-10-26
 
 ### Corrigé
