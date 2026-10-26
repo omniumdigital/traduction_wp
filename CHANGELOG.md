@@ -4,6 +4,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.2.0] - 2026-10-26
+
+### Ajouté
+- Assistant d'installation : champs Ton et Contexte du site dès le premier écran (facultatifs, avec un rappel de ne pas y mettre de données personnelles).
+- Logo Omnium comme icône de l'extension, dans le menu d'administration et dans l'écran des mises à jour. L'icône est servie depuis l'extension, sans ressource externe.
+
+### Modifié
+- Couverture des langues affichée au centième (par exemple 99,68 %), tronquée pour ne jamais afficher 100 % tant qu'il reste un segment à traduire.
+
 ## [1.1.2] - 2026-10-26
 
 ### Corrigé

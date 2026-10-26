@@ -98,6 +98,19 @@ final class TranslationCoverage {
 	}
 
 	/**
+	 * Percentage shown to the administrator, to the hundredth.
+	 *
+	 * Truncated rather than rounded so that 99.996 % never reads as 100 %
+	 * while the language is still incomplete.
+	 *
+	 * @param string $language Language code.
+	 */
+	public function display_percentage( string $language ): float {
+		// The epsilon absorbs float error (e.g. 57.99999999 must read 58).
+		return floor( $this->percentage( $language ) * 100 + 1e-6 ) / 100;
+	}
+
+	/**
 	 * Whether all known segments have an accepted translation.
 	 *
 	 * @param string $language Language code.

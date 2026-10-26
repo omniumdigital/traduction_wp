@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.1.2
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,11 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.2.0 =
+* Assistant : le ton et le contexte du site se renseignent dès l'installation.
+* Logo Omnium comme icône de l'extension (menu d'administration et écran des mises à jour).
+* Couverture des langues affichée au centième, sans jamais arrondir à 100 % une langue incomplète.
 
 = 1.1.2 =
 * Erreurs fournisseur diagnostiquables : le code d’erreur du fournisseur (par exemple `invalid_request_error`) est affiché avec le motif, sans jamais reprendre son message brut.

@@ -1,4 +1,13 @@
-import { Button, Card, CardBody, CheckboxControl, Notice, SelectControl, TextControl } from "@wordpress/components";
+import {
+	Button,
+	Card,
+	CardBody,
+	CheckboxControl,
+	Notice,
+	SelectControl,
+	TextareaControl,
+	TextControl,
+} from "@wordpress/components";
 import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useState } from "@wordpress/element";
 import { Loading } from "./common";
@@ -39,6 +48,8 @@ export function Wizard({ data, request, onComplete }) {
 			data: {
 				source_lang: settings.source_lang,
 				target_langs: settings.target_langs,
+				site_tone: settings.site_tone || "",
+				site_context: settings.site_context || "",
 			},
 		});
 		setStep(1);
@@ -116,6 +127,23 @@ export function Wizard({ data, request, onComplete }) {
 									/>
 								))}
 						</fieldset>
+						<TextControl
+							label={__("Tone", "omnium-translate")}
+							value={settings.site_tone || ""}
+							maxLength={200}
+							help={__("Optional. Example: friendly and informal, or formal and professional.", "omnium-translate")}
+							onChange={(site_tone) => setSettings((current) => ({ ...current, site_tone }))}
+						/>
+						<TextareaControl
+							label={__("Context", "omnium-translate")}
+							value={settings.site_context || ""}
+							maxLength={1000}
+							help={__(
+								"Optional. Describe your business and audience so the AI picks the right vocabulary. Do not include personal data.",
+								"omnium-translate",
+							)}
+							onChange={(site_context) => setSettings((current) => ({ ...current, site_context }))}
+						/>
 						<Button
 							variant="primary"
 							disabled={!settings.source_lang || !settings.target_langs?.length}
