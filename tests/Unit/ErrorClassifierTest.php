@@ -86,4 +86,10 @@ final class ErrorClassifierTest extends TestCase {
 		$this->assertSame( '', ErrorClassifier::provider_code( '{"error":{"type":"<script>alert(1)</script>","code":"has spaces in it"}}' ) );
 		$this->assertSame( '', ErrorClassifier::provider_code( 'not json' ) );
 	}
+
+	public function test_provider_code_never_echoes_the_api_key(): void {
+		$key = 'fake_key_0123456789_abcdefghij_klmnop';
+		$this->assertSame( 'INVALID_ARGUMENT', ErrorClassifier::provider_code( '{"error":{"code":"' . $key . '","status":"INVALID_ARGUMENT"}}', $key ) );
+		$this->assertSame( '', ErrorClassifier::provider_code( '{"error":{"type":"' . substr( $key, 0, 20 ) . '"}}', $key ) );
+	}
 }

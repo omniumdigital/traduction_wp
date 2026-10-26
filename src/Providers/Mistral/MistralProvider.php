@@ -277,7 +277,7 @@ final class MistralProvider implements ProviderInterface {
 		if ( 200 !== $code ) {
 			// Fixed local classification only: the raw body is untrusted and never stored.
 			$error_body = (string) wp_remote_retrieve_body( $response );
-			$exception  = new ProviderException( ErrorClassifier::classify( $error_body, $code ), $code, false, ErrorClassifier::provider_code( $error_body ) );
+			$exception  = new ProviderException( ErrorClassifier::classify( $error_body, $code ), $code, false, ErrorClassifier::provider_code( $error_body, $key ) );
 			throw $exception;
 		}
 

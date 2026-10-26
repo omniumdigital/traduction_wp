@@ -388,7 +388,8 @@ final class Administration {
 			return new \WP_REST_Response(
 				array(
 					'ok'        => $result->ok,
-					'message'   => $result->ok ? __( 'API key is valid.', 'omnium-translate' ) : __( 'API key test failed.', 'omnium-translate' ),
+					// Provider results only hold fixed strings, the HTTP code and a sanitized provider code.
+					'message'   => $result->ok ? __( 'API key is valid.', 'omnium-translate' ) : $result->message,
 					'http_code' => $result->http_code,
 				)
 			);

@@ -82,9 +82,10 @@ final class ErrorClassifier {
 	 * the code is what makes an otherwise unknown rejection diagnosable.
 	 *
 	 * @param string $raw_body Raw error response body, never persisted.
+	 * @param string $secret   API key sent with the request: a candidate overlapping it is dropped.
 	 * @return string Sanitized code, empty string when none.
 	 */
-	public static function provider_code( string $raw_body ): string {
+	public static function provider_code( string $raw_body, string $secret = '' ): string {
 		$decoded = json_decode( $raw_body, true );
 		if ( ! is_array( $decoded ) ) {
 			return '';
@@ -95,9 +96,14 @@ final class ErrorClassifier {
 			if ( is_int( $candidate ) ) {
 				$candidate = (string) $candidate;
 			}
-			if ( is_string( $candidate ) && 1 === preg_match( '/^[A-Za-z0-9_.:-]{1,64}$/', $candidate ) && ! in_array( $candidate, $parts, true ) ) {
-				$parts[] = $candidate;
+			if ( ! is_string( $candidate ) || 1 !== preg_match( '/^[A-Za-z0-9_.:-]{1,64}$/', $candidate ) || in_array( $candidate, $parts, true ) ) {
+				continue;
 			}
+			// A key-shaped value (e.g. a 39-char Gemini key) must never be echoed back.
+			if ( '' !== $secret && strlen( $candidate ) >= 8 && ( str_contains( $secret, $candidate ) || str_contains( $candidate, $secret ) ) ) {
+				continue;
+			}
+			$parts[] = $candidate;
 		}
 		return implode( '/', array_slice( $parts, 0, 3 ) );
 	}
