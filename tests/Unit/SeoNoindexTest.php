@@ -95,6 +95,14 @@ final class SeoNoindexTest extends TestCase {
 		$this->assertStringContainsString( 'COUNT(DISTINCT', $this->prepared_sql );
 	}
 
+	/** The displayed percentage keeps two decimals and never rounds up to 100. */
+	public function test_display_percentage_is_truncated_to_the_hundredth(): void {
+		Functions\when( 'get_transient' )->justReturn( 100 * 2 / 3 );
+		$this->assertSame( 66.66, ( new TranslationCoverage( $this->wpdb, new Settings() ) )->display_percentage( 'en' ) );
+		Functions\when( 'get_transient' )->justReturn( 99.996 );
+		$this->assertSame( 99.99, ( new TranslationCoverage( $this->wpdb, new Settings() ) )->display_percentage( 'en' ) );
+	}
+
 	/** A cached percentage avoids all database work. */
 	public function test_coverage_reads_cache(): void {
 		Functions\when( 'get_transient' )->justReturn( 42.5 );

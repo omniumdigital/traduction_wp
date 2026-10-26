@@ -5,6 +5,13 @@ import { Loading } from "./common";
 
 const REFRESH_MS = 5000;
 
+// Percent with at most two decimals, in the admin locale (e.g. "87,35 %" in French).
+const percentFormat = new Intl.NumberFormat(document.documentElement.lang || undefined, {
+	style: "percent",
+	maximumFractionDigits: 2,
+});
+const formatPercent = (value) => percentFormat.format((Number(value) || 0) / 100);
+
 export function Dashboard({ request }) {
 	const [dashboard, setDashboard] = useState(null);
 	const [estimate, setEstimate] = useState(null);
@@ -70,7 +77,7 @@ export function Dashboard({ request }) {
 					<Card key={language.code}>
 						<CardBody>
 							<span>{language.code.toUpperCase()}</span>
-							<strong className="omtr-stat">{language.coverage}%</strong>
+							<strong className="omtr-stat">{formatPercent(language.coverage)}</strong>
 							<small>{__("coverage", "omnium-translate")}</small>
 							<div
 								className="omtr-progress"
@@ -79,9 +86,9 @@ export function Dashboard({ request }) {
 								aria-valuemax={100}
 								aria-valuenow={language.coverage}
 								aria-label={sprintf(
-									__("%s coverage: %d%%", "omnium-translate"),
+									__("%1$s coverage: %2$s", "omnium-translate"),
 									language.code.toUpperCase(),
-									language.coverage,
+									formatPercent(language.coverage),
 								)}
 							>
 								<div style={{ width: `${Math.max(0, Math.min(100, language.coverage))}%` }} />

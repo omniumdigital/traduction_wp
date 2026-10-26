@@ -30,5 +30,17 @@ final class Updater {
 		if ( method_exists( $api, 'enableReleaseAssets' ) ) {
 			$api->enableReleaseAssets( '/omnium-translate\.zip$/' );
 		}
+		// Plugin icon on the Updates screen, served from the plugin itself (no external request).
+		$checker->addResultFilter(
+			static function ( $info ) {
+				if ( is_object( $info ) ) {
+					$info->icons = array(
+						'svg'     => OMTR_URL . 'assets/images/omnium-icon.svg',
+						'default' => OMTR_URL . 'assets/images/omnium-icon.svg',
+					);
+				}
+				return $info;
+			}
+		);
 	}
 }

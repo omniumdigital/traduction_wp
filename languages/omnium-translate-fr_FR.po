@@ -459,8 +459,8 @@ msgstr "%d tâches en file (%d lots de traduction)."
 msgid "Last activity: %s"
 msgstr "Dernière activité : %s"
 
-msgid "%s coverage: %d%%"
-msgstr "Couverture %s : %d %%"
+msgid "%1$s coverage: %2$s"
+msgstr "Couverture %1$s : %2$s"
 
 msgid "Retry failed segments"
 msgstr "Relancer les segments en échec"
@@ -673,3 +673,9 @@ msgstr "Fournisseurs disponibles et lieu de traitement (mettez à jour cette pol
 
 msgid "Key test failed (HTTP %1$d, code %2$s)."
 msgstr "Le test de la clé a échoué (HTTP %1$d, code %2$s)."
+
+msgid "Optional. Example: friendly and informal, or formal and professional."
+msgstr "Facultatif. Exemple : chaleureux et tutoiement, ou formel et professionnel."
+
+msgid "Optional. Describe your business and audience so the AI picks the right vocabulary. Do not include personal data."
+msgstr "Facultatif. Décrivez votre activité et votre public pour que l’IA choisisse le bon vocabulaire. N’indiquez aucune donnée personnelle."

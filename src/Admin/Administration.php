@@ -101,7 +101,15 @@ final class Administration {
 
 	/** Register the top-level menu. */
 	public function menu(): void {
-		add_menu_page( 'Omnium Translate', 'Omnium Translate', Capabilities::MANAGE, 'omnium-translate', array( $this, 'page' ), 'dashicons-translation' );
+		add_menu_page( 'Omnium Translate', 'Omnium Translate', Capabilities::MANAGE, 'omnium-translate', array( $this, 'page' ), self::menu_icon() );
+	}
+
+	/**
+	 * Omnium logo as a data URI: WordPress repaints its fills to the admin color scheme.
+	 */
+	private static function menu_icon(): string {
+		$svg = (string) file_get_contents( OMTR_DIR . 'assets/images/omnium-icon.svg' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin file, not a URL.
+		return '' !== $svg ? 'data:image/svg+xml;base64,' . base64_encode( $svg ) : 'dashicons-translation'; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Data URI required by add_menu_page().
 	}
 
 	/** Render the React mount or a build warning. */
@@ -404,7 +412,7 @@ final class Administration {
 		foreach ( $this->settings->target_langs() as $code ) {
 			$langs[] = array(
 				'code'     => $code,
-				'coverage' => $this->coverage->percentage( $code ),
+				'coverage' => $this->coverage->display_percentage( $code ),
 			);
 		}
 		$counts          = array_fill_keys( array( 'total', 'auto', 'edited', 'locked', 'failed' ), 0 );
