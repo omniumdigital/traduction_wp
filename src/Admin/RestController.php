@@ -95,7 +95,7 @@ final class RestController {
 						'type'              => 'array',
 						'items'             => array(
 							'type'    => 'string',
-							'pattern' => '^[a-z]{2,3}(?:-[A-Z]{2})?$',
+							'pattern' => '^[a-z]{2,3}(?:-[a-z]{2})?$',
 						),
 						'sanitize_callback' => static fn( array $languages ): array => array_values( array_map( 'sanitize_key', $languages ) ),
 					),

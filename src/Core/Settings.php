@@ -28,7 +28,7 @@ final class Settings {
 		'on_the_fly'       => false,
 		'monthly_word_cap' => 0,
 		'hourly_quota'     => 100,
-		'noindex_partial'  => false,
+		'noindex_partial'  => true,
 		'pref_cookie'      => false,
 		'visual_editor'    => false,
 		'site_tone'        => '',
@@ -46,7 +46,7 @@ final class Settings {
 				'border' => '#e4e4e7',
 			),
 			'radius'    => 8,
-			'flag_size' => 18,
+			'flag_size' => 16,
 		),
 	);
 
@@ -74,7 +74,8 @@ final class Settings {
 			$switcher['colors'] = is_array( $switcher['colors'] ) ? array_intersect_key( $switcher['colors'], self::DEFAULTS['switcher']['colors'] ) : array();
 		}
 		$all['switcher'] = array_replace_recursive( self::DEFAULTS['switcher'], $switcher );
-		$flags           = is_array( $all['flags'] ) ? array_intersect_key( $all['flags'], array_flip( array( 'de', 'en', 'es', 'fr', 'it', 'nl', 'pt' ) ) ) : array();
+		$language_codes  = array( 'de', 'de-at', 'de-ch', 'en', 'en-au', 'en-ca', 'en-gb', 'en-ie', 'en-us', 'es', 'es-ar', 'es-es', 'es-mx', 'fr', 'fr-be', 'fr-ca', 'fr-ch', 'fr-fr', 'it', 'it-ch', 'it-it', 'nl', 'nl-be', 'nl-nl', 'pt', 'pt-br', 'pt-pt' );
+		$flags           = is_array( $all['flags'] ) ? array_intersect_key( $all['flags'], array_flip( $language_codes ) ) : array();
 		$flags           = array_filter( $flags, static fn( mixed $flag ): bool => is_string( $flag ) && in_array( $flag, array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' ), true ) );
 		$all['flags']    = array_merge( self::DEFAULTS['flags'], $flags );
 		return $all;

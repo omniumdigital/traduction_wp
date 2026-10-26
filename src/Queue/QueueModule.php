@@ -14,6 +14,7 @@ use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\GlossaryService;
 use Omnium\Translate\Providers\ProviderRegistry;
 use Omnium\Translate\Providers\Pricing;
+use Omnium\Translate\Providers\TranslationQualityValidator;
 use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Router\RequestGuard;
 use Omnium\Translate\Router\SlugGenerator;
@@ -87,7 +88,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( SegmentRepositoryInterface::class ),
 				$c->get( TranslationRepositoryInterface::class ),
 				$c->get( LoggerInterface::class ),
-				$c->get( QueueState::class )
+				$c->get( QueueState::class ),
+				$c->get( PageRepository::class )
 			)
 		);
 
@@ -102,7 +104,8 @@ final class QueueModule implements ModuleInterface {
 				$c->get( LoggerInterface::class ),
 				$c->get( GlossaryService::class ),
 				$c->get( QueueState::class ),
-				$c->get( SlugGenerator::class )
+				$c->get( SlugGenerator::class ),
+				$c->get( TranslationQualityValidator::class )
 			)
 		);
 

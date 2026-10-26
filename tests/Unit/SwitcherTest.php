@@ -103,6 +103,9 @@ final class SwitcherTest extends TestCase {
 		$html = $this->switcher( $current )->render();
 
 		$this->assertStringContainsString( 'aria-label="Language selector"', $html );
+		$this->assertStringContainsString( 'data-omtr-skip', $html );
+		$this->assertStringContainsString( 'translate="no"', $html );
+		$this->assertStringContainsString( 'notranslate', $html );
 		$this->assertStringContainsString( 'aria-expanded="false"', $html );
 		$this->assertStringContainsString( 'href="https://example.test/article"', $html );
 		$this->assertStringContainsString( 'href="https://example.test/en/article"', $html );

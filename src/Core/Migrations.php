@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Migrations {
 
-	public const DB_VERSION = 2;
+	public const DB_VERSION = 3;
 
 	/**
 	 * Run migrations if the stored version is behind.
@@ -54,7 +54,15 @@ final class Migrations {
 	 * @return array<int, callable(): void>
 	 */
 	private static function steps(): array {
-		return array();
+		return array(
+			3 => static function (): void {
+				global $wpdb;
+				// Existing v2 pages have no page-to-segment inventory. Clearing
+				// their content fingerprint makes the next crawl rebuild it.
+				$sql = $wpdb->prepare( 'UPDATE %i SET content_hash = %s', Tables::name( Tables::PAGES ), '' );
+				$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time schema migration, prepared immediately above.
+			},
+		);
 	}
 
 	/**
@@ -70,13 +78,14 @@ final class Migrations {
 		global $wpdb;
 		$charset = $wpdb->get_charset_collate();
 
-		$segments     = Tables::name( Tables::SEGMENTS );
-		$translations = Tables::name( Tables::TRANSLATIONS );
-		$pages        = Tables::name( Tables::PAGES );
-		$slugs        = Tables::name( Tables::SLUGS );
-		$slug_history = Tables::name( Tables::SLUG_HISTORY );
-		$glossary     = Tables::name( Tables::GLOSSARY );
-		$log          = Tables::name( Tables::LOG );
+		$segments      = Tables::name( Tables::SEGMENTS );
+		$translations  = Tables::name( Tables::TRANSLATIONS );
+		$pages         = Tables::name( Tables::PAGES );
+		$page_segments = Tables::name( Tables::PAGE_SEGMENTS );
+		$slugs         = Tables::name( Tables::SLUGS );
+		$slug_history  = Tables::name( Tables::SLUG_HISTORY );
+		$glossary      = Tables::name( Tables::GLOSSARY );
+		$log           = Tables::name( Tables::LOG );
 
 		return array(
 			"CREATE TABLE {$segments} (
@@ -87,6 +96,12 @@ final class Migrations {
   created_at datetime NOT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY hash (hash)
+) {$charset};",
+			"CREATE TABLE {$page_segments} (
+  page_id bigint(20) unsigned NOT NULL,
+  segment_id bigint(20) unsigned NOT NULL,
+  PRIMARY KEY  (page_id,segment_id),
+  KEY segment_id (segment_id)
 ) {$charset};",
 			"CREATE TABLE {$translations} (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,

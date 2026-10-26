@@ -72,11 +72,14 @@ final class Robots {
 	 * Whether noindex applies to this request.
 	 */
 	private function should_noindex(): bool {
+		$post_id    = is_singular() ? (int) get_queried_object_id() : 0;
+		$request    = isset( $GLOBALS['wp']->request ) ? (string) $GLOBALS['wp']->request : '';
+		$source_url = home_url( '' === $request ? '/' : '/' . ltrim( $request, '/' ) );
 		return (bool) $this->settings->get( 'noindex_partial' )
 			&& $this->current_language->is_translated()
 			&& $this->guard->is_public_front_request()
 			&& ! is_feed()
 			&& ! is_robots()
-			&& ! $this->coverage->is_complete( $this->current_language->get() );
+			&& ! $this->coverage->is_page_complete( $this->current_language->get(), $post_id, $source_url );
 	}
 }

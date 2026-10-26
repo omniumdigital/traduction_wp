@@ -11,6 +11,7 @@ use Omnium\Translate\Core\LoggerInterface;
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Render\SegmentExtractorInterface;
 use Omnium\Translate\Store\SegmentRepositoryInterface;
+use Omnium\Translate\Store\PageRepository;
 use Omnium\Translate\Store\TranslationRepositoryInterface;
 
 defined( 'ABSPATH' ) || exit;
@@ -37,6 +38,7 @@ final class ScanJob {
 	 * @param TranslationRepositoryInterface $translations Translations repository.
 	 * @param LoggerInterface                $logger       Logger.
 	 * @param QueueState|null                $state        Manual pause state.
+	 * @param PageRepository|null            $pages        Page-to-segment inventory.
 	 */
 	public function __construct(
 		private Settings $settings,
@@ -47,7 +49,8 @@ final class ScanJob {
 		private SegmentRepositoryInterface $segments,
 		private TranslationRepositoryInterface $translations,
 		private LoggerInterface $logger,
-		private ?QueueState $state = null
+		private ?QueueState $state = null,
+		private ?PageRepository $pages = null
 	) {}
 
 	/**
@@ -82,16 +85,27 @@ final class ScanJob {
 			throw new \RuntimeException( 'omtr: scan fetch failed' );
 		}
 
-		$source = $this->settings->source_lang();
-		$found  = $this->extractor->extract( $html, $source );
+		$source  = $this->settings->source_lang();
+		$found   = $this->extractor->extract( $html, $source );
+		$content = $found;
+		ksort( $content );
+		$content_hash = hash( 'sha256', (string) wp_json_encode( $content ) );
 
 		if ( array() === $found ) {
+			if ( null !== $this->pages ) {
+				$this->pages->save_scan( $post_id, $url, $content_hash );
+				$this->pages->replace_segments( $post_id, $url, array() );
+			}
 			$this->logger->log( 'info', 'queue:scan', sprintf( 'Scan finished: no translatable segment (post_id=%d).', $post_id ) );
 			$this->queue->settle_run( $run_id, true );
 			return;
 		}
 
 		$hash_ids = $this->segments->upsert_many( $found, $source );
+		if ( null !== $this->pages ) {
+			$this->pages->save_scan( $post_id, $url, $content_hash );
+			$this->pages->replace_segments( $post_id, $url, array_values( $hash_ids ) );
+		}
 
 		$total_batches = 0;
 		foreach ( $this->settings->target_langs() as $lang ) {

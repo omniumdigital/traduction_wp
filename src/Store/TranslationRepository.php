@@ -7,6 +7,7 @@
 
 namespace Omnium\Translate\Store;
 
+use Omnium\Translate\Core\Options;
 use Omnium\Translate\Core\Tables;
 use Omnium\Translate\Security\Sanitizer;
 
@@ -181,5 +182,7 @@ final class TranslationRepository implements TranslationRepositoryInterface {
 		if ( false === $version ) {
 			wp_cache_set( self::CACHE_VERSION_KEY, 1, self::CACHE_GROUP );
 		}
+		$coverage_version = (int) get_option( Options::COVERAGE_VERSION, 0 );
+		update_option( Options::COVERAGE_VERSION, $coverage_version + 1, false );
 	}
 }

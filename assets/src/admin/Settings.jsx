@@ -208,7 +208,7 @@ export function Settings({ request, data: initialData }) {
 						type="number"
 						min="12"
 						max="32"
-						value={switcher.flag_size || 18}
+						value={switcher.flag_size || 16}
 						onChange={(flag_size) => updateSwitcher({ flag_size: Number(flag_size) })}
 					/>
 					<Contrast foreground={colors.fg || "#0a0a0a"} background={colors.bg || "#ffffff"} />

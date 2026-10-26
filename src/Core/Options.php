@@ -26,6 +26,7 @@ final class Options {
 	public const HOUR_SEGMENTS_LOCK = 'omtr_hour_segments_lock';
 	public const QUEUE_PAUSED       = 'omtr_queue_paused';
 	public const WIZARD_DONE        = 'omtr_wizard_done';
+	public const COVERAGE_VERSION   = 'omtr_coverage_version';
 
 	/**
 	 * All option names.
@@ -46,6 +47,7 @@ final class Options {
 			self::HOUR_SEGMENTS_LOCK,
 			self::QUEUE_PAUSED,
 			self::WIZARD_DONE,
+			self::COVERAGE_VERSION,
 		);
 	}
 }

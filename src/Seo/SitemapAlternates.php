@@ -50,7 +50,7 @@ final class SitemapAlternates {
 		$source     = preg_replace( '#</url>\s*$#', $links . "\t</url>\n", $output );
 		$result     = is_string( $source ) ? $source : $output;
 
-		foreach ( $this->languages() as $language ) {
+		foreach ( $this->languages( $post_id, $source_url ) as $language ) {
 			if ( $language === $this->settings->source_lang() ) {
 				continue;
 			}
@@ -83,7 +83,7 @@ final class SitemapAlternates {
 				$ids[] = $post_id;
 			}
 		}
-		$this->url_translator->preload_posts( $ids, $this->languages() );
+		$this->url_translator->preload_posts( $ids, array_values( array_unique( array_merge( array( $this->settings->source_lang() ), $this->settings->target_langs() ) ) ) );
 		$expanded = array();
 		foreach ( $prepared as $item ) {
 			$entry        = $item['entry'];
@@ -95,7 +95,7 @@ final class SitemapAlternates {
 				'source_url' => $source_url,
 				'post_id'    => $post_id,
 			);
-			foreach ( $this->languages() as $language ) {
+			foreach ( $this->languages( $post_id, $source_url ) as $language ) {
 				if ( $language === $this->settings->source_lang() ) {
 					continue;
 				}
@@ -121,7 +121,7 @@ final class SitemapAlternates {
 	public function links_xml( string $source_url, bool $declare_namespace = false, int $post_id = 0 ): string {
 		$xml       = '';
 		$namespace = $declare_namespace ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"' : '';
-		foreach ( $this->languages() as $language ) {
+		foreach ( $this->languages( $post_id, $source_url ) as $language ) {
 			$xml      .= sprintf(
 				"\t\t<xhtml:link%s rel=\"alternate\" hreflang=\"%s\" href=\"%s\" />\n",
 				$namespace,
@@ -161,14 +161,16 @@ final class SitemapAlternates {
 	/**
 	 * Languages allowed in search indexes and hreflang groups.
 	 *
+	 * @param int    $post_id    Related post id.
+	 * @param string $source_url Canonical source URL.
 	 * @return list<string>
 	 */
-	private function languages(): array {
+	private function languages( int $post_id, string $source_url ): array {
 		$languages = array_values( array_unique( array_merge( array( $this->settings->source_lang() ), $this->settings->target_langs() ) ) );
 		if ( ! (bool) $this->settings->get( 'noindex_partial' ) ) {
 			return $languages;
 		}
-		return array_values( array_filter( $languages, fn( string $language ): bool => $this->coverage->is_complete( $language ) ) );
+		return array_values( array_filter( $languages, fn( string $language ): bool => $this->coverage->is_page_complete( $language, $post_id, $source_url ) ) );
 	}
 
 	/**

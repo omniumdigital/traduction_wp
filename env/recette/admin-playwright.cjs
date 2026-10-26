@@ -45,6 +45,10 @@ const run = async () => {
 	});
 	page.on("pageerror", (error) => errors.push("pageerror: " + error.message));
 	page.on("response", (response) => {
+		// Seules les réponses REST du plugin peuvent refléter la clé saisie.
+		// Ignorer le reste évite d'attendre des flux WordPress longs (heartbeat,
+		// téléchargements, réponses tierces) à la fin du parcours.
+		if (!response.url().includes("/wp-json/omtr/")) return;
 		const check = response
 			.text()
 			.then((body) => {
@@ -83,8 +87,8 @@ const run = async () => {
 		await page.goto(BASE + "/wp-admin/admin.php?page=omnium-translate", { waitUntil: "load" });
 		await page.getByRole("heading", { name: T.headingWizard }).waitFor({ timeout: 20000 });
 		await page.getByLabel(T.sourceLabel).selectOption("fr");
-		await page.getByRole("checkbox", { name: "English" }).check();
-		await page.getByRole("checkbox", { name: "Español" }).check();
+		await page.getByRole("checkbox", { name: "English", exact: true }).check();
+		await page.getByRole("checkbox", { name: "Español", exact: true }).check();
 		await page.getByRole("button", { name: T.continue, exact: true }).click();
 
 		// Écran 2 : fournisseur + clé factice + test obligatoire.

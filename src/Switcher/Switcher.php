@@ -27,13 +27,33 @@ final class Switcher {
 	 * @var array<string, string>
 	 */
 	private const LANGUAGE_NAMES = array(
-		'de' => 'Deutsch',
-		'en' => 'English',
-		'es' => 'Español',
-		'fr' => 'Français',
-		'it' => 'Italiano',
-		'nl' => 'Nederlands',
-		'pt' => 'Português',
+		'de'    => 'Deutsch',
+		'de-at' => 'Deutsch (Österreich)',
+		'de-ch' => 'Deutsch (Schweiz)',
+		'en'    => 'English',
+		'en-au' => 'English (Australia)',
+		'en-ca' => 'English (Canada)',
+		'en-gb' => 'English (United Kingdom)',
+		'en-ie' => 'English (Ireland)',
+		'en-us' => 'English (United States)',
+		'es'    => 'Español',
+		'es-ar' => 'Español (Argentina)',
+		'es-es' => 'Español (España)',
+		'es-mx' => 'Español (México)',
+		'fr'    => 'Français',
+		'fr-be' => 'Français (Belgique)',
+		'fr-ca' => 'Français (Canada)',
+		'fr-ch' => 'Français (Suisse)',
+		'fr-fr' => 'Français (France)',
+		'it'    => 'Italiano',
+		'it-ch' => 'Italiano (Svizzera)',
+		'it-it' => 'Italiano (Italia)',
+		'nl'    => 'Nederlands',
+		'nl-be' => 'Nederlands (België)',
+		'nl-nl' => 'Nederlands (Nederland)',
+		'pt'    => 'Português',
+		'pt-br' => 'Português (Brasil)',
+		'pt-pt' => 'Português (Portugal)',
 	);
 
 	/**
@@ -42,13 +62,33 @@ final class Switcher {
 	 * @var array<string, string>
 	 */
 	private const FLAGS = array(
-		'de' => 'de',
-		'en' => 'gb',
-		'es' => 'es',
-		'fr' => 'fr',
-		'it' => 'it',
-		'nl' => 'nl',
-		'pt' => 'pt',
+		'de'    => 'de',
+		'de-at' => 'at',
+		'de-ch' => 'ch',
+		'en'    => 'gb',
+		'en-au' => 'au',
+		'en-ca' => 'ca',
+		'en-gb' => 'gb',
+		'en-ie' => 'ie',
+		'en-us' => 'us',
+		'es'    => 'es',
+		'es-ar' => 'ar',
+		'es-es' => 'es',
+		'es-mx' => 'mx',
+		'fr'    => 'fr',
+		'fr-be' => 'be',
+		'fr-ca' => 'ca',
+		'fr-ch' => 'ch',
+		'fr-fr' => 'fr',
+		'it'    => 'it',
+		'it-ch' => 'ch',
+		'it-it' => 'it',
+		'nl'    => 'nl',
+		'nl-be' => 'be',
+		'nl-nl' => 'nl',
+		'pt'    => 'pt',
+		'pt-br' => 'br',
+		'pt-pt' => 'pt',
 	);
 
 	/**
@@ -141,7 +181,7 @@ final class Switcher {
 		}
 
 		$switcher = $this->settings->get( 'switcher' );
-		$classes  = 'omtr-switcher omtr-switcher--' . $variant . ' omtr-switcher--' . $display;
+		$classes  = 'omtr-switcher omtr-switcher--' . $variant . ' omtr-switcher--' . $display . ' notranslate';
 		if ( 'floating' === $variant ) {
 			$position = (string) $switcher['position'];
 			$classes .= ' omtr-switcher--' . ( in_array( $position, array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' ), true ) ? $position : 'bottom-right' );
@@ -152,7 +192,7 @@ final class Switcher {
 		$style = $this->style_variables( $switcher );
 		if ( 'inline' === $variant ) {
 			return sprintf(
-				'<%1$s class="%2$s" style="%5$s" aria-label="%3$s"><ul class="omtr-switcher__list">%4$s</ul></%1$s>',
+				'<%1$s class="%2$s" style="%5$s" aria-label="%3$s" data-omtr-skip translate="no"><ul class="omtr-switcher__list">%4$s</ul></%1$s>',
 				$wrapper,
 				esc_attr( $classes ),
 				esc_attr__( 'Language selector', 'omnium-translate' ),
@@ -162,7 +202,7 @@ final class Switcher {
 		}
 
 		return sprintf(
-			'<%1$s class="%2$s" style="%7$s" aria-label="%3$s"><details class="omtr-switcher__dropdown" data-omtr-switcher><summary class="omtr-switcher__trigger" aria-haspopup="true" aria-expanded="false" aria-controls="%4$s">%5$s<span class="omtr-switcher__chevron" aria-hidden="true"></span></summary><ul class="omtr-switcher__list" id="%4$s">%6$s</ul></details></%1$s>',
+			'<%1$s class="%2$s" style="%7$s" aria-label="%3$s" data-omtr-skip translate="no"><details class="omtr-switcher__dropdown" data-omtr-switcher><summary class="omtr-switcher__trigger" aria-haspopup="true" aria-expanded="false" aria-controls="%4$s">%5$s<span class="omtr-switcher__chevron" aria-hidden="true"></span></summary><ul class="omtr-switcher__list" id="%4$s">%6$s</ul></details></%1$s>',
 			$wrapper,
 			esc_attr( $classes ),
 			esc_attr__( 'Language selector', 'omnium-translate' ),
@@ -187,9 +227,9 @@ final class Switcher {
 			}
 		}
 		$radius  = $switcher['radius'] ?? 8;
-		$size    = $switcher['flag_size'] ?? 18;
+		$size    = $switcher['flag_size'] ?? 16;
 		$parts[] = '--omtr-radius:' . ( is_numeric( $radius ) ? max( 0, min( 24, (int) $radius ) ) : 8 ) . 'px';
-		$parts[] = '--omtr-flag-size:' . ( is_numeric( $size ) ? max( 12, min( 32, (int) $size ) ) : 18 ) . 'px';
+		$parts[] = '--omtr-flag-size:' . ( is_numeric( $size ) ? max( 12, min( 32, (int) $size ) ) : 16 ) . 'px';
 		return implode( ';', $parts );
 	}
 
@@ -204,7 +244,7 @@ final class Switcher {
 			array_unique(
 				array_filter(
 					$languages,
-					static fn( string $language ): bool => 1 === preg_match( '/^[a-z]{2,3}(?:-[A-Z]{2})?$/', $language )
+					static fn( string $language ): bool => 1 === preg_match( '/^[a-z]{2,3}(?:-[a-z]{2})?$/', $language )
 				)
 			)
 		);
@@ -223,7 +263,7 @@ final class Switcher {
 	 */
 	private function language_name( string $language ): string {
 		$base = strtolower( (string) strtok( $language, '-' ) );
-		return self::LANGUAGE_NAMES[ $base ] ?? strtoupper( $language );
+		return self::LANGUAGE_NAMES[ strtolower( $language ) ] ?? ( self::LANGUAGE_NAMES[ $base ] ?? strtoupper( $language ) );
 	}
 
 	/**
@@ -235,7 +275,7 @@ final class Switcher {
 	private function language_content( string $language, string $display ): string {
 		$base       = strtolower( (string) strtok( $language, '-' ) );
 		$configured = $this->settings->get( 'flags' );
-		$flag_code  = is_array( $configured ) && isset( $configured[ $language ] ) ? (string) $configured[ $language ] : ( self::FLAGS[ $base ] ?? '' );
+		$flag_code  = is_array( $configured ) && isset( $configured[ $language ] ) ? (string) $configured[ $language ] : ( self::FLAGS[ strtolower( $language ) ] ?? ( self::FLAGS[ $base ] ?? '' ) );
 		if ( ! in_array( $flag_code, array( 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es', 'fr', 'gb', 'ie', 'it', 'mx', 'nl', 'pt', 'us', 'ar' ), true ) ) {
 			$flag_code = '';
 		}

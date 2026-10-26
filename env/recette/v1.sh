@@ -201,17 +201,25 @@ check "HREFLANG_URLS" "$([ -n "$EN_URL" ] && [ -n "$ES_URL" ] && echo 1 || echo 
 
 for lang in en es; do
 	upper="$(printf '%s' "$lang" | tr '[:lower:]' '[:upper:]')"
+	case "$KIND:$lang" in
+		gutenberg:en) TARGET_MARKER='Presentation of our workshop and its services' ;;
+		gutenberg:es) TARGET_MARKER='Presentación de nuestro taller y sus servicios' ;;
+		elementor:en) TARGET_MARKER='Artisanal ceramics workshop in Lyon' ;;
+		elementor:es) TARGET_MARKER='Taller de cerámica artesanal en Lyon' ;;
+		oxygen:en) TARGET_MARKER='Give momentum to your ideas' ;;
+		oxygen:es) TARGET_MARKER='Dé impulso a sus ideas' ;;
+	esac
 	[ "$lang" = en ] && LURL="$EN_URL" || LURL="$ES_URL"
 	ok_count=0; miss_count=0; err_pages=""
 	for n in $(seq -w 1 30); do
 		if [ "$n" = "01" ]; then url="$LURL"; else url="$BASE/$lang/recette-v1-$n/"; fi
 		code="$(fetch "$url" "$TMP/page-$lang-$n.html")"
 		total="$(count_occurrences "$TMP/page-$lang-$n.html" "$MARKER")"
-		prefixed="$(count_occurrences "$TMP/page-$lang-$n.html" "[$upper] $MARKER")"
-		if [ "$code" = "200" ] && [ "$prefixed" -gt 0 ] 2>/dev/null && [ "$total" = "$prefixed" ]; then
+		translated="$(count_occurrences "$TMP/page-$lang-$n.html" "$TARGET_MARKER")"
+		if [ "$code" = "200" ] && [ "$translated" -gt 0 ] 2>/dev/null && [ "$total" = "0" ]; then
 			ok_count=$((ok_count + 1))
 		else
-			miss_count=$((miss_count + 1)); err_pages="$err_pages $n(http=$code,total=$total,prefixed=$prefixed)"
+			miss_count=$((miss_count + 1)); err_pages="$err_pages $n(http=$code,source=$total,translated=$translated)"
 		fi
 	done
 	check "PAGES_${upper}_TRADUITES" "$([ "$ok_count" = "30" ] && echo 1 || echo 0)" "$ok_count/30 pages OK$err_pages"
@@ -241,10 +249,10 @@ done
 # wp-sitemap.xml (HTTP 301) : seul leur propre sitemap est alors pertinent
 # (vérifié ci-dessous par SITEMAP_SEO_PLUGIN), conformément à la charte §7.
 if [ "$KIND" = gutenberg ]; then
-	code="$(fetch "$BASE/wp-sitemap.xml" "$TMP/wp-sitemap.xml")"
-	sm_en="$(grep -c "recette-v1-01</loc>" "$TMP/wp-sitemap.xml" >/dev/null 2>&1 && grep -c "/en/" "$TMP/wp-sitemap.xml" || echo 0)"
-	sm_xhtml="$(grep -c 'xhtml:link' "$TMP/wp-sitemap.xml" || true)"
-	check "SITEMAP_NATIF" "$([ "$code" = "200" ] && [ "${sm_en:-0}" -ge 1 ] && [ "${sm_xhtml:-0}" -ge 1 ] && echo 1 || echo 0)" "wp-sitemap.xml HTTP $code, /en/: $sm_en, xhtml:link: $sm_xhtml"
+	code="$(fetch "$BASE/wp-sitemap-posts-page-1.xml" "$TMP/wp-sitemap-page.xml")"
+	sm_en="$(grep -c "/en/" "$TMP/wp-sitemap-page.xml" || true)"
+	sm_xhtml="$(grep -c 'xhtml:link' "$TMP/wp-sitemap-page.xml" || true)"
+	check "SITEMAP_NATIF" "$([ "$code" = "200" ] && [ "${sm_en:-0}" -ge 1 ] && [ "${sm_xhtml:-0}" -ge 1 ] && echo 1 || echo 0)" "wp-sitemap-posts-page-1.xml HTTP $code, /en/: $sm_en, xhtml:link: $sm_xhtml"
 fi
 # Sitemap du plugin SEO actif (Yoast sur elementor, Rank Math sur oxygen).
 if [ "$KIND" != gutenberg ]; then
@@ -290,20 +298,23 @@ if [ "$KIND" != gutenberg ]; then
 		upper="$(printf '%s' "$lang" | tr '[:lower:]' '[:upper:]')"
 		purl_lang="$(printf '%s' "$purl" | sed -E "s#^(https?://[^/]+)/#\\1/$lang/#")"
 		fetch "$purl_lang" "$TMP/product-$lang.html" >/dev/null
-		jsonld_result="$(python3 "$ROOT/env/recette/jsonld-product.py" "$TMP/product-source.html" "$TMP/product-$lang.html" "$pname" "$pprice" "$psku" "$lang" 2>&1)" && jsonld_ok=1 || jsonld_ok=0
+		jsonld_result="$(python3 "$ROOT/env/recette/jsonld-product.py" "$TMP/product-source.html" "$TMP/product-$lang.html" "$pname" "$pprice" "$psku" 2>&1)" && jsonld_ok=1 || jsonld_ok=0
 		check "JSONLD_PRODUCT_$upper" "$jsonld_ok" "$jsonld_result (url=$purl_lang)"
 	done
 
 	note "-- Email WooCommerce dans la langue de la commande"
 	WX eval-file "$PHPFILE" email "$KIND" > "$TMP/email-1.log" 2>&1
 	s1="$(sed -n 's/^EMAIL_SUBJECT=//p' "$TMP/email-1.log" | tail -1)"
-	if ! printf '%s' "$s1" | grep -q '^\[EN\]'; then
+	if ! printf '%s' "$s1" | grep -q '^Translated:'; then
 		left="$(drain_queue)" # l'email a pu mettre des segments en file
 		WX eval-file "$PHPFILE" email "$KIND" > "$TMP/email-2.log" 2>&1
 		s1="$(sed -n 's/^EMAIL_SUBJECT=//p' "$TMP/email-2.log" | tail -1)"
 	fi
 	h1="$(sed -n 's/^EMAIL_HEADING=//p' "$TMP/email-1.log" "$TMP/email-2.log" | tail -1)"
-	check "WOO_EMAIL_LANGUE_COMMANDE" "$(printf '%s' "$s1" | grep -q '^\[EN\]' && printf '%s' "$h1" | grep -q '^\[EN\]' && echo 1 || echo 0)" "sujet: $s1 | entête: $h1"
+	check "WOO_EMAIL_LANGUE_COMMANDE" "$(printf '%s' "$s1" | grep -q '^Translated:' && printf '%s' "$h1" | grep -q '^Translated:' && echo 1 || echo 0)" "sujet: $s1 | entête: $h1"
+	# L'aperçu d'email peut découvrir des chaînes WooCommerce supplémentaires.
+	# Les traiter avant de mesurer la retraduction d'un site inchangé.
+	drain_queue >/dev/null
 fi
 
 # --- retraduction d'un site inchangé = zéro appel ------------------------------
@@ -337,7 +348,7 @@ check "DEBUG_LOG_SANS_ERREUR_PHP" "$([ "${omtr_errors:-1}" = "0" ] && echo 1 || 
 
 if [ "$KIND" = gutenberg ]; then
 	note "-- Parcours navigateur complémentaire (en_US, onglets)"
-	W user meta update admin locale '' >/dev/null 2>&1
+	W user meta update admin locale en_US >/dev/null 2>&1
 	W eval-file "$PHPFILE" reset-wizard >/dev/null 2>&1
 	before_en="$(mock_calls)"
 	OMTR_BASE="$BASE" OMTR_LOCALE=en_US OMTR_TIMED=0 \
@@ -348,7 +359,7 @@ if [ "$KIND" = gutenberg ]; then
 	key_dom_en="$(sed -n 's/^KEY_IN_DOM_AFTER_SAVE=//p' "$TMP/playwright-en.log" | tail -1)"
 	after_en="$(mock_calls)"
 	check "BROWSER_TABS_EN" "$([ "${console_en:-9}" = "0" ] && [ "${key_dom_en:-1}" = "false" ] && echo 1 || echo 0)" "console=$console_en erreurs, clé en clair dans le DOM=$key_dom_en"
-	check "BROWSER_WIZARD_EN_0_APPEL" "$([ "$(( ${after_en:-0} - ${before_en:-0} ))" = "0" ] && echo 1 || echo 0)" "delta appels=$(( ${after_en:-0} - ${before_en:-0} )) après relance navigateur"
+	check "BROWSER_WIZARD_EN_1_APPEL_TEST_CLE" "$([ "$(( ${after_en:-0} - ${before_en:-0} ))" = "1" ] && echo 1 || echo 0)" "delta appels=$(( ${after_en:-0} - ${before_en:-0} )); seul le test de clé appelle le fournisseur"
 fi
 
 # --- surcoût d'une page traduite en cache -------------------------------------
@@ -385,7 +396,13 @@ check "SURCOIT_50MS" "$(awk -v o="${overhead:-9999}" 'BEGIN { print (o < 50) ? 1
 # Les query strings de version (?ver=...) des assets (dont le CSS généré par
 # Elementor) changent naturellement au fil du temps, indépendamment du
 # plugin : elles sont ignorées pour ne comparer que le contenu réel.
-strip_asset_versions() { sed -E "s/\?ver=[0-9]+//g; s/\.css[a-f0-9]{8,}/.css/g" "$1"; }
+strip_asset_versions() {
+	# WooCommerce peut enregistrer ses polices locales lors du premier rendu
+	# d'email, indépendamment de l'activation d'Omnium. Neutraliser cet état
+	# tardif ainsi que les cache-busters Elementor avant la comparaison.
+	sed -E 's/\?ver=[A-Za-z0-9._-]+//g; s/\.css[a-f0-9]{8,}/.css/g; s/--wp--preset--font-family--(inter|cardo): [^;]+;//g; s/\.has-(inter|cardo)-font-family\{[^}]+\}//g; s/^[[:space:]]*<\/head>/<\/head>/' "$1" |
+		sed '/<style class="wp-fonts-local">/,/<\/style>/d'
+}
 for n in 01 15 30; do
 	fetch "$BASE/recette-v1-$n/" "$TMP/after-$n.html" >/dev/null
 	if diff -q <(strip_asset_versions "$TMP/before-$n.html") <(strip_asset_versions "$TMP/after-$n.html") >/dev/null; then
