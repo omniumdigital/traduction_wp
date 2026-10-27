@@ -29,6 +29,7 @@ final class Options {
 	public const COVERAGE_VERSION   = 'omtr_coverage_version';
 	public const WORDS_TRANSLATED   = 'omtr_words_translated';
 	public const CAPS_GRANTED       = 'omtr_caps_granted';
+	public const SLUG_REFRESH       = 'omtr_slug_refresh';
 
 	/**
 	 * All option names.
@@ -52,6 +53,7 @@ final class Options {
 			self::COVERAGE_VERSION,
 			self::WORDS_TRANSLATED,
 			self::CAPS_GRANTED,
+			self::SLUG_REFRESH,
 		);
 	}
 }

@@ -21,6 +21,7 @@ export function Settings({ request, data: initialData }) {
 	const [key, setKey] = useState("");
 	const [switchedTo, setSwitchedTo] = useState(null);
 	const [keyStatus, setKeyStatus] = useState(null);
+	const [slugsQueued, setSlugsQueued] = useState(false);
 	useEffect(() => {
 		if (initialData) return;
 		Promise.all([request({ path: "/settings" }), request({ path: "/providers" })])
@@ -169,6 +170,26 @@ export function Settings({ request, data: initialData }) {
 						checked={Boolean(settings.noindex_partial)}
 						onChange={(noindex_partial) => save({ noindex_partial })}
 					/>
+					<p>
+						{__(
+							"Translated URLs are built from the translated page title. Manual URLs are kept and old URLs redirect (301) to the new ones.",
+							"omnium-translate",
+						)}
+					</p>
+					<Button
+						variant="secondary"
+						onClick={async () => {
+							await request({ path: "/slugs/refresh", method: "POST" });
+							setSlugsQueued(true);
+						}}
+					>
+						{__("Update translated URLs", "omnium-translate")}
+					</Button>
+					{slugsQueued && (
+						<Notice status="success" onDismiss={() => setSlugsQueued(false)}>
+							{__("Translated URLs will be updated in the background within a few minutes.", "omnium-translate")}
+						</Notice>
+					)}
 				</PanelBody>
 				<PanelBody title={__("Site tone and context", "omnium-translate")} initialOpen>
 					<TextControl

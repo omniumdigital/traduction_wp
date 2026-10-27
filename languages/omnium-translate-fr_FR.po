@@ -679,3 +679,12 @@ msgstr "Facultatif. Exemple : chaleureux et tutoiement, ou formel et professionn
 
 msgid "Optional. Describe your business and audience so the AI picks the right vocabulary. Do not include personal data."
 msgstr "Facultatif. Décrivez votre activité et votre public pour que l’IA choisisse le bon vocabulaire. N’indiquez aucune donnée personnelle."
+
+msgid "Translated URLs are built from the translated page title. Manual URLs are kept and old URLs redirect (301) to the new ones."
+msgstr "Les URLs traduites sont construites à partir du titre traduit de la page. Les URLs saisies à la main sont conservées et les anciennes URLs redirigent (301) vers les nouvelles."
+
+msgid "Update translated URLs"
+msgstr "Mettre à jour les URLs traduites"
+
+msgid "Translated URLs will be updated in the background within a few minutes."
+msgstr "Les URLs traduites seront mises à jour en arrière-plan d’ici quelques minutes."

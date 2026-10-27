@@ -52,6 +52,23 @@ final class SlugRestController {
 				),
 			)
 		);
+		register_rest_route(
+			'omtr/v1',
+			'/slugs/refresh',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'refresh_slugs' ),
+				'permission_callback' => array( Capabilities::class, 'rest_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Request a background refresh of every translated slug.
+	 */
+	public function refresh_slugs(): \WP_REST_Response {
+		SlugRefresher::request();
+		return new \WP_REST_Response( array( 'scheduled' => true ) );
 	}
 
 	/**

@@ -104,6 +104,11 @@ final class BatchJob {
 		$existing = $this->translations->find_many( array_keys( $texts ), $lang );
 		$pending  = array_diff_key( $texts, $existing );
 		if ( array() === $pending ) {
+			// Nothing to translate, but the title may be translated already:
+			// make sure the page also gets its translated URL.
+			if ( $post_id > 0 && null !== $this->slug_generator ) {
+				$this->slug_generator->generate( $post_id, $lang );
+			}
 			$this->logger->log( 'info', 'queue:batch', 'Batch skipped: every segment is already translated.' );
 			$this->queue->settle_run( $run_id, true );
 			return;

@@ -106,6 +106,38 @@ final class SlugGeneratorTest extends TestCase {
 		$this->assertStringContainsString( 'a-propos', $this->queries[2] );
 	}
 
+	/**
+	 * Other copies of the source URL are replaced too: a suffixed fallback and
+	 * a slug built from the untranslated source title.
+	 *
+	 * @dataProvider sourceCopies
+	 */
+	public function test_source_url_copies_are_replaced( string $stored ): void {
+		$this->seed_title_translation( 'Titre source', 'About us' );
+		$this->mock_post( 'a-propos' );
+
+		// get_var: existing copy, slug conflict, history conflict, save re-read.
+		$slug = $this->generator( $this->db( array( $stored, null, null, $stored ) ) )->generate( 42, 'en' );
+
+		$this->assertSame( 'about-us', $slug );
+		$this->assertStringContainsString( $stored, $this->queries[2] );
+	}
+
+	/** @return iterable<string, array{string}> */
+	public static function sourceCopies(): iterable {
+		yield 'suffixed post_name' => array( 'a-propos-2' );
+		yield 'source title' => array( 'titre-source' );
+	}
+
+	/** A slug that merely starts like the source URL is a manual one and is kept. */
+	public function test_slug_extending_the_source_url_is_not_a_copy(): void {
+		$this->seed_title_translation( 'Titre source', 'About us' );
+		$this->mock_post( 'a-propos' );
+
+		$this->assertSame( 'a-propos-team', $this->generator( $this->db( array( 'a-propos-team' ) ) )->generate( 42, 'en' ) );
+		$this->assertSame( array(), $this->queries );
+	}
+
 	/** @dataProvider maliciousSlugs */
 	public function test_refuses_malicious_manual_slugs( string $candidate ): void {
 		$wpdb         = $this->createMock( \wpdb::class );
