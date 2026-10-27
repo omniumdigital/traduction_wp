@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,10 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.2.2 =
+* Les URLs des pages déjà traduites sont recalculées automatiquement à la mise à jour : plus de mot français dans les URLs traduites. Les anciennes URLs redirigent en 301 et les URLs saisies à la main sont conservées.
+* Bouton « Mettre à jour les URLs traduites » dans Réglages > SEO.
 
 = 1.2.1 =
 * Un texte déjà dans la langue cible (comme l'article « Hello world! » en anglais) ne fait plus échouer tout son lot : seuls les segments refusés sont renvoyés à l'IA, et une traduction identique est acceptée au second essai.

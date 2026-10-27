@@ -3,7 +3,7 @@
  * Plugin Name:       Omnium Translate
  * Plugin URI:        https://github.com/omniumdigital/traduction_wp
  * Description:       Traduction automatique par IA, sans abonnement : tout tourne sur votre site, avec votre propre clé API.
- * Version:           1.2.1
+ * Version:           1.2.2
  * Requires at least: 6.9
  * Requires PHP:      8.1
  * Author:            Omnium Digital
@@ -20,7 +20,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'OMTR_VERSION', '1.2.1' );
+define( 'OMTR_VERSION', '1.2.2' );
 define( 'OMTR_FILE', __FILE__ );
 define( 'OMTR_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OMTR_URL', plugin_dir_url( __FILE__ ) );
