@@ -9,6 +9,7 @@ namespace Omnium\Translate\Providers\Claude;
 
 use Omnium\Translate\Core\Settings;
 use Omnium\Translate\Glossary\Glossary;
+use Omnium\Translate\Providers\BatchRunner;
 use Omnium\Translate\Providers\ErrorClassifier;
 use Omnium\Translate\Providers\ProviderException;
 use Omnium\Translate\Providers\ProviderInterface;
@@ -131,11 +132,26 @@ final class ClaudeProvider implements ProviderInterface {
 		if ( array() === $segments ) {
 			return array();
 		}
-		$numbered = $this->prompts->number( $segments );
+		return ( new BatchRunner( $this->prompts, $this->validator ) )->run(
+			$segments,
+			$glossary,
+			fn( array $numbered ): string => $this->text_from_response( $this->request( $this->batch_body( $numbered, $source, $target, $glossary ) ) )
+		);
+	}
 
-		$body = array(
+	/**
+	 * Request body for one batch of numbered segments.
+	 *
+	 * @param array<int, string> $numbered Number => source text.
+	 * @param string             $source   Source language code.
+	 * @param string             $target   Target language code.
+	 * @param Glossary           $glossary Glossary, tone and site context.
+	 * @return array<string, mixed>
+	 */
+	private function batch_body( array $numbered, string $source, string $target, Glossary $glossary ): array {
+		return array(
 			'model'      => $this->model(),
-			'max_tokens' => $this->max_tokens_for( $segments ),
+			'max_tokens' => $this->max_tokens_for( $numbered ),
 			'system'     => $this->prompts->system_prompt( $source, $target, $glossary ),
 			'messages'   => array(
 				array(
@@ -144,20 +160,6 @@ final class ClaudeProvider implements ProviderInterface {
 				),
 			),
 		);
-
-		// One extra attempt is allowed when the response is not valid strict JSON.
-		$attempts = 0;
-		while ( true ) {
-			++$attempts;
-			$raw       = $this->request( $body );
-			$validated = $this->validator->validate( $this->text_from_response( $raw ), array_keys( $numbered ), $numbered, $glossary );
-			if ( null !== $validated ) {
-				return $this->map_to_hashes( $validated, array_keys( $segments ) );
-			}
-			if ( $attempts >= 2 ) {
-				throw new ProviderException( 'The provider returned an invalid response format.', 0, false );
-			}
-		}
 	}
 
 	/**
@@ -293,27 +295,10 @@ final class ClaudeProvider implements ProviderInterface {
 	}
 
 	/**
-	 * Map validated numbers back to segment hashes.
-	 *
-	 * @param array<int, string> $validated Number => translated text.
-	 * @param list<string>       $hashes    Hashes in sent order.
-	 * @return array<string, string>
-	 */
-	private function map_to_hashes( array $validated, array $hashes ): array {
-		$mapped = array();
-		foreach ( $validated as $number => $text ) {
-			if ( isset( $hashes[ $number - 1 ] ) ) {
-				$mapped[ $hashes[ $number - 1 ] ] = $text;
-			}
-		}
-		return $mapped;
-	}
-
-	/**
 	 * Output token budget for a batch: roughly the input size, with headroom
 	 * for JSON syntax, translation expansion and adaptive thinking.
 	 *
-	 * @param array<string, string> $segments Segment hash => source text.
+	 * @param array<int|string, string> $segments Source texts.
 	 */
 	private function max_tokens_for( array $segments ): int {
 		$chars = 0;

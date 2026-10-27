@@ -156,7 +156,9 @@ final class BatchJob {
 		foreach ( $translated as $hash => $text ) {
 			$id    = array_search( $hash, $segments, true );
 			$clean = Sanitizer::inline_html( $text );
-			if ( false !== $id && isset( $pending[ $hash ] ) && $quality->is_valid( $pending[ $hash ], $clean, $glossary ) ) {
+			// Identical-to-source text was already arbitrated by the provider's
+			// second attempt (BatchRunner): only re-check structure and glossary here.
+			if ( false !== $id && isset( $pending[ $hash ] ) && $quality->is_valid( $pending[ $hash ], $clean, $glossary, true ) ) {
 				// Untrusted AI output: strict whitelist sanitization before storage.
 				$saved[ $id ]      = $clean;
 				$accepted_hashes[] = $hash;

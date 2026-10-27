@@ -4,6 +4,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.2.1] - 2026-10-27
+
+### Corrigé
+- Un segment déjà dans la langue cible (par exemple l'article « Hello world! » de WordPress, en anglais sur un site français, traduit vers l'anglais) revenait identique et faisait échouer tout son lot, jusqu'à 50 segments. Désormais :
+  - seuls les segments refusés sont renvoyés à l'IA, les traductions valides du lot sont enregistrées ;
+  - au second essai, une traduction identique à l'original est acceptée ;
+  - une erreur HTTP au second essai conserve les traductions déjà obtenues.
+
 ## [1.2.0] - 2026-10-26
 
 ### Ajouté
