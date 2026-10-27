@@ -24,8 +24,10 @@ final class TranslationQualityValidator {
 	 * @param string   $source      Original source segment.
 	 * @param string   $translation Candidate translation.
 	 * @param Glossary $glossary    Mandatory terminology rules.
+	 * @param bool     $allow_identical Accept a translation identical to the source
+	 *                                  (text already in the target language).
 	 */
-	public function is_valid( string $source, string $translation, Glossary $glossary ): bool {
+	public function is_valid( string $source, string $translation, Glossary $glossary, bool $allow_identical = false ): bool {
 		$source      = trim( $source );
 		$translation = trim( $translation );
 		if ( '' === $translation || preg_match( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $translation ) ) {
@@ -59,7 +61,7 @@ final class TranslationQualityValidator {
 		}
 
 		$word_count = preg_match_all( '/[\p{L}\p{N}]+/u', $source_text );
-		if ( $source_length >= 32 && is_int( $word_count ) && $word_count >= 5 && $this->fold( $source_text ) === $this->fold( $translation_text ) ) {
+		if ( ! $allow_identical && $source_length >= 32 && is_int( $word_count ) && $word_count >= 5 && $this->fold( $source_text ) === $this->fold( $translation_text ) ) {
 			return false;
 		}
 

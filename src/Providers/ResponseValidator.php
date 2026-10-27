@@ -42,6 +42,40 @@ final class ResponseValidator {
 	 * @return array<int, string>|null Number => translation, or null when the response is invalid.
 	 */
 	public function validate( string $raw, array $expected, ?array $sources = null, ?Glossary $glossary = null ): ?array {
+		return $this->check( $raw, $expected, $sources, $glossary, false, false );
+	}
+
+	/**
+	 * Validate a raw provider response, keeping each entry that passes.
+	 *
+	 * The response structure stays all-or-nothing (strict JSON object, known
+	 * keys, string values): a structural failure returns null. Empty or
+	 * low-quality entries are dropped instead, so one bad segment does not
+	 * fail its whole batch.
+	 *
+	 * @param string             $raw             Raw response body text.
+	 * @param list<int>          $expected        Numbers that were sent (1-based).
+	 * @param array<int, string> $sources         Numbered source segments.
+	 * @param Glossary           $glossary        Glossary rules to enforce.
+	 * @param bool               $allow_identical Accept a translation identical to its source.
+	 * @return array<int, string>|null Number => translation (possibly partial), or null when the structure is invalid.
+	 */
+	public function validate_partial( string $raw, array $expected, array $sources, Glossary $glossary, bool $allow_identical = false ): ?array {
+		return $this->check( $raw, $expected, $sources, $glossary, true, $allow_identical );
+	}
+
+	/**
+	 * Shared validation.
+	 *
+	 * @param string                  $raw             Raw response body text.
+	 * @param list<int>               $expected        Numbers that were sent (1-based).
+	 * @param array<int, string>|null $sources         Numbered source segments.
+	 * @param Glossary|null           $glossary        Glossary rules to enforce.
+	 * @param bool                    $partial         Drop bad entries instead of rejecting the response.
+	 * @param bool                    $allow_identical Accept a translation identical to its source.
+	 * @return array<int, string>|null
+	 */
+	private function check( string $raw, array $expected, ?array $sources, ?Glossary $glossary, bool $partial, bool $allow_identical ): ?array {
 		if ( str_contains( $raw, "\0" ) ) {
 			return null;
 		}
@@ -70,23 +104,25 @@ final class ResponseValidator {
 
 		$valid = array();
 		foreach ( get_object_vars( $decoded ) as $key => $value ) {
-			// The contract is all-or-nothing: unknown, missing or malformed entries
-			// trigger the provider's one allowed format/quality retry.
+			// Unknown keys or non-string values mean the model ignored the
+			// contract: the whole response is rejected and retried.
 			$key = (string) $key;
-			if ( ! ctype_digit( $key ) || ! isset( $allowed[ $key ] ) ) {
-				return null;
-			}
-			if ( ! is_string( $value ) || '' === trim( $value ) ) {
+			if ( ! ctype_digit( $key ) || ! isset( $allowed[ $key ] ) || ! is_string( $value ) ) {
 				return null;
 			}
 			$number = $allowed[ $key ];
-			if ( null !== $sources && null !== $glossary && isset( $sources[ $number ] ) && ! $this->quality->is_valid( $sources[ $number ], $value, $glossary ) ) {
+			$bad    = '' === trim( $value )
+				|| ( null !== $sources && null !== $glossary && isset( $sources[ $number ] ) && ! $this->quality->is_valid( $sources[ $number ], $value, $glossary, $allow_identical ) );
+			if ( $bad ) {
+				if ( $partial ) {
+					continue;
+				}
 				return null;
 			}
 			$valid[ $number ] = $value;
 		}
 
-		if ( count( $valid ) !== count( $allowed ) ) {
+		if ( ! $partial && count( $valid ) !== count( $allowed ) ) {
 			return null;
 		}
 		ksort( $valid );

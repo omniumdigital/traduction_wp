@@ -172,6 +172,25 @@ final class ClaudeProviderTest extends TestCase {
 		$this->assertCount( 2, $this->requests );
 	}
 
+	/** Regression: an English sentence on a French site, translated to English, used to fail its whole batch. */
+	public function test_text_already_in_target_language_is_retried_alone_then_accepted(): void {
+		$english  = 'Welcome to WordPress. This is your first post. Edit or delete it, then start writing!';
+		$provider = $this->make_provider();
+		$this->stub_http(
+			array(
+				array( 'code' => 200, 'body' => $this->response_body( array( 1 => 'Hello everyone', 2 => $english ) ) ),
+				array( 'code' => 200, 'body' => $this->response_body( array( 1 => $english ) ) ),
+			)
+		);
+
+		$result = $provider->translate_batch( array( 'hash-1' => 'Bonjour tout le monde', 'hash-2' => $english ), 'fr', 'en', new Glossary() );
+
+		$this->assertSame( array( 'hash-1' => 'Hello everyone', 'hash-2' => $english ), $result );
+		$this->assertCount( 2, $this->requests );
+		$retry = json_decode( (string) $this->requests[1]['args']['body'], true );
+		$this->assertStringNotContainsString( 'Bonjour tout le monde', $retry['messages'][0]['content'] );
+	}
+
 	public function test_two_invalid_responses_fail_without_retryable_flag(): void {
 		$provider = $this->make_provider();
 		$this->stub_http(
