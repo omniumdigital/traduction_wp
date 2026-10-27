@@ -4,6 +4,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.2.2] - 2026-10-27
+
+### Corrigé
+- URLs traduites des pages déjà traduites : le slug traduit n'était calculé qu'après une nouvelle traduction de la page, donc un site traduit avant cette fonctionnalité gardait ses URLs en français. La mise à jour recalcule automatiquement, en arrière-plan, l'URL traduite de chaque contenu publié. Les URLs saisies à la main sont conservées et les anciennes redirigent en 301 vers les nouvelles.
+- Une page dont tous les segments sont déjà traduits reçoit aussi son URL traduite lors d'une relance.
+
+### Ajouté
+- Bouton « Mettre à jour les URLs traduites » dans Réglages > SEO.
+
 ## [1.2.1] - 2026-10-27
 
 ### Corrigé

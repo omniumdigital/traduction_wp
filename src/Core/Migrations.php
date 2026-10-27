@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Migrations {
 
-	public const DB_VERSION = 3;
+	public const DB_VERSION = 4;
 
 	/**
 	 * Run migrations if the stored version is behind.
@@ -61,6 +61,11 @@ final class Migrations {
 				// their content fingerprint makes the next crawl rebuild it.
 				$sql = $wpdb->prepare( 'UPDATE %i SET content_hash = %s', Tables::name( Tables::PAGES ), '' );
 				$wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time schema migration, prepared immediately above.
+			},
+			4 => static function (): void {
+				// Sites translated before translated slugs existed kept source
+				// URLs: rebuild every translated slug once in the background.
+				update_option( Options::SLUG_REFRESH, 1, false );
 			},
 		);
 	}

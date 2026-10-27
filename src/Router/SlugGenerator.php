@@ -69,14 +69,10 @@ final class SlugGenerator {
 		}
 
 		$existing = $this->slugs->get( $post_id, $lang );
-		if ( null !== $existing ) {
-			$post     = get_post( $post_id );
-			$fallback = $post instanceof \WP_Post ? $this->normalize( (string) $post->post_name ) : '';
-			// A slug that differs from the source fallback was set manually
-			// (or regenerated on purpose): never overwrite it.
-			if ( '' === $fallback || $existing !== $fallback ) {
-				return $existing;
-			}
+		// A slug that is not a copy of the source URL was set manually (or
+		// already translated): never overwrite it.
+		if ( null !== $existing && ! $this->is_source_copy( $existing, $post_id, $title ) ) {
+			return $existing;
 		}
 
 		$slug = $this->unique( $base, $lang, $post_id );
@@ -85,6 +81,32 @@ final class SlugGenerator {
 		}
 		$this->slugs->save( $post_id, $lang, $slug );
 		return $slug;
+	}
+
+	/**
+	 * Whether a stored slug is still a copy of the source URL.
+	 *
+	 * Covers the 1.0.x fallback (normalized post_name) and a slug built from
+	 * the untranslated source title, with or without a "-2" style suffix.
+	 *
+	 * @param string $slug    Stored translated slug.
+	 * @param int    $post_id Post id.
+	 * @param string $title   Source title.
+	 */
+	private function is_source_copy( string $slug, int $post_id, string $title ): bool {
+		$post    = get_post( $post_id );
+		$sources = array_filter(
+			array(
+				$post instanceof \WP_Post ? $this->normalize( (string) $post->post_name ) : '',
+				$this->normalize( $title ),
+			)
+		);
+		foreach ( $sources as $source ) {
+			if ( $slug === $source || 1 === preg_match( '/^' . preg_quote( $source, '/' ) . '-\d+$/', $slug ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
