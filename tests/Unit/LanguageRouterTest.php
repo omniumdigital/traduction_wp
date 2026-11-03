@@ -123,4 +123,53 @@ final class LanguageRouterTest extends TestCase {
 		$this->assertSame( '/old-page/', $_SERVER['REQUEST_URI'] );
 		$this->assertNull( $router->old_slug_redirect_url() );
 	}
+
+	public function test_front_page_translated_slug_redirects_to_language_root(): void {
+		Functions\when( 'get_post_status' )->justReturn( 'publish' );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/' );
+		$_SERVER['REQUEST_URI'] = '/en/home-2/?a=1';
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$wpdb->expects( $this->once() )->method( 'get_var' )->willReturn( '12' );
+		$router = new LanguageRouter( new CurrentLanguage( 'fr' ), new Settings(), new RequestGuard(), new SlugRepository( $wpdb ), new UrlTranslator( new Settings() ) );
+
+		$router->strip_language_prefix( true );
+		$this->assertSame( '/?a=1', $_SERVER['REQUEST_URI'] );
+		$this->assertSame( 'https://example.test/en/', $router->old_slug_redirect_url() );
+	}
+
+	public function test_front_page_translated_slug_redirects_on_subdirectory_install(): void {
+		Functions\when( 'home_url' )->justReturn( 'https://example.test/blog/' );
+		Functions\when( 'get_post_status' )->justReturn( 'publish' );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/blog/' );
+		$_SERVER['REQUEST_URI'] = '/blog/es/inicio/';
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$wpdb->method( 'get_var' )->willReturn( '12' );
+		$router = new LanguageRouter( new CurrentLanguage( 'fr' ), new Settings(), new RequestGuard(), new SlugRepository( $wpdb ), new UrlTranslator( new Settings() ) );
+
+		$router->strip_language_prefix( true );
+		$this->assertSame( '/blog/', $_SERVER['REQUEST_URI'] );
+		$this->assertSame( 'https://example.test/blog/es/', $router->old_slug_redirect_url() );
+	}
+
+	public function test_current_translated_slug_of_regular_page_does_not_redirect(): void {
+		Functions\when( 'get_post_status' )->justReturn( 'publish' );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/source-page/' );
+		$_SERVER['REQUEST_URI'] = '/en/translated-page/';
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$wpdb->method( 'get_var' )->willReturn( '42' );
+		$router = new LanguageRouter( new CurrentLanguage( 'fr' ), new Settings(), new RequestGuard(), new SlugRepository( $wpdb ), new UrlTranslator( new Settings() ) );
+
+		$router->strip_language_prefix( true );
+		$this->assertSame( '/source-page/', $_SERVER['REQUEST_URI'] );
+		$this->assertNull( $router->old_slug_redirect_url() );
+	}
 }

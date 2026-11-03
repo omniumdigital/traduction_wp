@@ -17,7 +17,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class LanguageRouter {
 	/**
-	 * Post identified by a historical slug on this request.
+	 * Post reached through a URL that must 301 to its current one: a historical
+	 * slug, or the translated slug of the static front page.
 	 *
 	 * @var int|null
 	 */
@@ -110,13 +111,17 @@ final class LanguageRouter {
 			return $relative_path;
 		}
 		$source_path = (string) $parsed['path'];
-		if ( '' !== $home_path && str_starts_with( $source_path, $home_path . '/' ) ) {
+		if ( '' !== $home_path && ( $source_path === $home_path || str_starts_with( $source_path, $home_path . '/' ) ) ) {
 			$source_path = substr( $source_path, strlen( $home_path ) );
+		}
+		// The static front page lives at /{lang}/: its translated slug redirects there.
+		if ( '' === trim( $source_path, '/' ) ) {
+			$this->old_slug_post_id = $post_id;
 		}
 		return '/' . ltrim( $source_path, '/' );
 	}
 
-	/** Return the new URL for an obsolete slug, if the request matched one. */
+	/** Return the current URL for an obsolete or front-page slug, if the request matched one. */
 	public function old_slug_redirect_url(): ?string {
 		if ( null === $this->old_slug_post_id || null === $this->url_translator ) {
 			return null;
