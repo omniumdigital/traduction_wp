@@ -12,14 +12,30 @@ if ( ! class_exists( Element::class ) ) {
 	abstract class Element {}
 }
 
-/** @return array<string, mixed> */
-function c( string $slug, string $label, array $children = array(), array $options = array() ): array {
-	return array(
-		'slug'     => $slug,
-		'label'    => $label,
-		'children' => $children,
-		'options'  => $options,
+/**
+ * Mirrors the Oxygen 6.1/6.2 signature (plugin/elements/elements-helpers.php):
+ * $enable_media_queries and $enable_hover are required.
+ *
+ * @param array<int, mixed> $children
+ * @param mixed             $options
+ * @param array<int, mixed> $keywords
+ * @param array<string, mixed>|null $dynamic
+ * @return array<string, mixed>
+ */
+function c( $slug, $label, $children, $options, $enable_media_queries, $enable_hover, $keywords = array(), $dynamic = null ): array {
+	$control = array(
+		'slug'               => $slug,
+		'label'              => $label,
+		'options'            => $options,
+		'enableMediaQueries' => $enable_media_queries,
+		'enableHover'        => $enable_hover,
+		'children'           => $children,
+		'keywords'           => $keywords,
 	);
+	if ( $dynamic ) {
+		$control['dynamic'] = $dynamic;
+	}
+	return $control;
 }
 
 namespace Breakdance\ElementStudio;
