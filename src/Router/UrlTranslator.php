@@ -210,6 +210,10 @@ final class UrlTranslator {
 	 * @param string $home_base     Absolute home base without trailing slash.
 	 */
 	private function translated_slug_path( string $relative_path, string $lang, string $home_base ): string {
+		// The home path is the static front page itself: it keeps /{lang}/, never its slug.
+		if ( '/' === $relative_path ) {
+			return $relative_path;
+		}
 		$post_id = $this->known_post_id ?? $this->post_id_for_url( rtrim( $home_base, '/' ) . '/' . ltrim( $relative_path, '/' ) );
 		if ( $post_id <= 0 || ! isset( $GLOBALS['wpdb'] ) || ! $GLOBALS['wpdb'] instanceof \wpdb ) {
 			return $relative_path;
