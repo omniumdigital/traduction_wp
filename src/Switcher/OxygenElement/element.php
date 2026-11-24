@@ -123,7 +123,9 @@ final class LanguageSwitcher extends \Breakdance\Elements\Element {
 							'text'  => __( 'Floating', 'omnium-translate' ),
 						),
 					),
-				)
+				),
+				false,
+				false
 			),
 			c(
 				'display',
@@ -149,7 +151,9 @@ final class LanguageSwitcher extends \Breakdance\Elements\Element {
 							'text'  => __( 'Language code', 'omnium-translate' ),
 						),
 					),
-				)
+				),
+				false,
+				false
 			),
 		);
 	}

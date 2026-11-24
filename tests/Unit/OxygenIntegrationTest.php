@@ -49,4 +49,14 @@ final class OxygenIntegrationTest extends TestCase {
 		$this->assertSame( array( 'dropdown', 'inline', 'floating' ), array_column( $controls[0]['options']['items'], 'value' ) );
 		$this->assertSame( array( 'flag-name', 'flag', 'name', 'code' ), array_column( $controls[1]['options']['items'], 'value' ) );
 	}
+
+	public function test_controls_disable_breakpoints_and_hover(): void {
+		$controls = \Omnium\Translate\Switcher\OxygenElement\LanguageSwitcher::contentControls();
+
+		$this->assertCount( 2, $controls );
+		foreach ( $controls as $control ) {
+			$this->assertFalse( $control['enableMediaQueries'] );
+			$this->assertFalse( $control['enableHover'] );
+		}
+	}
 }

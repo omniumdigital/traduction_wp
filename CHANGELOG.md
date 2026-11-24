@@ -4,6 +4,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+### Corrigé
+- Correctif : le sélecteur de langue Oxygen faisait planter le builder Oxygen 6.2.2 (failed to load elements).
+
 ## [1.2.2] - 2026-10-27
 
 ### Corrigé
