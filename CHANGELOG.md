@@ -4,6 +4,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage s
 
 ## [Non publié]
 
+## [1.2.4] - 2026-11-24
+
+### Corrigé
+- Réglages : impossible d'ajouter une langue cible, le champ texte refusait toute saisie. Les langues cibles se cochent désormais dans une liste, comme dans l'assistant.
+- Glossaire : la langue se choisit dans un menu déroulant (langues cibles configurées) au lieu d'être saisie à la main.
+- Page d'accueil statique : ses versions traduites pointaient vers son slug traduit (par exemple `/en/home-2/` ou `/es/inicio/`) au lieu de `/en/` et `/es/`, dans la balise canonical, les hreflang, le sitemap, le sélecteur de langue et le JSON-LD. La page d'accueil reste désormais toujours à la racine de chaque langue.
+- Les anciennes URLs `/{langue}/{slug-de-la-page-d-accueil}/` redirigent en 301 vers `/{langue}/`, comme WordPress le fait déjà pour la langue source.
+
 ## [1.2.3] - 2026-11-24
 
 ### Corrigé

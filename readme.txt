@@ -3,7 +3,7 @@ Contributors: omniumdigital
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.2.3
+Stable tag: 1.2.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,6 +78,11 @@ La clé API chiffrée et les tâches planifiées sont supprimées. Les traductio
 L’extension recherche les versions GitHub publiques avec Plugin Update Checker. Cette vérification peut être désactivée dans les réglages.
 
 == Changelog ==
+
+= 1.2.4 =
+* Réglages : les langues cibles se cochent dans une liste (le champ texte empêchait d'ajouter une langue).
+* Glossaire : la langue se choisit dans un menu déroulant.
+* Page d'accueil statique : elle reste à la racine de chaque langue (`/en/`, `/es/`) dans le canonical, les hreflang, le sitemap, le sélecteur et le JSON-LD ; son ancien slug traduit redirige en 301.
 
 = 1.2.3 =
 * Correctif : le sélecteur de langue Oxygen faisait planter le builder Oxygen 6.2.2 (failed to load elements).

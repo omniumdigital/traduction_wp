@@ -1,5 +1,6 @@
 import {
 	Button,
+	CheckboxControl,
 	ColorPicker,
 	Notice,
 	Panel,
@@ -43,6 +44,7 @@ export function Settings({ request, data: initialData }) {
 	const switcher = settings.switcher || {};
 	const colors = switcher.colors || {};
 	const languages = data.languages || [];
+	const targets = settings.target_langs || [];
 	const flags = data.flags || [];
 	const updateSwitcher = (patch) => save({ switcher: { ...switcher, ...patch } });
 	const updateColors = (patch) => updateSwitcher({ colors: { ...colors, ...patch } });
@@ -56,18 +58,25 @@ export function Settings({ request, data: initialData }) {
 						options={languages.map((item) => ({ label: item.name, value: item.code }))}
 						onChange={(source_lang) => save({ source_lang })}
 					/>
-					<TextControl
-						label={__("Target languages (comma separated)", "omnium-translate")}
-						value={(settings.target_langs || []).join(", ")}
-						onChange={(value) =>
-							save({
-								target_langs: value
-									.split(",")
-									.map((item) => item.trim())
-									.filter(Boolean),
-							})
-						}
-					/>
+					<fieldset className="omtr-languages">
+						<legend>{__("Target languages", "omnium-translate")}</legend>
+						{languages
+							.filter((item) => item.code !== settings.source_lang)
+							.map((item) => (
+								<CheckboxControl
+									key={item.code}
+									label={item.name}
+									checked={targets.includes(item.code)}
+									onChange={(checked) =>
+										save({
+											target_langs: checked
+												? [...targets, item.code]
+												: targets.filter((code) => code !== item.code),
+										})
+									}
+								/>
+							))}
+					</fieldset>
 					<ToggleControl
 						label={__("Translate automatically when content changes", "omnium-translate")}
 						checked={settings.auto_translate}

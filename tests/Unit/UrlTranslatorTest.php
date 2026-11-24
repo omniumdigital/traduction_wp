@@ -108,4 +108,42 @@ final class UrlTranslatorTest extends TestCase {
 
 		$this->assertSame( '/parent-source/page-source/', $translator->translate( '/en/parent-translated/page-translated/', 'fr' ) );
 	}
+
+	public function test_front_page_keeps_language_root_instead_of_its_slug(): void {
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/' );
+		Functions\when( 'url_to_postid' )->justReturn( 12 );
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->expects( $this->never() )->method( 'get_var' );
+		$translator = new UrlTranslator( new Settings() );
+
+		$this->assertSame( 'https://example.test/en/', $translator->translate_post( 12, 'en' ) );
+		$this->assertSame( 'https://example.test/es/', $translator->translate_post( 12, 'es' ) );
+		$this->assertSame( 'https://example.test/en/', $translator->translate( 'https://example.test/', 'en' ) );
+		$this->assertSame( '/es/?a=1', $translator->translate( '/en/?a=1', 'es' ) );
+	}
+
+	public function test_front_page_keeps_language_root_on_subdirectory_install(): void {
+		Functions\when( 'home_url' )->justReturn( 'https://example.test/blog/' );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/blog/' );
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->expects( $this->never() )->method( 'get_var' );
+
+		$this->assertSame( 'https://example.test/blog/en/', ( new UrlTranslator( new Settings() ) )->translate_post( 12, 'en' ) );
+	}
+
+	public function test_front_page_slug_switches_back_to_source_root(): void {
+		Functions\when( 'get_post_status' )->justReturn( 'publish' );
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/' );
+		$wpdb         = $this->createMock( \wpdb::class );
+		$wpdb->prefix = 'wp_';
+		$GLOBALS['wpdb'] = $wpdb;
+		$wpdb->method( 'prepare' )->willReturn( 'prepared' );
+		$wpdb->method( 'get_var' )->willReturn( '12' );
+
+		$this->assertSame( '/', ( new UrlTranslator( new Settings() ) )->translate( '/en/home-2/', 'fr' ) );
+	}
 }
