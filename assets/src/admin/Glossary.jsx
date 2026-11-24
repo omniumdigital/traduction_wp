@@ -7,6 +7,18 @@ export function Glossary({ request }) {
 	const [items, setItems] = useState([]);
 	const [form, setForm] = useState({ term: "", target_lang: "", translation: "", rule: "translate" });
 	const [message, setMessage] = useState("");
+	const [languages, setLanguages] = useState([]);
+	useEffect(() => {
+		request({ path: "/settings" })
+			.then((response) => {
+				const all = response.languages || [];
+				const targets = response.settings?.target_langs || [];
+				const configured = all.filter((item) => targets.includes(item.code));
+				setLanguages(configured.length ? configured : all);
+			})
+			.catch(() => {});
+	}, [request]);
+	const languageName = (code) => languages.find((item) => item.code === code)?.name || code;
 	const load = useCallback(
 		() =>
 			request({ path: "/glossary" })
@@ -43,9 +55,13 @@ export function Glossary({ request }) {
 						value={form.term}
 						onChange={(term) => setForm({ ...form, term })}
 					/>
-					<TextControl
+					<SelectControl
 						label={__("Language", "omnium-translate")}
 						value={form.target_lang}
+						options={[
+							{ label: __("Select a language", "omnium-translate"), value: "" },
+							...languages.map((item) => ({ label: item.name, value: item.code })),
+						]}
 						onChange={(target_lang) => setForm({ ...form, target_lang })}
 					/>
 					<TextControl
@@ -94,7 +110,7 @@ export function Glossary({ request }) {
 						{items.map((item) => (
 							<tr key={item.id}>
 								<td>{item.term}</td>
-								<td>{item.target_lang}</td>
+								<td>{languageName(item.target_lang)}</td>
 								<td>{item.translation}</td>
 								<td>{item.rule}</td>
 								<td>
